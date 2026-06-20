@@ -1,0 +1,268 @@
+:root {
+  --bg: #0b1020;
+  --bg-soft: #121a30;
+  --ink: #eef2ff;
+  --muted: #9aa7c7;
+  --line: #233156;
+  --dawn-1: #ff8a5b;
+  --dawn-2: #ffd36e;
+  --accent: #6ea8fe;
+  --radius: 14px;
+  --maxw: 920px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1b2647 0%, var(--bg) 60%);
+  color: var(--ink);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 22px 80px;
+}
+
+.nav {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 26px 0 10px;
+}
+
+.wordmark {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: 0.2px;
+  background: linear-gradient(90deg, var(--dawn-1), var(--dawn-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.byline {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 12px;
+  color: var(--dawn-2);
+  margin: 0 0 14px;
+}
+
+.hero {
+  padding: 56px 0 40px;
+}
+
+.hero h1 {
+  font-size: clamp(40px, 7vw, 68px);
+  line-height: 1.02;
+  margin: 0 0 20px;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  font-size: 19px;
+  color: var(--muted);
+  max-width: 60ch;
+}
+
+.lede strong {
+  color: var(--ink);
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 28px 0 12px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 22px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--dawn-1), var(--dawn-2));
+  color: #1a1206;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.btn.is-pending {
+  opacity: 0.62;
+  cursor: not-allowed;
+  filter: grayscale(0.2);
+}
+
+.fine {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+section {
+  padding: 40px 0;
+  border-top: 1px solid var(--line);
+}
+
+h2 {
+  font-size: clamp(26px, 4vw, 34px);
+  margin: 0 0 26px;
+  letter-spacing: -0.01em;
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.steps li {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+
+.step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--dawn-1), var(--dawn-2));
+  color: #1a1206;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.steps h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.steps p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.bullets {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.bullets li {
+  color: var(--muted);
+}
+
+.bullets strong {
+  color: var(--ink);
+}
+
+.pricing {
+  display: flex;
+  justify-content: center;
+}
+
+.price-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+}
+
+.price {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 4px 0 18px;
+}
+
+.amount {
+  font-size: 56px;
+  font-weight: 800;
+}
+
+.per {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.price-points {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.price-card .btn {
+  width: 100%;
+}
+
+.faq dl {
+  display: grid;
+  gap: 18px;
+}
+
+.faq dt {
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.faq dd {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.foot {
+  border-top: 1px solid var(--line);
+  padding-top: 26px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.foot p {
+  margin: 0 0 6px;
+}

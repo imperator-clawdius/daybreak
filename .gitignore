@@ -1,0 +1,15 @@
+node_modules/
+dist/
+out/
+.next/
+site/out/
+desktop/dist/
+desktop/release/
+*.log
+.DS_Store
+.env
+.env.local
+# Daybreak stores user data locally; never commit a real db.
+*.sqlite
+*.sqlite3
+private/

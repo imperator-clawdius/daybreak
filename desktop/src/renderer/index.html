@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>Daybreak</title>
+    <link rel="stylesheet" href="renderer.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header class="top">
+        <h1 id="phase-title">Daybreak</h1>
+        <p id="streak" class="streak"></p>
+      </header>
+
+      <section id="board" class="board" aria-live="polite"></section>
+
+      <form id="add-form" class="add">
+        <input
+          id="add-input"
+          type="text"
+          maxlength="120"
+          placeholder="Commit to something for today…"
+          autocomplete="off"
+        />
+        <button type="submit" id="add-btn">Add</button>
+      </form>
+
+      <footer class="bottom">
+        <p id="hint" class="hint"></p>
+        <button id="done-btn" class="done" disabled>Clear &amp; close</button>
+      </footer>
+    </main>
+    <script src="renderer.js"></script>
+  </body>
+</html>

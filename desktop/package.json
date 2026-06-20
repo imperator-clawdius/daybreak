@@ -1,0 +1,50 @@
+{
+  "name": "@daybreak/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Daybreak Windows desktop app.",
+  "main": "dist/main.js",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "bundle": "node build.mjs",
+    "build": "npm run bundle",
+    "dev": "npm run bundle && electron .",
+    "package": "npm run bundle && electron-builder --win --publish never"
+  },
+  "dependencies": {
+    "@daybreak/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.6.3"
+  },
+  "build": {
+    "appId": "com.passiveprintlabs.daybreak",
+    "productName": "Daybreak",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
