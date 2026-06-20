@@ -15,7 +15,13 @@ const primary = process.argv[2] || PREVIEW;
 
 async function head(url) {
   try {
-    const res = await fetch(url, { method: "GET", redirect: "follow" });
+    // connection: close avoids a keep-alive socket lingering into interpreter
+    // teardown (a libuv assertion crash on Windows when process.exit races it).
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: { connection: "close" },
+    });
     const body = await res.text();
     return { ok: res.ok, status: res.status, hasApp: /Daybreak/.test(body) };
   } catch (e) {
@@ -54,4 +60,6 @@ if (apexLive) {
   );
 }
 
-process.exit(primaryRes.ok ? 0 : 1);
+// Set the code and let the event loop drain naturally instead of a hard
+// process.exit(), which can trip a libuv teardown assertion on Windows.
+process.exitCode = primaryRes.ok ? 0 : 1;
