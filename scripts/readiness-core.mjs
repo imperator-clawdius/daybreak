@@ -292,6 +292,7 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
         typeof item.price !== "object" ||
         Array.isArray(item.price) ||
         typeof item.price.unit_amount !== "number" ||
+        !Number.isInteger(item.price.unit_amount) ||
         typeof item.price.currency !== "string" ||
         (item.price.recurring !== null &&
           item.price.recurring !== undefined &&

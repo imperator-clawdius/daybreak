@@ -1005,6 +1005,19 @@ describe("readiness external-link proof", () => {
         kind: "checkout",
         url: "https://buy.stripe.com/live_123",
         expectedPriceUsd: 19,
+        checkoutProof: stripeProof({ unitAmount: 1900.5 }),
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_line_items_invalid",
+    });
+
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
         checkoutProof: {
           payment_link: {
             url: "https://buy.stripe.com/live_123",

@@ -700,6 +700,35 @@ describe("external launch links", () => {
               {
                 quantity: 1,
                 price: {
+                  unit_amount: 1900.5,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_line_items_invalid",
+    });
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
                   unit_amount: 1900,
                   currency: 1900,
                   recurring: null,
