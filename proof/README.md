@@ -47,3 +47,8 @@ the first real paid checkout. The verifier expects:
 
 Keep customer email, customer name, payment method details, receipts, and API
 keys out of this file.
+
+The verifier rejects proof that includes Stripe customer or payment-detail
+fields such as `customer`, `customer_email`, `customer_details`,
+`payment_intent`, `payment_method`, `payment_method_details`, `receipt_email`,
+`client_secret`, or `api_key`.

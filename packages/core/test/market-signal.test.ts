@@ -119,4 +119,42 @@ describe("paid order proof", () => {
       }),
     ).toMatchObject({ ready: false, reason: "paid_order_checkout_mismatch" });
   });
+
+  it("rejects first-order proof that includes customer personal data", () => {
+    const base = paidOrderProof();
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            customer_email: "buyer@example.com",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            customer_details: { email: "buyer@example.com", name: "Buyer" },
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+    });
+  });
 });

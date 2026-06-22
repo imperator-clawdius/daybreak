@@ -32,6 +32,26 @@ export const GITHUB_PAGES_IPV6 = [
   "2606:50c0:8003::153",
 ];
 const GITHUB_PAGES_ADDRESSES = [...GITHUB_PAGES_IPV4, ...GITHUB_PAGES_IPV6];
+const DISALLOWED_PAID_ORDER_PROOF_KEYS = new Set([
+  "api_key",
+  "client_secret",
+  "customer",
+  "customer_details",
+  "customer_email",
+  "payment_intent",
+  "payment_method",
+  "payment_method_details",
+  "receipt_email",
+]);
+
+function containsDisallowedPaidOrderProofData(value) {
+  if (!value || typeof value !== "object") return false;
+  return Object.entries(value).some(
+    ([key, nested]) =>
+      DISALLOWED_PAID_ORDER_PROOF_KEYS.has(key) ||
+      containsDisallowedPaidOrderProofData(nested),
+  );
+}
 
 export function readText(root, relativePath) {
   try {
@@ -557,6 +577,9 @@ export function evaluateMarketSignal({
   ) {
     return pending("paid_order_amount_mismatch");
   }
+  if (containsDisallowedPaidOrderProofData(proof)) {
+    return pending("paid_order_proof_contains_customer_data");
+  }
   if (refunds > 0) {
     return pending("paid_order_refunded", 1);
   }
@@ -658,7 +681,7 @@ export async function buildReadinessGates({
         ? marketSignal.detail
         : `${marketSignal.detail} - no fabricated proof permitted`,
       blocker:
-        "ship checkout, earn the first real $19 order, and add proof/first-paid-order.json from Stripe",
+        "ship checkout, earn the first real $19 order, and add redacted proof/first-paid-order.json from Stripe",
     },
   ];
 }
