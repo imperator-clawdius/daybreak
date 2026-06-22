@@ -6,6 +6,7 @@ export type PaidOrderProofReason =
   | "paid_order_not_one_time"
   | "paid_order_not_complete"
   | "paid_order_not_paid"
+  | "paid_order_proof_malformed"
   | "paid_order_amount_mismatch"
   | "paid_order_proof_contains_customer_data"
   | "paid_order_refund_proof_missing"
@@ -168,6 +169,17 @@ export function getPaidOrderProofState({
       reason: "paid_order_not_paid",
       paidOrders: 0,
       refunds,
+    };
+  }
+  if (
+    typeof session.amount_total !== "number" ||
+    typeof session.currency !== "string"
+  ) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
     };
   }
   if (

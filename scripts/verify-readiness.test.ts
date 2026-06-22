@@ -237,6 +237,46 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending when first-order amount or currency proof is malformed", () => {
+    const base = paidOrderProof();
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
+            amount_total: "1900",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
+            currency: 1900,
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("keeps market signal pending when paid-order proof contains customer personal data", () => {
     const base = paidOrderProof();
 

@@ -150,6 +150,48 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects malformed first-order amount and currency proof", () => {
+    const base = paidOrderProof();
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            amount_total: "1900",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            currency: 1900,
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("rejects first-order proof that includes customer personal data", () => {
     const base = paidOrderProof();
 

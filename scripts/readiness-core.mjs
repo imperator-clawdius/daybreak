@@ -684,6 +684,18 @@ export function evaluateMarketSignal({
     return pending("paid_order_not_paid");
   }
   if (
+    typeof session.amount_total !== "number" ||
+    typeof session.currency !== "string"
+  ) {
+    return {
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
+    };
+  }
+  if (
     session.amount_total !== expectedPriceUsd * 100 ||
     session.currency !== "usd"
   ) {
