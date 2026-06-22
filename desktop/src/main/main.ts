@@ -39,6 +39,10 @@ let dismissAllowed = false;
 let smokeFailed = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
+  const prior = {
+    ...makeItem("Prior smoke week", "2026-06-15", () => "smoke-prior-week"),
+    state: "done" as const,
+  };
   const item = {
     ...makeItem(SMOKE_COMMIT_TEXT, SMOKE_DAY, () => "smoke-evening-item"),
     state: "open" as const,
@@ -47,6 +51,12 @@ if (SMOKE && SMOKE_SCENARIO === "evening") {
     version: 1,
     lastSeenIso: null,
     days: [
+      {
+        day: "2026-06-15",
+        morningResolved: true,
+        eveningResolved: true,
+        items: [prior],
+      },
       {
         day: SMOKE_DAY,
         morningResolved: true,
@@ -68,10 +78,6 @@ function nowForSession(): Date {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function todaySession(now: Date): { phase: Phase; log: DayLog } {
-  return buildDaySession(now, store.read().days);
 }
 
 function createWindow(): void {
@@ -144,7 +150,9 @@ async function runSmokeFlow(): Promise<void> {
   const ok = !smokeFailed && data.version === 1 && swipeFlow;
   console.log(
     ok
-      ? `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=${SMOKE_SCENARIO} swipe_flow=true`
+      ? `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=${SMOKE_SCENARIO} swipe_flow=true${
+          SMOKE_SCENARIO === "evening" ? " streak_summary=true" : ""
+        }`
       : "DAYBREAK_SMOKE=fail",
   );
   dismissAllowed = true;
@@ -256,15 +264,17 @@ async function exerciseEveningSwipeFlow(): Promise<boolean> {
   const domResult = (await win.webContents.executeJavaScript(`
     (() => {
       const doneBtn = document.getElementById("done-btn");
+      const streak = document.getElementById("streak");
       const row = Array.from(document.querySelectorAll(".item")).find((element) =>
         element.textContent.includes(${JSON.stringify(SMOKE_COMMIT_TEXT)}),
       );
       return {
         doneEnabled: doneBtn instanceof HTMLButtonElement && !doneBtn.disabled,
         stateDone: row instanceof HTMLElement && row.classList.contains("state-done"),
+        streakText: streak instanceof HTMLElement ? streak.textContent : "",
       };
     })()
-  `)) as { doneEnabled: boolean; stateDone: boolean };
+  `)) as { doneEnabled: boolean; stateDone: boolean; streakText: string };
   const persisted = store.read();
   const persistedDone = persisted.days.some(
     (day) =>
@@ -274,13 +284,22 @@ async function exerciseEveningSwipeFlow(): Promise<boolean> {
         (item) => item.text === SMOKE_COMMIT_TEXT && item.state === "done",
       ),
   );
-  if (!domResult.doneEnabled || !domResult.stateDone || !persistedDone) {
+  const streakRendered = domResult.streakText === "1-day / 2-week streak";
+  if (
+    !domResult.doneEnabled ||
+    !domResult.stateDone ||
+    !persistedDone ||
+    !streakRendered
+  ) {
     console.error("evening smoke flow verification failed:", {
       ...domResult,
       persistedDone,
+      streakRendered,
     });
   }
-  return domResult.doneEnabled && domResult.stateDone && persistedDone;
+  return (
+    domResult.doneEnabled && domResult.stateDone && persistedDone && streakRendered
+  );
 }
 
 async function sendMouseSwipe(
@@ -332,9 +351,10 @@ function configureStartupRegistration(): void {
 ipcMain.handle("daybreak:load", () => {
   const now = nowForSession();
   dismissAllowed = false;
-  const { phase, log } = todaySession(now);
+  const history = store.read().days;
+  const { phase, log } = buildDaySession(now, history);
   activeSession = { phase, log };
-  return { phase, log, now: now.toISOString() };
+  return { phase, log, history, now: now.toISOString() };
 });
 
 // Persist progress as the user wipes. Returns whether dismissal is now allowed.

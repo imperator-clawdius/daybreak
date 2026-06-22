@@ -8,11 +8,12 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **86 tests, 14 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
-| App actually launches and completes the wipe flows | `DAYBREAK_SMOKE=1 electron .` -> `scenario=morning swipe_flow=true`, exit 0; `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening electron .` -> `scenario=evening swipe_flow=true`, exit 0 |
+| Core mechanic works and is tested | `vitest run` -> **87 tests, 14 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, history-backed streak summary, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| App actually launches and completes the wipe flows | `DAYBREAK_SMOKE=1 electron .` -> `scenario=morning swipe_flow=true`, exit 0; `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
 | Desktop shell is contained | BrowserWindow uses context isolation, no node integration, `sandbox: true`, denied new windows, and a core-tested file-navigation allowlist |
 | Packaged Windows app registers for first-login startup | `desktop/src/main/main.ts` calls `app.setLoginItemSettings({ openAtLogin: true })` only for packaged Windows production builds; smoke and dev runs are excluded by core-tested policy |
+| Weekly streak display is history-backed | Main returns stored day history to the renderer, core merges it with the current in-memory day, and evening smoke proves a two-week historical streak renders after review |
 | Local persistence is crash-tolerant | Desktop `Store` writes via `.tmp`, preserves `.bak`, rejects malformed day logs, and recovers from corrupt or malformed primary JSON in automated tests |
 | Desktop packaging uses current core output | `@daybreak/desktop` builds `@daybreak/core` before esbuild bundling so direct packaging does not depend on stale core `dist` output |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |

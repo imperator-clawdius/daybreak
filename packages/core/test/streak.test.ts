@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { currentStreak, dayCounts, weeklyStreak } from "../src/streak";
+import {
+  currentStreak,
+  dayCounts,
+  summarizeStreak,
+  weeklyStreak,
+} from "../src/streak";
 import { makeItem } from "../src/session";
 import { DayLog } from "../src/model";
 
@@ -53,5 +58,19 @@ describe("streak math", () => {
       day("2026-06-23", true), // week of 06-22
     ];
     expect(weeklyStreak(history)).toBe(2);
+  });
+
+  it("summarizes daily and weekly streaks using the current in-memory day", () => {
+    const history = [
+      day("2026-06-15", true),
+      day("2026-06-16", true),
+      day("2026-06-22", false),
+    ];
+    const current = day("2026-06-22", true);
+
+    expect(summarizeStreak(history, current, new Date(2026, 5, 22))).toEqual({
+      daily: 1,
+      weekly: 2,
+    });
   });
 });

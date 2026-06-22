@@ -4,10 +4,10 @@ import {
   actionForSwipe,
   applyWipe,
   canDismiss,
-  currentStreak,
   makeItem,
   MAX_DAILY_COMMITS,
   resolveLogForPhase,
+  summarizeStreak,
   validateNewCommit,
   type DayLog,
   type Item,
@@ -25,6 +25,7 @@ declare global {
 const api = window.daybreak;
 
 let log: DayLog;
+let history: DayLog[] = [];
 let phase: Phase;
 let now: Date;
 let activeSwipe:
@@ -43,6 +44,7 @@ async function boot() {
   const loaded = await api.load();
   phase = loaded.phase;
   log = loaded.log;
+  history = loaded.history;
   now = new Date(loaded.now);
   api.onNudge(() => flashHint("Wipe every item before Daybreak will close."));
   render();
@@ -73,11 +75,13 @@ function actionLabel(a: WipeAction): string {
 function render() {
   ($("phase-title") as HTMLElement).textContent = phaseLabel();
 
-  // We only have today's board client-side; streak uses the single day we know
-  // plus whatever the main process surfaced. Streak display is informational.
-  const streak = currentStreak([log], now);
+  const streak = summarizeStreak(history, log, now);
   ($("streak") as HTMLElement).textContent =
-    streak > 0 ? `${streak}-day streak` : "Start your streak today";
+    streak.daily > 0
+      ? `${streak.daily}-day / ${streak.weekly}-week streak`
+      : streak.weekly > 0
+        ? `Restart today / ${streak.weekly}-week streak`
+        : "Start your streak today";
 
   const board = $("board");
   board.innerHTML = "";

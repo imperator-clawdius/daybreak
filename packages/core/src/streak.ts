@@ -41,3 +41,20 @@ export function weeklyStreak(history: DayLog[]): number {
   }
   return weeks.size;
 }
+
+export interface StreakSummary {
+  daily: number;
+  weekly: number;
+}
+
+export function summarizeStreak(
+  history: DayLog[],
+  current: DayLog,
+  today: Date,
+): StreakSummary {
+  const merged = [...history.filter((log) => log.day !== current.day), current];
+  return {
+    daily: currentStreak(merged, today),
+    weekly: weeklyStreak(merged),
+  };
+}

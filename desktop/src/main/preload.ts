@@ -4,7 +4,12 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { DayLog, Phase } from "@daybreak/core";
 
 export interface DaybreakBridge {
-  load: () => Promise<{ phase: Phase; log: DayLog; now: string }>;
+  load: () => Promise<{
+    phase: Phase;
+    log: DayLog;
+    history: DayLog[];
+    now: string;
+  }>;
   save: (p: { log: DayLog; phase: Phase }) => Promise<{ canDismiss: boolean }>;
   dismiss: (p: { log: DayLog; phase: Phase }) => Promise<{ closed: boolean }>;
   onNudge: (cb: () => void) => void;
