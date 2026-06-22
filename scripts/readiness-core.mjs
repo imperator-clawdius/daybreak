@@ -668,6 +668,18 @@ export function evaluateMarketSignal({
   if (!session || !paymentLink || paymentLink.url !== checkoutUrl) {
     return pending("paid_order_checkout_mismatch");
   }
+  if (
+    typeof paymentLink.id !== "string" ||
+    typeof session.payment_link !== "string"
+  ) {
+    return {
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
+    };
+  }
   if (session.payment_link !== paymentLink.id) {
     return pending("paid_order_checkout_mismatch");
   }

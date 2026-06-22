@@ -131,6 +131,17 @@ export function getPaidOrderProofState({
       refunds,
     };
   }
+  if (
+    typeof paymentLink.id !== "string" ||
+    typeof session.payment_link !== "string"
+  ) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
   if (session.payment_link !== paymentLink.id) {
     return {
       ready: false,
