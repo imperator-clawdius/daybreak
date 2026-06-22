@@ -169,15 +169,23 @@ export function getCheckoutProofState({
     return { ready: false, reason: "checkout_not_live_mode" };
   }
 
-  const items = checkoutProof.line_items?.data ?? [];
-  const expectedCents = expectedPriceUsd * 100;
+  const lineItems = checkoutProof.line_items;
   if (
-    checkoutProof.line_items?.has_more !== undefined &&
-    typeof checkoutProof.line_items.has_more !== "boolean"
+    lineItems !== undefined &&
+    (!lineItems || typeof lineItems !== "object" || Array.isArray(lineItems))
   ) {
     return { ready: false, reason: "checkout_proof_malformed" };
   }
-  if (checkoutProof.line_items?.has_more === true) {
+
+  const items = lineItems?.data ?? [];
+  const expectedCents = expectedPriceUsd * 100;
+  if (
+    lineItems?.has_more !== undefined &&
+    typeof lineItems.has_more !== "boolean"
+  ) {
+    return { ready: false, reason: "checkout_proof_malformed" };
+  }
+  if (lineItems?.has_more === true) {
     return { ready: false, reason: "checkout_line_items_incomplete" };
   }
   if (!Array.isArray(items)) {

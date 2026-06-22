@@ -215,10 +215,21 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
   }
 
   const expectedCents = expectedPriceUsd * 100;
-  const items = proof.line_items?.data ?? [];
+  const lineItems = proof.line_items;
   if (
-    proof.line_items?.has_more !== undefined &&
-    typeof proof.line_items.has_more !== "boolean"
+    lineItems !== undefined &&
+    (!lineItems || typeof lineItems !== "object" || Array.isArray(lineItems))
+  ) {
+    return {
+      pass: false,
+      reason: "checkout_proof_malformed",
+      detail: "proof line_items must be an object when present",
+    };
+  }
+  const items = lineItems?.data ?? [];
+  if (
+    lineItems?.has_more !== undefined &&
+    typeof lineItems.has_more !== "boolean"
   ) {
     return {
       pass: false,
@@ -226,7 +237,7 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
       detail: "proof line_items.has_more must be a boolean when present",
     };
   }
-  if (proof.line_items?.has_more === true) {
+  if (lineItems?.has_more === true) {
     return {
       pass: false,
       reason: "checkout_line_items_incomplete",
