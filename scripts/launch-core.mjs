@@ -15,13 +15,17 @@ export function getPrimaryUrl(argv = []) {
   return argv[2] || PRODUCTION_URL;
 }
 
-export async function fetchSite(url, fetchImpl = fetch) {
+export async function fetchSite(
+  url,
+  fetchImpl = fetch,
+  { redirect = "follow" } = {},
+) {
   try {
     // connection: close avoids a keep-alive socket lingering into interpreter
     // teardown (a libuv assertion crash on Windows when process.exit races it).
     const res = await fetchImpl(url, {
       method: "GET",
-      redirect: "follow",
+      redirect,
       headers: { connection: "close" },
     });
     const body = await res.text();
@@ -40,11 +44,15 @@ function routeUrl(baseUrl, route) {
   return new URL(route, baseUrl).href;
 }
 
-export async function fetchRequiredRoutes(baseUrl, fetchImpl = fetch) {
+export async function fetchRequiredRoutes(
+  baseUrl,
+  fetchImpl = fetch,
+  options = {},
+) {
   return Promise.all(
     REQUIRED_ROUTES.map(async (route) => ({
       route,
-      res: await fetchSite(routeUrl(baseUrl, route), fetchImpl),
+      res: await fetchSite(routeUrl(baseUrl, route), fetchImpl, options),
     })),
   );
 }
@@ -170,9 +178,15 @@ export async function verifyLaunch({
     apexDns !== "unresolved"
       ? await fetchRequiredRoutes(PRODUCTION_URL, fetchImpl)
       : null;
-  const primaryRes = await fetchSite(primary, fetchImpl);
-  const previewRes = await fetchSite(PREVIEW_URL, fetchImpl);
-  const previewRoutes = await fetchRequiredRoutes(PREVIEW_URL, fetchImpl);
+  const primaryRes = await fetchSite(primary, fetchImpl, {
+    redirect: primary === PREVIEW_URL ? "manual" : "follow",
+  });
+  const previewRes = await fetchSite(PREVIEW_URL, fetchImpl, {
+    redirect: "manual",
+  });
+  const previewRoutes = await fetchRequiredRoutes(PREVIEW_URL, fetchImpl, {
+    redirect: "manual",
+  });
   const apexHttpRes = await fetchSite(PRODUCTION_HTTP_URL, fetchImpl);
   const apexHttpRoutes = await fetchRequiredRoutes(PRODUCTION_HTTP_URL, fetchImpl);
   const primaryRoutes =

@@ -118,6 +118,33 @@ describe("launch verifier", () => {
     );
   });
 
+  it("does not count a preview redirect to the apex as preview health", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: async (url: string, init?: { redirect?: string }) => {
+        const isPreview = url.startsWith(PREVIEW_URL);
+        if (isPreview && init?.redirect === "manual") {
+          return { ok: false, status: 301, text: async () => "Moved" };
+        }
+        if (isPreview) {
+          return { ok: true, status: 200, text: async () => "Daybreak apex" };
+        }
+        if (url.endsWith("/robots.txt")) {
+          return { ok: true, status: 200, text: async () => validRobots() };
+        }
+        if (url.endsWith("/sitemap.xml")) {
+          return { ok: true, status: 200, text: async () => validSitemap() };
+        }
+        return { ok: true, status: 200, text: async () => "Daybreak" };
+      },
+    });
+
+    expect(report.text).toContain(
+      "PREVIEW_SITE=pending status=301 contains_daybreak=false",
+    );
+  });
+
   it("keeps launch pending when a required legal route is missing", async () => {
     const report = await verifyLaunch({
       argv: ["node", "scripts/verify-launch.mjs"],
