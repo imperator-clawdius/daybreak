@@ -148,7 +148,9 @@ export function renderLaunchReport({
   wwwHost,
   wwwDns,
   wwwHttpRes,
+  wwwHttpRoutes,
   wwwLive,
+  wwwRoutes,
 }) {
   const lines = [];
   lines.push(`PRIMARY ${primary}`);
@@ -187,6 +189,7 @@ export function renderLaunchReport({
       wwwHttpRes.error ? ` error=${wwwHttpRes.error}` : ""
     }`,
   );
+  lines.push(formatRouteReport("WWW_HTTP_ROUTES", wwwHttpRoutes));
   lines.push(`WWW_DNS host=${wwwHost} resolves=${wwwDns}`);
   if (wwwLive) {
     lines.push(
@@ -194,6 +197,7 @@ export function renderLaunchReport({
         wwwLive.error ? ` error=${wwwLive.error}` : ""
       }`,
     );
+    lines.push(formatRouteReport("WWW_ROUTES", wwwRoutes));
   } else {
     lines.push(
       `WWW_SITE=pending reason=dns_or_pages_not_ready (point ${wwwHost} at GitHub Pages and wait for HTTPS)`,
@@ -217,6 +221,10 @@ export async function verifyLaunch({
       : null;
   const wwwLive =
     wwwDns !== "unresolved" ? await fetchSite(WWW_URL, fetchImpl) : null;
+  const wwwRoutes =
+    wwwDns !== "unresolved"
+      ? await fetchRequiredRoutes(WWW_URL, fetchImpl)
+      : null;
   const apexRoutes =
     apexDns !== "unresolved"
       ? await fetchRequiredRoutes(PRODUCTION_URL, fetchImpl)
@@ -233,6 +241,7 @@ export async function verifyLaunch({
   const apexHttpRes = await fetchSite(PRODUCTION_HTTP_URL, fetchImpl);
   const apexHttpRoutes = await fetchRequiredRoutes(PRODUCTION_HTTP_URL, fetchImpl);
   const wwwHttpRes = await fetchSite(WWW_HTTP_URL, fetchImpl);
+  const wwwHttpRoutes = await fetchRequiredRoutes(WWW_HTTP_URL, fetchImpl);
   const primaryRoutes =
     primary === PRODUCTION_URL
       ? apexRoutes
@@ -261,7 +270,9 @@ export async function verifyLaunch({
       wwwHost: WWW_HOST,
       wwwDns,
       wwwHttpRes,
+      wwwHttpRoutes,
       wwwLive,
+      wwwRoutes,
     }),
   };
 }
