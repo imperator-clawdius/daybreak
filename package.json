@@ -26,6 +26,7 @@
     "lint": "npm run typecheck && npm run lint -w @daybreak/site",
     "check": "npm run lint && npm run test && npm run build",
     "verify:launch": "node scripts/verify-launch.mjs",
+    "verify:pages-health": "node scripts/verify-pages-health.mjs",
     "verify:readiness": "node scripts/verify-readiness.mjs",
     "verify:release": "node scripts/verify-release.mjs",
     "dev:desktop": "npm run dev -w @daybreak/desktop",

@@ -27,6 +27,7 @@ npm run check            # lint + test + build (all workspaces)
 npm run dev:desktop      # run the Electron app locally
 npm run dev:site         # run the landing page locally
 npm run verify:readiness # honest launch-blocker report
+npm run verify:pages-health # GitHub Pages DNS/cert health
 npm run verify:release   # installer checksum + signing preflight
 ```
 

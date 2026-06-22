@@ -57,6 +57,7 @@ counts, screenshots, or testimonials.
 | HTTP apex success masks HTTPS failure | GitHub Pages can serve the apex over HTTP while the certificate is still wrong, which looks "live" in a browser but is not production-ready. | Launch verification now reports `APEX_HTTP_SITE` separately from the HTTPS `APEX_SITE` gate. |
 | WWW domain breaks silently | Buyers may type `www.daybreak.rest`; checking only the apex would miss a broken or certificate-pending `www` redirect. | Launch verification now reports `WWW_DNS`, `WWW_HTTP_SITE`, and `WWW_SITE`, and default production launch stays pending unless `www` HTTPS also serves Daybreak. |
 | Readiness domain gate ignores WWW | If readiness checked only the apex, it could advance the domain gate while `www.daybreak.rest` still failed for buyers. | The production-domain readiness gate now evaluates both `daybreak.rest` and `www.daybreak.rest`, accepts GitHub Pages IPv6 DNS for the CNAME, and keeps the gate pending until both hosts serve Daybreak over HTTPS. |
+| Pages certificate state is manually inspected | Without a repeatable Pages-health command, certificate issuance can regress into screenshots or vague dashboard checks. | Added `npm run verify:pages-health`, which polls GitHub's Pages DNS health endpoint, uses local `gh` auth or env tokens, reports apex and `www` DNS/Pages/HTTPS flags, and exits pending until the certificate is approved and HTTPS is enforced. |
 
 ## Still blocked by real-world artifacts
 
@@ -82,6 +83,7 @@ npm run check
 npm audit --omit=dev --audit-level=moderate
 npm run verify:readiness
 npm run verify:launch
+npm run verify:pages-health
 $env:DAYBREAK_SMOKE = "1"; npx electron .; Remove-Item Env:DAYBREAK_SMOKE
 $env:DAYBREAK_SMOKE = "1"; npm start; Remove-Item Env:DAYBREAK_SMOKE
 $env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE

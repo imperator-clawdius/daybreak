@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **133 tests, 22 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, core package importability, static site metadata export, proof-backed public checkout/download state, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage, root desktop launch contract) |
+| Core mechanic works and is tested | `vitest run` -> **137 tests, 23 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, core package importability, static site metadata export, proof-backed public checkout/download state, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage, root desktop launch contract, GitHub Pages health verifier) |
 | App actually launches and completes the wipe flows | From repo root in PowerShell, `$env:DAYBREAK_SMOKE = "1"; npx electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm start` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
@@ -34,6 +34,7 @@ fabricated proof**.
 | First-order readiness requires Stripe paid-order proof | `npm run verify:readiness` keeps market signal pending until `proof/first-paid-order.json` proves a live, complete, paid, unrefunded USD 1900 Checkout Session for the configured Payment Link |
 | Windows app icon configured | `desktop/package.json` sets `build.win.icon` to `desktop/assets/icon.ico`; `npm run package -w @daybreak/desktop` no longer emits the default Electron icon warning |
 | Domain is attached over HTTP | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages and the repo Pages custom domain is set to `daybreak.rest`; HTTPS certificate issuance is still pending |
+| GitHub Pages health is repeatable | `npm run verify:pages-health` polls GitHub's Pages health endpoint and reports both `daybreak.rest` and `www.daybreak.rest` as DNS-valid, served by Pages, and HTTPS-eligible, while keeping `PAGES_HEALTH=pending` until the certificate exists and HTTPS is enforced |
 | HTTPS domain blocker is visible | `npm run verify:launch` and `npm run verify:readiness` surface the apex and `www` HTTPS/certificate fetch errors, including underlying TLS cause details when Node exposes them, instead of hiding them behind a generic HTTP status |
 | WWW domain status is visible | `npm run verify:launch` reports `WWW_DNS`, `WWW_HTTP_SITE`, and `WWW_SITE`, so `www.daybreak.rest` cannot silently be broken while the apex is being checked |
 | Preview redirect is not overclaimed | `npm run verify:launch` fetches the GitHub Pages project URL with manual redirect handling, so a custom-domain redirect reports `PREVIEW_SITE=pending status=301` instead of borrowing the apex response |
@@ -81,6 +82,7 @@ npm audit --omit=dev --audit-level=moderate
 npm run check
 npm run verify:readiness
 npm run verify:launch
+npm run verify:pages-health
 npm run package -w @daybreak/desktop
 npm run verify:release
 $env:DAYBREAK_SMOKE = "1"; npx electron .; Remove-Item Env:DAYBREAK_SMOKE
