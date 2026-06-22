@@ -153,6 +153,9 @@ export function getCheckoutProofState({
   ) {
     return { ready: false, reason: "checkout_proof_malformed" };
   }
+  if (typeof paymentLink?.url !== "string") {
+    return { ready: false, reason: "checkout_proof_malformed" };
+  }
   if (paymentLink?.url !== checkoutUrl) {
     return { ready: false, reason: "checkout_url_mismatch" };
   }

@@ -423,6 +423,59 @@ describe("external launch links", () => {
     }
   });
 
+  it("rejects malformed checkout Payment Link URL proof", () => {
+    const baseProof = {
+      payment_link: {
+        url: "https://buy.stripe.com/live_123",
+        active: true,
+        livemode: true,
+      },
+      line_items: {
+        data: [
+          {
+            quantity: 1,
+            price: {
+              unit_amount: 1900,
+              currency: "usd",
+              recurring: null,
+            },
+          },
+        ],
+      },
+    };
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...baseProof,
+          payment_link: { ...baseProof.payment_link, url: 123 },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_malformed",
+    });
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...baseProof,
+          payment_link: {
+            active: true,
+            livemode: true,
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_malformed",
+    });
+  });
+
   it("rejects malformed checkout line item proof without throwing", () => {
     expect(() =>
       getCheckoutProofState({

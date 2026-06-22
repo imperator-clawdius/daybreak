@@ -182,6 +182,13 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
       detail: "Stripe Payment Link proof payment_link must be an object",
     };
   }
+  if (typeof paymentLink.url !== "string") {
+    return {
+      pass: false,
+      reason: "checkout_proof_malformed",
+      detail: "Stripe Payment Link proof payment_link.url must be a string",
+    };
+  }
   if (paymentLink.url !== checkoutUrl) {
     return {
       pass: false,
