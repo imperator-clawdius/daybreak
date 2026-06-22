@@ -1,6 +1,7 @@
 // Daybreak renderer. Pure DOM + @daybreak/core. No business logic lives here
 // that isn't already covered by core's tested functions.
 import {
+  actionForSwipe,
   applyWipe,
   canDismiss,
   currentStreak,
@@ -26,6 +27,15 @@ const api = window.daybreak;
 let log: DayLog;
 let phase: Phase;
 let now: Date;
+let activeSwipe:
+  | {
+      row: HTMLElement;
+      itemId: string;
+      pointerId: number;
+      startX: number;
+      startY: number;
+    }
+  | null = null;
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -85,6 +95,12 @@ function renderItem(item: Item): HTMLElement {
   const row = document.createElement("div");
   row.className = `item state-${item.state}`;
   row.dataset.id = item.id;
+  row.addEventListener("pointerdown", (event) => {
+    startSwipe(event, row, item.id);
+  });
+  row.addEventListener("pointermove", updateSwipe);
+  row.addEventListener("pointerup", finishSwipe);
+  row.addEventListener("pointercancel", cancelSwipe);
 
   const text = document.createElement("span");
   text.className = "item-text";
@@ -108,6 +124,74 @@ function renderItem(item: Item): HTMLElement {
   }
   row.appendChild(actions);
   return row;
+}
+
+function startSwipe(event: PointerEvent, row: HTMLElement, itemId: string) {
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  if (event.target instanceof Element && event.target.closest("button")) return;
+
+  activeSwipe = {
+    row,
+    itemId,
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+  };
+  row.setPointerCapture(event.pointerId);
+  row.classList.add("dragging");
+}
+
+function updateSwipe(event: PointerEvent) {
+  if (!activeSwipe || activeSwipe.pointerId !== event.pointerId) return;
+  event.preventDefault();
+
+  const deltaX = event.clientX - activeSwipe.startX;
+  const deltaY = event.clientY - activeSwipe.startY;
+  const previewAction = actionForSwipe({ phase, deltaX, deltaY });
+  const displayX = Math.max(-140, Math.min(140, deltaX));
+  const displayY =
+    deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX)
+      ? Math.min(120, deltaY)
+      : 0;
+
+  activeSwipe.row.style.transform = `translate(${displayX}px, ${displayY}px)`;
+  setSwipePreview(activeSwipe.row, previewAction);
+}
+
+function finishSwipe(event: PointerEvent) {
+  if (!activeSwipe || activeSwipe.pointerId !== event.pointerId) return;
+
+  const { row, itemId, startX, startY } = activeSwipe;
+  const action = actionForSwipe({
+    phase,
+    deltaX: event.clientX - startX,
+    deltaY: event.clientY - startY,
+  });
+  resetSwipe(row, event.pointerId);
+  if (action) wipe(itemId, action);
+}
+
+function cancelSwipe(event: PointerEvent) {
+  if (!activeSwipe || activeSwipe.pointerId !== event.pointerId) return;
+  resetSwipe(activeSwipe.row, event.pointerId);
+}
+
+function resetSwipe(row: HTMLElement, pointerId: number) {
+  row.releasePointerCapture(pointerId);
+  row.style.transform = "";
+  setSwipePreview(row, null);
+  row.classList.remove("dragging");
+  activeSwipe = null;
+}
+
+function setSwipePreview(row: HTMLElement, action: WipeAction | null) {
+  row.classList.remove(
+    "swipe-preview-commit",
+    "swipe-preview-done",
+    "swipe-preview-defer",
+    "swipe-preview-kill",
+  );
+  if (action) row.classList.add(`swipe-preview-${action}`);
 }
 
 function wipe(id: string, action: WipeAction) {

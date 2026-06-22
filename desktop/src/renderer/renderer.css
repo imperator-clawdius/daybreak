@@ -68,8 +68,36 @@ body {
   border-radius: 14px;
   padding: 16px 18px;
   transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
     opacity 0.2s,
     transform 0.2s;
+  cursor: grab;
+  touch-action: none;
+  will-change: transform;
+}
+
+.item.dragging {
+  cursor: grabbing;
+  transition:
+    border-color 0.1s,
+    box-shadow 0.1s;
+}
+
+.swipe-preview-commit,
+.swipe-preview-done {
+  border-color: var(--green);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.18);
+}
+
+.swipe-preview-defer {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(110, 168, 254, 0.18);
+}
+
+.swipe-preview-kill {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.18);
 }
 
 .item-text {

@@ -4,6 +4,7 @@
 // computes that with @daybreak/core's canDismiss(); main trusts only the
 // boolean it is told AND re-validates against the persisted board.
 import { app, BrowserWindow, ipcMain, screen } from "electron";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -21,12 +22,29 @@ import {
 import { Store } from "./store";
 
 const SMOKE = process.env.DAYBREAK_SMOKE === "1";
+const SMOKE_NOW = "2026-06-22T09:00:00.000Z";
+const SMOKE_COMMIT_TEXT = `Daybreak smoke ${process.pid}`;
+
+if (SMOKE) {
+  app.setPath("userData", join(tmpdir(), `daybreak-smoke-${process.pid}`));
+}
 
 const store = new Store(join(app.getPath("userData"), "daybreak.json"));
 let win: BrowserWindow | null = null;
 let activeSession: { phase: Phase; log: DayLog } | null = null;
 let dismissAllowed = false;
 let smokeFailed = false;
+
+function nowForSession(): Date {
+  if (!SMOKE) return new Date();
+  const raw = process.env.DAYBREAK_SMOKE_NOW ?? SMOKE_NOW;
+  const forced = new Date(raw);
+  return Number.isNaN(forced.getTime()) ? new Date(SMOKE_NOW) : forced;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function todaySession(now: Date): { phase: Phase; log: DayLog } {
   const phase = phaseForHour(now.getHours());
@@ -98,20 +116,114 @@ function createWindow(): void {
 
   if (SMOKE) {
     win.webContents.once("did-finish-load", () => {
-      // Give the renderer's boot() (load + first save round-trip) time to run.
-      setTimeout(() => {
-        const data = store.read();
-        const ok = !smokeFailed && data.version === 1;
-        console.log(
-          ok
-            ? "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true"
-            : "DAYBREAK_SMOKE=fail",
-        );
-        dismissAllowed = true;
-        app.exit(ok ? 0 : 1);
-      }, 2500);
+      void runSmokeFlow();
     });
   }
+}
+
+async function runSmokeFlow(): Promise<void> {
+  // Give the renderer's boot() (load + first save round-trip) time to run.
+  await delay(500);
+  const swipeFlow = await exerciseSwipeFlow();
+  const data = store.read();
+  const ok = !smokeFailed && data.version === 1 && swipeFlow;
+  console.log(
+    ok
+      ? "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true swipe_flow=true"
+      : "DAYBREAK_SMOKE=fail",
+  );
+  dismissAllowed = true;
+  app.exit(ok ? 0 : 1);
+}
+
+async function exerciseSwipeFlow(): Promise<boolean> {
+  if (!win) return false;
+
+  const point = (await win.webContents.executeJavaScript(`
+    (async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      await wait(150);
+      const form = document.getElementById("add-form");
+      const input = document.getElementById("add-input");
+      if (!(form instanceof HTMLFormElement) || !(input instanceof HTMLInputElement)) {
+        return { ok: false, reason: "form_missing" };
+      }
+      if (getComputedStyle(form).display === "none") {
+        return { ok: false, reason: "form_hidden" };
+      }
+      input.value = ${JSON.stringify(SMOKE_COMMIT_TEXT)};
+      form.requestSubmit();
+      await wait(250);
+      const row = Array.from(document.querySelectorAll(".item")).find((element) =>
+        element.textContent.includes(${JSON.stringify(SMOKE_COMMIT_TEXT)}),
+      );
+      if (!(row instanceof HTMLElement)) {
+        return { ok: false, reason: "row_missing" };
+      }
+      const rect = row.getBoundingClientRect();
+      return {
+        ok: true,
+        x: Math.round(rect.left + Math.min(40, rect.width / 3)),
+        y: Math.round(rect.top + rect.height / 2),
+      };
+    })()
+  `)) as { ok: boolean; reason?: string; x?: number; y?: number };
+
+  if (!point.ok || point.x === undefined || point.y === undefined) {
+    console.error("smoke flow setup failed:", point.reason ?? "unknown");
+    return false;
+  }
+
+  win.webContents.sendInputEvent({
+    type: "mouseDown",
+    button: "left",
+    clickCount: 1,
+    x: point.x,
+    y: point.y,
+  });
+  for (const offset of [24, 48, 72, 96, 120]) {
+    win.webContents.sendInputEvent({
+      type: "mouseMove",
+      x: point.x + offset,
+      y: point.y,
+      movementX: 24,
+      movementY: 0,
+    });
+    await delay(16);
+  }
+  win.webContents.sendInputEvent({
+    type: "mouseUp",
+    button: "left",
+    x: point.x + 120,
+    y: point.y,
+  });
+
+  await delay(400);
+  const domResult = (await win.webContents.executeJavaScript(`
+    (() => {
+      const doneBtn = document.getElementById("done-btn");
+      const row = Array.from(document.querySelectorAll(".item")).find((element) =>
+        element.textContent.includes(${JSON.stringify(SMOKE_COMMIT_TEXT)}),
+      );
+      return {
+        doneEnabled: doneBtn instanceof HTMLButtonElement && !doneBtn.disabled,
+        stateOpen: row instanceof HTMLElement && row.classList.contains("state-open"),
+      };
+    })()
+  `)) as { doneEnabled: boolean; stateOpen: boolean };
+  const persisted = store.read();
+  const persistedOpen = persisted.days.some((day) =>
+    day.items.some(
+      (item) => item.text === SMOKE_COMMIT_TEXT && item.state === "open",
+    ),
+  );
+  if (!domResult.doneEnabled || !domResult.stateOpen || !persistedOpen) {
+    console.error("smoke flow verification failed:", {
+      ...domResult,
+      persistedOpen,
+    });
+  }
+  return domResult.doneEnabled && domResult.stateOpen && persistedOpen;
 }
 
 function configureStartupRegistration(): void {
@@ -129,7 +241,7 @@ function configureStartupRegistration(): void {
 }
 
 ipcMain.handle("daybreak:load", () => {
-  const now = new Date();
+  const now = nowForSession();
   dismissAllowed = false;
   const { phase, log } = todaySession(now);
   activeSession = { phase, log };
