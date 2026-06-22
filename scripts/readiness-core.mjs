@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 export function readText(root, relativePath) {
@@ -29,6 +30,10 @@ function isStripePaymentLink(url) {
   }
 }
 
+function isSha256(value) {
+  return /^[a-f0-9]{64}$/i.test(value);
+}
+
 async function fetchProof(url, fetchImpl) {
   try {
     const res = await fetchImpl(url, {
@@ -50,7 +55,31 @@ async function fetchProof(url, fetchImpl) {
   }
 }
 
-export async function evaluateExternalLink({ kind, url, fetchImpl = fetch }) {
+async function fetchAndHash(url, fetchImpl) {
+  try {
+    const res = await fetchImpl(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: { connection: "close" },
+    });
+    if (!res.ok) {
+      return { ok: false, status: res.status };
+    }
+
+    const bytes = Buffer.from(await res.arrayBuffer());
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    return { ok: true, status: res.status, sha256 };
+  } catch (e) {
+    return { ok: false, status: 0, error: String(e.message || e) };
+  }
+}
+
+export async function evaluateExternalLink({
+  kind,
+  url,
+  expectedSha256 = "",
+  fetchImpl = fetch,
+}) {
   if (!isHttpsUrl(url)) {
     return { pass: false, reason: "not_configured", detail: "not configured" };
   }
@@ -60,6 +89,44 @@ export async function evaluateExternalLink({ kind, url, fetchImpl = fetch }) {
       pass: false,
       reason: "not_stripe_payment_link",
       detail: "configured URL is not a buy.stripe.com Payment Link",
+    };
+  }
+
+  if (kind === "download") {
+    if (!isSha256(expectedSha256)) {
+      return {
+        pass: false,
+        reason: "checksum_not_configured",
+        detail: "installer checksum not configured",
+      };
+    }
+
+    const proof = await fetchAndHash(url, fetchImpl);
+    if (!proof.ok) {
+      return {
+        pass: false,
+        reason: "http_not_ok",
+        status: proof.status,
+        detail: `HTTP ${proof.status || "error"}`,
+        error: proof.error,
+      };
+    }
+
+    if (proof.sha256.toLowerCase() !== expectedSha256.toLowerCase()) {
+      return {
+        pass: false,
+        reason: "checksum_mismatch",
+        status: proof.status,
+        sha256: proof.sha256,
+        detail: `SHA-256 mismatch (${proof.sha256})`,
+      };
+    }
+
+    return {
+      pass: true,
+      status: proof.status,
+      sha256: proof.sha256,
+      detail: `HTTP ${proof.status} sha256=${proof.sha256}`,
     };
   }
 
@@ -81,6 +148,7 @@ export async function buildReadinessGates({ root, fetchImpl = fetch }) {
   const configSrc = readText(root, "site/app/config.ts");
   const checkoutUrl = extractConfigUrl(configSrc, "CHECKOUT_URL");
   const downloadUrl = extractConfigUrl(configSrc, "DOWNLOAD_URL");
+  const downloadSha256 = extractConfigUrl(configSrc, "DOWNLOAD_SHA256");
 
   const checkout = await evaluateExternalLink({
     kind: "checkout",
@@ -90,6 +158,7 @@ export async function buildReadinessGates({ root, fetchImpl = fetch }) {
   const download = await evaluateExternalLink({
     kind: "download",
     url: downloadUrl,
+    expectedSha256: downloadSha256,
     fetchImpl,
   });
 
@@ -128,9 +197,9 @@ export async function buildReadinessGates({ root, fetchImpl = fetch }) {
       pass: download.pass,
       detail: download.pass
         ? `${downloadUrl} (${download.detail})`
-        : `site/app/config.ts -> DOWNLOAD_URL (${download.detail})`,
+        : `site/app/config.ts -> DOWNLOAD_URL/DOWNLOAD_SHA256 (${download.detail})`,
       blocker:
-        "produce a signed Windows installer, host it, set DOWNLOAD_URL, and verify it returns HTTP 2xx",
+        "produce a signed Windows installer, publish its SHA-256, host it, set DOWNLOAD_URL and DOWNLOAD_SHA256, and verify the bytes match",
     },
     {
       name: "Production domain owned + attached",

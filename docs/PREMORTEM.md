@@ -16,6 +16,8 @@ counts, screenshots, or testimonials.
 | Landing page copy drifts from implementation | The site said "local database" while v1 persists local JSON. | FAQ now says "local file," matching the completion ledger. |
 | Pending CTA points nowhere | A disabled-looking checkout link to a missing anchor feels unfinished. | Pending checkout is rendered as non-clickable status, and the page now exposes a launch status section. |
 | Critical production dependency advisories | A sale page should not ship on a known critical Next.js audit set. | Upgraded Next and `eslint-config-next` from `15.1.6` to `15.5.19`; migrated linting from deprecated `next lint` to direct ESLint CLI. |
+| Random 200 OK file satisfies installer readiness | A mistyped, stale, or spoofed download URL could look sale-ready even if it is not the signed Daybreak installer. | `verify:readiness` now requires `DOWNLOAD_SHA256` and hashes the fetched installer bytes before the installer gate can pass. |
+| Pages deploy workflow ages into a runtime deprecation | A professional launch should not depend on action runtimes GitHub has already started warning about. | Pages CI now uses Node 24-compatible official actions and builds with Node 24. |
 
 ## Still blocked by real-world artifacts
 
@@ -23,7 +25,7 @@ These remain intentionally pending and must not be faked:
 
 1. Buy and attach `daybreakdesk.com`.
 2. Create a real $19 one-time Stripe Payment Link.
-3. Sign and host the Windows installer.
+3. Sign and host the Windows installer, then publish the exact SHA-256 checksum.
 4. Earn at least one genuine paid order.
 
 ## Residual risks to monitor

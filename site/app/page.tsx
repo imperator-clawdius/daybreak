@@ -143,7 +143,10 @@ export default function Home() {
           </li>
           <li>
             <strong>Installer</strong>
-            <span>Pending signed Windows build and hosted download URL.</span>
+            <span>
+              Pending signed Windows build, hosted download URL, and published
+              SHA-256 checksum.
+            </span>
           </li>
           <li>
             <strong>Domain</strong>

@@ -29,7 +29,8 @@ These require the owner; none are faked to look done.
    honest "checkout opening soon" state - not a fake button.
 3. **Produce a signed Windows installer.** Unsigned NSIS packaging works, but a
    real release needs a code-signing cert so SmartScreen does not flag it; then
-   host it, set `DOWNLOAD_URL`, and let the readiness gate verify HTTP 2xx.
+   host it, set `DOWNLOAD_URL` and `DOWNLOAD_SHA256`, and let the readiness gate
+   verify both HTTP 2xx and the downloaded file hash.
 4. **Earn the first real $19 order.** Market signal is `0` and stays `0` in the
    readiness gate until a genuine paid order exists.
 
