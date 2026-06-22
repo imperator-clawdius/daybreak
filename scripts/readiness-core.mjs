@@ -132,6 +132,57 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
   };
 }
 
+function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) {
+  if (!proof || typeof proof !== "object") {
+    return {
+      pass: false,
+      reason: "installer_proof_missing",
+      detail: "installer proof file is missing or invalid",
+    };
+  }
+
+  if (proof.download?.url !== downloadUrl) {
+    return {
+      pass: false,
+      reason: "installer_url_mismatch",
+      detail: "installer proof URL does not match DOWNLOAD_URL",
+    };
+  }
+  if (proof.download.sha256 !== expectedSha256) {
+    return {
+      pass: false,
+      reason: "installer_checksum_mismatch",
+      detail: "installer proof SHA-256 does not match DOWNLOAD_SHA256",
+    };
+  }
+  if (proof.signature?.status !== "Valid") {
+    return {
+      pass: false,
+      reason: "installer_signature_not_valid",
+      detail: "installer proof does not show a valid signature",
+    };
+  }
+
+  const proofSigner = proof.signature.signer ?? proof.signature.subject ?? "";
+  if (
+    typeof proofSigner !== "string" ||
+    !proofSigner.includes(EXPECTED_SIGNER_SUBJECT) ||
+    proofSigner !== signer
+  ) {
+    return {
+      pass: false,
+      reason: "installer_signer_mismatch",
+      detail: "installer proof signer does not match the hosted installer",
+    };
+  }
+
+  return {
+    pass: true,
+    reason: "installer_proven",
+    detail: "installer proof matches hosted signed bytes",
+  };
+}
+
 async function fetchProof(url, fetchImpl) {
   try {
     const res = await fetchImpl(url, {
@@ -278,6 +329,7 @@ export async function evaluateExternalLink({
   expectedSha256 = "",
   expectedPriceUsd = 0,
   checkoutProof = null,
+  installerProof = null,
   fetchImpl = fetch,
   signatureImpl = readInstallerSignatureFromBytes,
 }) {
@@ -358,6 +410,22 @@ export async function evaluateExternalLink({
         signatureStatus,
         signer,
         detail: `signer=${signer || "missing"} expected=${EXPECTED_SIGNER_SUBJECT}`,
+      };
+    }
+
+    const installerProofState = evaluateInstallerProof({
+      downloadUrl: url,
+      expectedSha256,
+      signer,
+      proof: installerProof,
+    });
+    if (!installerProofState.pass) {
+      return {
+        ...installerProofState,
+        status: proof.status,
+        sha256: proof.sha256,
+        signatureStatus,
+        signer,
       };
     }
 
@@ -462,6 +530,7 @@ export async function buildReadinessGates({
   const downloadSha256 = extractConfigUrl(configSrc, "DOWNLOAD_SHA256");
   const priceUsd = extractConfigNumber(configSrc, "PRICE_USD");
   const checkoutProof = readJsonProof(root, "proof/stripe-payment-link.json");
+  const installerProof = readJsonProof(root, "proof/installer-download.json");
   const paidOrderProof = readJsonProof(root, "proof/first-paid-order.json");
 
   const checkout = await evaluateExternalLink({
@@ -475,6 +544,7 @@ export async function buildReadinessGates({
     kind: "download",
     url: downloadUrl,
     expectedSha256: downloadSha256,
+    installerProof,
     fetchImpl,
   });
   const domain = await evaluateProductionDomain({ fetchImpl, lookupImpl });
@@ -521,7 +591,7 @@ export async function buildReadinessGates({
         ? `${downloadUrl} (${download.detail})`
         : `site/app/config.ts -> DOWNLOAD_URL/DOWNLOAD_SHA256 (${download.detail})`,
       blocker:
-        "produce a signed Windows installer, publish its SHA-256, host it, set DOWNLOAD_URL and DOWNLOAD_SHA256, and verify the bytes and Passive Print Labs Authenticode signer match",
+        "produce a signed Windows installer, publish its SHA-256, host it, set DOWNLOAD_URL and DOWNLOAD_SHA256, add proof/installer-download.json, and verify the bytes and Passive Print Labs Authenticode signer match",
     },
     {
       name: "Production domain owned + attached",

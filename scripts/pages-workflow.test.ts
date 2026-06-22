@@ -11,4 +11,8 @@ describe("Pages deploy workflow", () => {
       '"proof/stripe-payment-link.json"',
     );
   });
+
+  it("redeploys when signed installer proof changes", () => {
+    expect(pagesWorkflowSource()).toContain('"proof/installer-download.json"');
+  });
 });

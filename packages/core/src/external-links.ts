@@ -9,7 +9,12 @@ export type ExternalLinkReason =
   | "checkout_price_mismatch"
   | "checkout_not_one_time"
   | "url_not_configured"
-  | "checksum_not_configured";
+  | "checksum_not_configured"
+  | "installer_proof_missing"
+  | "installer_url_mismatch"
+  | "installer_checksum_mismatch"
+  | "installer_signature_not_valid"
+  | "installer_signer_mismatch";
 
 export interface ExternalLinkState {
   ready: boolean;
@@ -146,4 +151,66 @@ export function getInstallerLinkState({
   }
 
   return { ready: true, reason: "ready" };
+}
+
+interface InstallerDownloadProof {
+  download?: {
+    url?: unknown;
+    sha256?: unknown;
+  };
+  signature?: {
+    status?: unknown;
+    signer?: unknown;
+    subject?: unknown;
+  };
+}
+
+export function getInstallerProofState({
+  url,
+  sha256,
+  proof,
+  expectedSigner = "Passive Print Labs LLC",
+}: {
+  url: string;
+  sha256: string;
+  proof: unknown;
+  expectedSigner?: string;
+}): ExternalLinkState {
+  if (!proof || typeof proof !== "object") {
+    return { ready: false, reason: "installer_proof_missing" };
+  }
+
+  const installerProof = proof as InstallerDownloadProof;
+  if (installerProof.download?.url !== url) {
+    return { ready: false, reason: "installer_url_mismatch" };
+  }
+  if (installerProof.download.sha256 !== sha256) {
+    return { ready: false, reason: "installer_checksum_mismatch" };
+  }
+  if (installerProof.signature?.status !== "Valid") {
+    return { ready: false, reason: "installer_signature_not_valid" };
+  }
+
+  const signer =
+    installerProof.signature.signer ?? installerProof.signature.subject ?? "";
+  if (typeof signer !== "string" || !signer.includes(expectedSigner)) {
+    return { ready: false, reason: "installer_signer_mismatch" };
+  }
+
+  return { ready: true, reason: "ready" };
+}
+
+export function getVerifiedInstallerLinkState({
+  url,
+  sha256,
+  proof,
+}: {
+  url: string;
+  sha256: string;
+  proof: unknown;
+}): ExternalLinkState {
+  const linkState = getInstallerLinkState({ url, sha256 });
+  if (!linkState.ready) return linkState;
+
+  return getInstallerProofState({ url, sha256, proof });
 }

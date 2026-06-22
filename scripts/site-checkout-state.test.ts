@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   getPublicCheckoutState,
+  getPublicDownloadState,
+  readInstallerDownloadProof,
   readStripePaymentLinkProof,
 } from "../site/app/checkout-state";
 
@@ -35,6 +37,17 @@ const matchingProof = {
         },
       },
     ],
+  },
+};
+
+const downloadUrl = "https://downloads.example.com/daybreak.exe";
+const downloadSha256 =
+  "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+const matchingInstallerProof = {
+  download: { url: downloadUrl, sha256: downloadSha256 },
+  signature: {
+    status: "Valid",
+    signer: "CN=Passive Print Labs LLC",
   },
 };
 
@@ -77,5 +90,49 @@ describe("public checkout state", () => {
 
       expect(readStripePaymentLinkProof(dir)).toMatchObject(matchingProof);
       expect(readStripePaymentLinkProof(siteRoot)).toMatchObject(matchingProof);
+    }));
+
+  it("keeps the public download pending until signed installer proof is present", () => {
+    expect(
+      getPublicDownloadState({
+        downloadUrl,
+        downloadSha256,
+        proof: null,
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "installer_proof_missing",
+    });
+
+    expect(
+      getPublicDownloadState({
+        downloadUrl,
+        downloadSha256,
+        proof: matchingInstallerProof,
+      }),
+    ).toMatchObject({
+      ready: true,
+      reason: "ready",
+    });
+  });
+
+  it("loads installer proof from repo root or site workspace build context", () =>
+    withTempDir((dir) => {
+      const siteRoot = join(dir, "site");
+      const proofDir = join(dir, "proof");
+      mkdirSync(siteRoot);
+      mkdirSync(proofDir);
+      writeFileSync(
+        join(proofDir, "installer-download.json"),
+        JSON.stringify(matchingInstallerProof),
+        "utf8",
+      );
+
+      expect(readInstallerDownloadProof(dir)).toMatchObject(
+        matchingInstallerProof,
+      );
+      expect(readInstallerDownloadProof(siteRoot)).toMatchObject(
+        matchingInstallerProof,
+      );
     }));
 });

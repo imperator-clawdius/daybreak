@@ -81,6 +81,18 @@ function paidOrderProof(overrides = {}) {
   };
 }
 
+function installerProof({
+  url = "https://downloads.example.com/daybreak.exe",
+  sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+  status = "Valid",
+  signer = "CN=Passive Print Labs LLC",
+} = {}) {
+  return {
+    download: { url, sha256 },
+    signature: { status, signer },
+  };
+}
+
 describe("readiness external-link proof", () => {
   it("extracts configured URLs from the site config source", () => {
     const src = 'export const CHECKOUT_URL = "https://buy.stripe.com/live";';
@@ -267,6 +279,22 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps installer download pending until signed-installer proof exists", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "installer_proof_missing",
+    });
+  });
+
   it("passes installer download only when the fetched bytes match and the signer is Passive Print Labs", async () => {
     await expect(
       evaluateExternalLink({
@@ -276,6 +304,7 @@ describe("readiness external-link proof", () => {
           "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
         fetchImpl: fetchBody(200, "hello"),
         signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+        installerProof: installerProof(),
       }),
     ).resolves.toMatchObject({
       pass: true,

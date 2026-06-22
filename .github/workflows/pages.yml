@@ -7,6 +7,7 @@ on:
       - "site/**"
       - "packages/**"
       - "proof/stripe-payment-link.json"
+      - "proof/installer-download.json"
       - "deploy/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:

@@ -5,6 +5,7 @@ import {
   getCheckoutLinkState,
   getVerifiedCheckoutLinkState,
   getInstallerLinkState,
+  getVerifiedInstallerLinkState,
   isLiveCheckoutUrl,
 } from "../src/external-links";
 
@@ -202,6 +203,34 @@ describe("external launch links", () => {
         url: "https://downloads.example.com/daybreak.exe",
         sha256:
           "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+      }),
+    ).toMatchObject({ ready: true, reason: "ready" });
+  });
+
+  it("keeps the public download CTA inactive until signed installer proof matches", () => {
+    const url = "https://downloads.example.com/daybreak.exe";
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url,
+        sha256,
+        proof: null,
+      }),
+    ).toMatchObject({ ready: false, reason: "installer_proof_missing" });
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url,
+        sha256,
+        proof: {
+          download: { url, sha256 },
+          signature: {
+            status: "Valid",
+            signer: "CN=Passive Print Labs LLC",
+          },
+        },
       }),
     ).toMatchObject({ ready: true, reason: "ready" });
   });

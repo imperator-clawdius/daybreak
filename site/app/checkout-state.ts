@@ -2,19 +2,20 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
-  getInstallerLinkState,
   getVerifiedCheckoutLinkState,
+  getVerifiedInstallerLinkState,
   type ExternalLinkState,
 } from "@daybreak/core";
 
 import { CHECKOUT_URL, DOWNLOAD_SHA256, DOWNLOAD_URL, PRICE_USD } from "./config";
 
 const STRIPE_PROOF_PATH = join("proof", "stripe-payment-link.json");
+const INSTALLER_PROOF_PATH = join("proof", "installer-download.json");
 
-export function readStripePaymentLinkProof(root = process.cwd()): unknown {
+function readProofFile(root: string, relativePath: string): unknown {
   const candidates = [
-    join(root, STRIPE_PROOF_PATH),
-    join(root, "..", STRIPE_PROOF_PATH),
+    join(root, relativePath),
+    join(root, "..", relativePath),
   ];
 
   for (const candidate of candidates) {
@@ -27,6 +28,14 @@ export function readStripePaymentLinkProof(root = process.cwd()): unknown {
   }
 
   return null;
+}
+
+export function readStripePaymentLinkProof(root = process.cwd()): unknown {
+  return readProofFile(root, STRIPE_PROOF_PATH);
+}
+
+export function readInstallerDownloadProof(root = process.cwd()): unknown {
+  return readProofFile(root, INSTALLER_PROOF_PATH);
 }
 
 export function getPublicCheckoutState({
@@ -45,9 +54,18 @@ export function getPublicCheckoutState({
   });
 }
 
-export function getPublicDownloadState(): ExternalLinkState {
-  return getInstallerLinkState({
-    url: DOWNLOAD_URL,
-    sha256: DOWNLOAD_SHA256,
+export function getPublicDownloadState({
+  downloadUrl = DOWNLOAD_URL,
+  downloadSha256 = DOWNLOAD_SHA256,
+  proof = readInstallerDownloadProof(),
+}: {
+  downloadUrl?: string;
+  downloadSha256?: string;
+  proof?: unknown;
+} = {}): ExternalLinkState {
+  return getVerifiedInstallerLinkState({
+    url: downloadUrl,
+    sha256: downloadSha256,
+    proof,
   });
 }

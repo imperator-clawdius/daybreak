@@ -16,6 +16,20 @@ account after creating the live $19 one-time Payment Link. The verifier expects:
 
 Keep API keys, customer data, session data, and order data out of this file.
 
+## `installer-download.json`
+
+Required before the public download CTA can go live and before the installer
+gate can pass. Generate it only after hosting the real signed Windows installer
+and verifying the hosted bytes. The verifier expects:
+
+- `download.url` equals `DOWNLOAD_URL` in `site/app/config.ts`
+- `download.sha256` equals `DOWNLOAD_SHA256` in `site/app/config.ts`
+- `signature.status` is `Valid`
+- `signature.signer` or `signature.subject` contains `Passive Print Labs LLC`
+
+Keep certificate private keys, signing credentials, request logs, and customer
+data out of this file.
+
 ## `first-paid-order.json`
 
 Required before the market-signal gate can pass. Generate it from Stripe after
