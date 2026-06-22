@@ -253,6 +253,66 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
   };
 }
 
+function getPackagedScenarioFailure({ scenario, result }) {
+  if (!result.pass) return result.reason;
+
+  const stdout = result.stdout || "";
+  const requiredMarkers = [`scenario=${scenario}`];
+  if (scenario === "evening") requiredMarkers.push("streak_summary=true");
+
+  const missingMarkers = requiredMarkers.filter(
+    (marker) => !stdout.includes(marker),
+  );
+  return missingMarkers.length
+    ? `missing_${missingMarkers.join("_and_")}`
+    : "";
+}
+
+export function evaluatePackagedSmokeSuite({
+  executablePath,
+  scenarioResults,
+}) {
+  if (!existsSync(executablePath)) {
+    return {
+      pass: false,
+      executableExists: false,
+      reason: "packaged_app_missing",
+      executablePath,
+      scenarios: [],
+      failedScenarios: [],
+      detail: `missing ${executablePath}`,
+    };
+  }
+
+  const scenarios = scenarioResults.map(({ scenario }) => scenario);
+  const failed = scenarioResults
+    .map(({ scenario, result }) => ({
+      scenario,
+      result,
+      reason: getPackagedScenarioFailure({ scenario, result }),
+    }))
+    .filter(({ reason }) => reason);
+  const failedScenarios = failed.map(({ scenario }) => scenario);
+  const pass = scenarioResults.length > 0 && failed.length === 0;
+
+  return {
+    pass,
+    executableExists: true,
+    reason: pass
+      ? "packaged_smoke_suite_passed"
+      : "packaged_smoke_suite_failed",
+    executablePath,
+    scenarios,
+    failedScenarios,
+    results: scenarioResults,
+    detail: pass
+      ? `packaged Daybreak.exe smoke passed for ${scenarios.join(",")}`
+      : `packaged smoke failed for ${failed
+          .map(({ scenario, reason }) => `${scenario}:${reason}`)
+          .join(",")}`,
+  };
+}
+
 export function runPackagedSmoke(executablePath, { scenario = "morning" } = {}) {
   if (!existsSync(executablePath)) {
     return evaluatePackagedSmoke({ executablePath, runnerResult: null });
@@ -278,6 +338,22 @@ export function runPackagedSmoke(executablePath, { scenario = "morning" } = {}) 
       stderr: child.stderr || child.error?.message || "",
     },
   });
+}
+
+export function runPackagedSmokeSuite(
+  executablePath,
+  { scenarios = ["morning", "evening"] } = {},
+) {
+  if (!existsSync(executablePath)) {
+    return evaluatePackagedSmokeSuite({ executablePath, scenarioResults: [] });
+  }
+
+  const scenarioResults = scenarios.map((scenario) => ({
+    scenario,
+    result: runPackagedSmoke(executablePath, { scenario }),
+  }));
+
+  return evaluatePackagedSmokeSuite({ executablePath, scenarioResults });
 }
 
 export function evaluateReleasePreflight({
@@ -344,6 +420,11 @@ export function renderReleaseReport(result) {
       `packaged_smoke=${result.packagedSmoke.pass ? "pass" : "pending"}`,
     );
     lines.push(`packaged_app_path=${result.packagedSmoke.executablePath}`);
+    if (result.packagedSmoke.scenarios?.length) {
+      lines.push(
+        `packaged_smoke_scenarios=${result.packagedSmoke.scenarios.join(",")}`,
+      );
+    }
     if (!result.packagedSmoke.pass) {
       lines.push(`packaged_smoke_message=${result.packagedSmoke.detail}`);
     }

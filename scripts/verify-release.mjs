@@ -7,13 +7,13 @@ import {
   expectedInstallerPath,
   readAuthenticodeSignature,
   renderReleaseReport,
-  runPackagedSmoke,
+  runPackagedSmokeSuite,
 } from "./release-core.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const installerPath = expectedInstallerPath(root);
 const signature = readAuthenticodeSignature(installerPath);
-const packagedSmoke = runPackagedSmoke(expectedPackagedAppPath(root));
+const packagedSmoke = runPackagedSmokeSuite(expectedPackagedAppPath(root));
 const result = evaluateReleasePreflight({
   root,
   installerPath,

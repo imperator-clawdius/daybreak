@@ -7,6 +7,7 @@ import {
   evaluateBuildIcon,
   evaluateInstallerArtifact,
   evaluatePackagedSmoke,
+  evaluatePackagedSmokeSuite,
   evaluateReleaseMetadata,
   evaluateReleasePreflight,
   renderReleaseReport,
@@ -247,6 +248,137 @@ describe("release preflight", () => {
       ).toMatchObject({
         pass: false,
         reason: "packaged_smoke_failed",
+      });
+    }));
+
+  it("passes packaged smoke suite only when morning and evening packaged flows pass", () =>
+    withTempDir((dir) => {
+      const executablePath = join(dir, "Daybreak.exe");
+      writeFileSync(executablePath, "exe", "utf8");
+
+      const result = evaluatePackagedSmokeSuite({
+        executablePath,
+        scenarioResults: [
+          {
+            scenario: "morning",
+            result: evaluatePackagedSmoke({
+              executablePath,
+              runnerResult: {
+                status: 0,
+                signal: null,
+                stdout:
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+                stderr: "",
+              },
+            }),
+          },
+          {
+            scenario: "evening",
+            result: evaluatePackagedSmoke({
+              executablePath,
+              runnerResult: {
+                status: 0,
+                signal: null,
+                stdout:
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening swipe_flow=true streak_summary=true",
+                stderr: "",
+              },
+            }),
+          },
+        ],
+      });
+
+      expect(result).toMatchObject({
+        pass: true,
+        reason: "packaged_smoke_suite_passed",
+        scenarios: ["morning", "evening"],
+      });
+    }));
+
+  it("keeps release pending when any packaged smoke scenario fails", () =>
+    withTempDir((dir) => {
+      const executablePath = join(dir, "Daybreak.exe");
+      writeFileSync(executablePath, "exe", "utf8");
+
+      const result = evaluatePackagedSmokeSuite({
+        executablePath,
+        scenarioResults: [
+          {
+            scenario: "morning",
+            result: evaluatePackagedSmoke({
+              executablePath,
+              runnerResult: {
+                status: 0,
+                signal: null,
+                stdout:
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+                stderr: "",
+              },
+            }),
+          },
+          {
+            scenario: "evening",
+            result: evaluatePackagedSmoke({
+              executablePath,
+              runnerResult: {
+                status: 1,
+                signal: null,
+                stdout: "DAYBREAK_SMOKE=fail",
+                stderr: "streak did not render",
+              },
+            }),
+          },
+        ],
+      });
+
+      expect(result).toMatchObject({
+        pass: false,
+        reason: "packaged_smoke_suite_failed",
+        failedScenarios: ["evening"],
+      });
+    }));
+
+  it("keeps release pending when evening packaged smoke omits streak proof", () =>
+    withTempDir((dir) => {
+      const executablePath = join(dir, "Daybreak.exe");
+      writeFileSync(executablePath, "exe", "utf8");
+
+      const result = evaluatePackagedSmokeSuite({
+        executablePath,
+        scenarioResults: [
+          {
+            scenario: "morning",
+            result: evaluatePackagedSmoke({
+              executablePath,
+              runnerResult: {
+                status: 0,
+                signal: null,
+                stdout:
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+                stderr: "",
+              },
+            }),
+          },
+          {
+            scenario: "evening",
+            result: evaluatePackagedSmoke({
+              executablePath,
+              runnerResult: {
+                status: 0,
+                signal: null,
+                stdout:
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening swipe_flow=true",
+                stderr: "",
+              },
+            }),
+          },
+        ],
+      });
+
+      expect(result).toMatchObject({
+        pass: false,
+        reason: "packaged_smoke_suite_failed",
+        failedScenarios: ["evening"],
       });
     }));
 
