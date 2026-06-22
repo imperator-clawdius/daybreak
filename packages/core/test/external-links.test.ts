@@ -220,6 +220,28 @@ describe("external launch links", () => {
     });
   });
 
+  it("rejects checkout proof with no line items", () => {
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [],
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_line_items_invalid",
+    });
+  });
+
   it("rejects malformed checkout line item proof without throwing", () => {
     expect(() =>
       getCheckoutProofState({

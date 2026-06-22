@@ -210,6 +210,14 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
     };
   }
 
+  if (items.length === 0) {
+    return {
+      pass: false,
+      reason: "checkout_line_items_invalid",
+      detail: "proof must contain one line item",
+    };
+  }
+
   if (items.some((item) => !item || typeof item !== "object")) {
     return {
       pass: false,
