@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
+export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
+
 export function readJson(root, relativePath) {
   return JSON.parse(readFileSync(join(root, relativePath), "utf8"));
 }
@@ -85,16 +87,24 @@ export function evaluateInstallerArtifact({ installerPath, signature }) {
   const sha256 = sha256File(installerPath);
   const signatureStatus = signature.status || "Unknown";
   const signer = signature.subject || "";
+  const signerMatches = signer.includes(EXPECTED_SIGNER_SUBJECT);
   const signatureMessage =
     signatureStatus === "NotSigned"
       ? "The installer is not digitally signed."
+      : signatureStatus === "Valid" && !signerMatches
+        ? `Expected signer subject to include ${EXPECTED_SIGNER_SUBJECT}.`
       : signature.statusMessage || "";
-  const valid = signatureStatus === "Valid";
+  const valid = signatureStatus === "Valid" && signerMatches;
 
   return {
     pass: valid,
     installerExists: true,
-    reason: valid ? "signed" : "not_signed",
+    reason:
+      signatureStatus === "Valid" && !signerMatches
+        ? "signer_mismatch"
+        : valid
+          ? "signed"
+          : "not_signed",
     installerPath,
     sha256,
     signatureStatus,
@@ -233,9 +243,13 @@ export function renderReleaseReport(result) {
 
   if (!result.pass) {
     const blockers = [];
-    if (!result.signatureStatus || result.signatureStatus !== "Valid") {
+    if (
+      !result.signatureStatus ||
+      result.signatureStatus !== "Valid" ||
+      result.reason === "signer_mismatch"
+    ) {
       blockers.push(
-        "- Sign the Windows installer with a real code-signing certificate before hosting it.",
+        "- Sign the Windows installer with a real Passive Print Labs code-signing certificate before hosting it.",
       );
     }
     if (result.icon && !result.icon.pass) {

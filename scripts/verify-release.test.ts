@@ -93,6 +93,31 @@ describe("release preflight", () => {
       });
     }));
 
+  it("keeps release pending when the valid signature is from the wrong publisher", () =>
+    withTempDir((dir) => {
+      const installerPath = join(dir, "Daybreak Setup 0.1.0.exe");
+      writeFileSync(installerPath, "hello", "utf8");
+
+      const result = evaluateInstallerArtifact({
+        installerPath,
+        signature: {
+          status: "Valid",
+          statusMessage: "",
+          subject: "CN=Unrelated Publisher LLC",
+        },
+      });
+
+      expect(result).toMatchObject({
+        pass: false,
+        reason: "signer_mismatch",
+        signatureStatus: "Valid",
+        signer: "CN=Unrelated Publisher LLC",
+      });
+      expect(renderReleaseReport(result)).toContain(
+        "Sign the Windows installer with a real Passive Print Labs code-signing certificate before hosting it.",
+      );
+    }));
+
   it("renders an honest pending report with checksum and signature status", () =>
     withTempDir((dir) => {
       const installerPath = join(dir, "Daybreak Setup 0.1.0.exe");
