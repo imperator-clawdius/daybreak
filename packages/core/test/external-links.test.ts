@@ -263,6 +263,20 @@ describe("external launch links", () => {
       },
     };
 
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...baseProof,
+          payment_link: "not-an-object",
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_malformed",
+    });
+
     for (const payment_link of [
       { ...baseProof.payment_link, active: "true" },
       { ...baseProof.payment_link, livemode: "true" },

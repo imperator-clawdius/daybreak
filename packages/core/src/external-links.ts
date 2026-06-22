@@ -145,6 +145,12 @@ export function getCheckoutProofState({
 
   const checkoutProof = proof as StripeCheckoutProof;
   const paymentLink = checkoutProof.payment_link;
+  if (
+    paymentLink !== undefined &&
+    (!paymentLink || typeof paymentLink !== "object" || Array.isArray(paymentLink))
+  ) {
+    return { ready: false, reason: "checkout_proof_malformed" };
+  }
   if (paymentLink?.url !== checkoutUrl) {
     return { ready: false, reason: "checkout_url_mismatch" };
   }

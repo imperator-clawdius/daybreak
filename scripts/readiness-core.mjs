@@ -170,6 +170,18 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
   }
 
   const paymentLink = proof.payment_link || {};
+  if (
+    proof.payment_link !== undefined &&
+    (!proof.payment_link ||
+      typeof proof.payment_link !== "object" ||
+      Array.isArray(proof.payment_link))
+  ) {
+    return {
+      pass: false,
+      reason: "checkout_proof_malformed",
+      detail: "Stripe Payment Link proof payment_link must be an object",
+    };
+  }
   if (paymentLink.url !== checkoutUrl) {
     return {
       pass: false,
