@@ -8,8 +8,8 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **128 tests, 21 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, core package importability, static site metadata export, proof-backed public checkout/download state, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage) |
-| App actually launches and completes the wipe flows | From repo root in PowerShell, `$env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
+| Core mechanic works and is tested | `vitest run` -> **130 tests, 22 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, core package importability, static site metadata export, proof-backed public checkout/download state, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage, root desktop launch contract) |
+| App actually launches and completes the wipe flows | From repo root in PowerShell, `$env:DAYBREAK_SMOKE = "1"; npx electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm start` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
 | Desktop shell is contained | BrowserWindow uses context isolation, no node integration, `sandbox: true`, denied new windows, and a core-tested file-navigation allowlist |
@@ -81,6 +81,8 @@ npm run verify:readiness
 npm run verify:launch
 npm run package -w @daybreak/desktop
 npm run verify:release
+$env:DAYBREAK_SMOKE = "1"; npx electron .; Remove-Item Env:DAYBREAK_SMOKE
+$env:DAYBREAK_SMOKE = "1"; npm start; Remove-Item Env:DAYBREAK_SMOKE
 $env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE
 $env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_COMMIT_TEXT = "Ship Daybreak"; $env:DAYBREAK_SMOKE_SCREENSHOT = "../site/public/daybreak-app.png"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE,Env:DAYBREAK_SMOKE_COMMIT_TEXT,Env:DAYBREAK_SMOKE_SCREENSHOT
 $env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE,Env:DAYBREAK_SMOKE_SCENARIO

@@ -44,6 +44,7 @@ counts, screenshots, or testimonials.
 | Root dependency changes do not republish the static site | The site export runs through root `npm ci`, so root manifest or lockfile changes can affect the Pages artifact even when no `site/**` file changes. | The Pages workflow now triggers on `package.json` and `package-lock.json`, with `scripts/pages-workflow.test.ts` proving dependency manifest changes redeploy the static site. |
 | Repo changes merge without the full local gate | A Pages-only workflow can miss desktop/core regressions on changes that do not affect the site deployment path. | Added `.github/workflows/check.yml` to run Node 24 `npm ci`, `npm audit --omit=dev --audit-level=moderate`, and `npm run check` on pushes and pull requests; `scripts/ci-workflow.test.ts` proves those CI gates stay wired. |
 | Desktop/toolchain advisories accumulate before launch | Old Electron, electron-builder, esbuild, and Vitest versions carried high/critical audit findings that would undermine a professional Windows release. | Upgraded Electron to 42.4.1, electron-builder to 26.15.3, esbuild to 0.28.1, and Vitest to 4.1.9; `npm run check`, Electron smoke, and NSIS packaging pass after the upgrade. |
+| Root Electron launch opens the wrong app context | A user running `npx electron .` from the repo root can hit Electron's default app/error path instead of Daybreak's desktop main process. | The root package now declares `main: desktop/dist/main.js`, exposes `npm start` as the desktop dev launcher, and `scripts/root-launch.test.ts` proves the contract. |
 | Installer ships with the default Electron icon | A paid Windows app with the stock Electron icon looks unfinished and weakens trust before first launch. | Added a Daybreak Windows icon asset, configured `build.win.icon`, and extended `verify:release` so the release preflight rejects missing icon configuration. |
 | Pages deploy workflow ages into a runtime deprecation | A professional launch should not depend on action runtimes GitHub has already started warning about. | Pages CI now uses Node 24-compatible official actions and builds with Node 24. |
 | Local release artifact lacks proof | Packaging could produce a file while leaving signing status and checksum to manual inspection. | Added `npm run verify:release`, which computes the installer SHA-256 and checks Authenticode status before any hosted release is considered ready. |
@@ -79,6 +80,8 @@ npm run check
 npm audit --omit=dev --audit-level=moderate
 npm run verify:readiness
 npm run verify:launch
+$env:DAYBREAK_SMOKE = "1"; npx electron .; Remove-Item Env:DAYBREAK_SMOKE
+$env:DAYBREAK_SMOKE = "1"; npm start; Remove-Item Env:DAYBREAK_SMOKE
 $env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE
 $env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE,Env:DAYBREAK_SMOKE_SCENARIO
 npm run package -w @daybreak/desktop

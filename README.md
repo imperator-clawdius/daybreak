@@ -22,6 +22,7 @@ physically wiped every item: **commit, defer, or kill.**
 
 ```bash
 npm install
+npm start                # build and run the Electron app locally
 npm run check            # lint + test + build (all workspaces)
 npm run dev:desktop      # run the Electron app locally
 npm run dev:site         # run the landing page locally
@@ -33,8 +34,8 @@ npm run verify:release   # installer checksum + signing preflight
 
 See [`docs/COMPLETION.md`](docs/COMPLETION.md) for the honest completion ledger
 and [`docs/PREMORTEM.md`](docs/PREMORTEM.md) for the launch-hardening premortem:
-what is real and verified vs. what is still blocked (domain purchase, Stripe
-link, signed hosted installer, first real sale). No fabricated proof appears
-anywhere in this project by policy (`AGENTS.md`).
+what is real and verified vs. what is still blocked (GitHub Pages HTTPS
+certificate, Stripe link, signed hosted installer, first real sale). No
+fabricated proof appears anywhere in this project by policy (`AGENTS.md`).
 
 Domain: **daybreak.rest** (purchased on Namecheap; apex DNS and Pages custom domain set; GitHub Pages HTTPS certificate pending).

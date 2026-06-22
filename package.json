@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "desktop/dist/main.js",
   "description": "Daybreak - a Windows morning intent-setter you can't dismiss until you've wiped every commitment. $19 one-time.",
   "workspaces": [
     "packages/*",
@@ -15,6 +16,7 @@
     }
   },
   "scripts": {
+    "start": "npm run dev:desktop",
     "build:core": "npm run build -w @daybreak/core",
     "build:desktop": "npm run build -w @daybreak/desktop",
     "build:site": "npm run build -w @daybreak/site",
