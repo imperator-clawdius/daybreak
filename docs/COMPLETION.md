@@ -8,9 +8,10 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **61 tests, 9 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, IPC log-update validation, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| Core mechanic works and is tested | `vitest run` -> **65 tests, 10 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, IPC log-update validation, desktop shell policy, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
 | App actually launches | `DAYBREAK_SMOKE=1 electron .` -> `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true`, exit 0 |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
+| Desktop shell is contained | BrowserWindow uses context isolation, no node integration, `sandbox: true`, denied new windows, and a core-tested file-navigation allowlist |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |

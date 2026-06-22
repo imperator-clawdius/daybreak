@@ -5,10 +5,12 @@
 // boolean it is told AND re-validates against the persisted board.
 import { app, BrowserWindow, ipcMain, screen } from "electron";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   buildEveningSession,
   buildMorningSession,
   canDismiss,
+  isAllowedDesktopNavigation,
   phaseForHour,
   resolveLogForPhase,
   validateLogUpdate,
@@ -43,6 +45,9 @@ function todaySession(now: Date): { phase: Phase; log: DayLog } {
 
 function createWindow(): void {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+  const entryFile = join(__dirname, "index.html");
+  const entryUrl = pathToFileURL(entryFile).toString();
+
   win = new BrowserWindow({
     // Smoke mode: small, hidden, non-intrusive so CI / verification never
     // hijacks the screen. Production: full-screen kiosk that owns the morning.
@@ -58,6 +63,7 @@ function createWindow(): void {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
   });
 
@@ -72,6 +78,12 @@ function createWindow(): void {
     console.error("render process gone:", details.reason);
     smokeFailed = true;
   });
+  win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+  win.webContents.on("will-navigate", (event, targetUrl) => {
+    if (!isAllowedDesktopNavigation(entryUrl, targetUrl)) {
+      event.preventDefault();
+    }
+  });
 
   // The gate: refuse close until a wiped board has been committed.
   win.on("close", (e) => {
@@ -81,7 +93,7 @@ function createWindow(): void {
     }
   });
 
-  win.loadFile(join(__dirname, "index.html"));
+  win.loadFile(entryFile);
 
   if (SMOKE) {
     win.webContents.once("did-finish-load", () => {
