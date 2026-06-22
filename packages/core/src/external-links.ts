@@ -187,7 +187,10 @@ export function getCheckoutProofState({
         typeof item.price !== "object" ||
         Array.isArray(item.price) ||
         typeof item.price.unit_amount !== "number" ||
-        typeof item.price.currency !== "string",
+        typeof item.price.currency !== "string" ||
+        (item.price.recurring !== null &&
+          item.price.recurring !== undefined &&
+          typeof item.price.recurring !== "object"),
     )
   ) {
     return { ready: false, reason: "checkout_line_items_invalid" };
