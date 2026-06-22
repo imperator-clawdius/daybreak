@@ -115,6 +115,21 @@ export function getCheckoutProofState({
   return { ready: true, reason: "ready" };
 }
 
+export function getVerifiedCheckoutLinkState({
+  checkoutUrl,
+  expectedPriceUsd,
+  proof,
+}: {
+  checkoutUrl: string;
+  expectedPriceUsd: number;
+  proof: unknown;
+}): ExternalLinkState {
+  const linkState = getCheckoutLinkState(checkoutUrl);
+  if (!linkState.ready) return linkState;
+
+  return getCheckoutProofState({ checkoutUrl, expectedPriceUsd, proof });
+}
+
 export function getInstallerLinkState({
   url,
   sha256,

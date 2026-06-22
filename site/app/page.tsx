@@ -1,14 +1,11 @@
-import { getCheckoutLinkState, getInstallerLinkState } from "@daybreak/core";
 import Image from "next/image";
 
-import { CHECKOUT_URL, DOWNLOAD_SHA256, DOWNLOAD_URL, PRICE_USD } from "./config";
+import { getPublicCheckoutState, getPublicDownloadState } from "./checkout-state";
+import { CHECKOUT_URL, DOWNLOAD_URL, PRICE_USD } from "./config";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-const checkoutReady = getCheckoutLinkState(CHECKOUT_URL).ready;
-const downloadReady = getInstallerLinkState({
-  url: DOWNLOAD_URL,
-  sha256: DOWNLOAD_SHA256,
-}).ready;
+const checkoutReady = getPublicCheckoutState().ready;
+const downloadReady = getPublicDownloadState().ready;
 
 function Cta() {
   if (checkoutReady) {

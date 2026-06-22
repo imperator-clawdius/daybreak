@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getCheckoutProofState,
   getCheckoutLinkState,
+  getVerifiedCheckoutLinkState,
   getInstallerLinkState,
   isLiveCheckoutUrl,
 } from "../src/external-links";
@@ -36,6 +37,44 @@ describe("external launch links", () => {
         proof: {
           payment_link: {
             url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({ ready: true, reason: "ready" });
+  });
+
+  it("keeps the public checkout CTA inactive until Stripe proof matches the configured link", () => {
+    const checkoutUrl = "https://buy.stripe.com/live_123";
+
+    expect(
+      getVerifiedCheckoutLinkState({
+        checkoutUrl,
+        expectedPriceUsd: 19,
+        proof: null,
+      }),
+    ).toMatchObject({ ready: false, reason: "checkout_proof_missing" });
+
+    expect(
+      getVerifiedCheckoutLinkState({
+        checkoutUrl,
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: checkoutUrl,
             active: true,
             livemode: true,
           },
