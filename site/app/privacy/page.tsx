@@ -48,7 +48,7 @@ export default function PrivacyPage() {
 
       <section>
         <h2>Contact</h2>
-        <p>Email founder@daybreakdesk.com with privacy questions.</p>
+        <p>Email founder@daybreak.rest with privacy questions.</p>
       </section>
     </main>
   );

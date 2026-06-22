@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 
 // Base path lets the same build serve two ways:
-//  - "" (default) → apex custom domain daybreakdesk.com (production)
+//  - "" (default) → apex custom domain daybreak.rest (production)
 //  - "/daybreak"  → GitHub project Pages preview (imperator-clawdius.github.io/daybreak)
-// The CI preview job sets DAYBREAK_BASE_PATH=/daybreak.
+// The CI production job leaves DAYBREAK_BASE_PATH unset.
 const basePath = process.env.DAYBREAK_BASE_PATH || "";
 
 const nextConfig = {

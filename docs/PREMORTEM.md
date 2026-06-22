@@ -24,7 +24,7 @@ counts, screenshots, or testimonials.
 
 These remain intentionally pending and must not be faked:
 
-1. Buy and attach `daybreakdesk.com`.
+1. Finish `daybreak.rest` HTTPS certificate issuance and enforcement.
 2. Create a real $19 one-time Stripe Payment Link.
 3. Sign and host the Windows installer, then publish the exact SHA-256 checksum.
 4. Earn at least one genuine paid order.

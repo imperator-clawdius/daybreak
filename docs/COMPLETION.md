@@ -15,15 +15,16 @@ fabricated proof**.
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
 | Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `signature_status=NotSigned`, exit 1 until a real cert signs it |
-| Domain is available | RDAP 404 plus no nameservers for `daybreakdesk.com` (Namecheap-registerable) |
+| Domain is attached over HTTP | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages and the repo Pages custom domain is set to `daybreak.rest`; HTTPS certificate issuance is still pending |
 
 ## Honestly pending (real blockers - readiness gate = 3/7)
 
 These require the owner; none are faked to look done.
 
-1. **Buy `daybreakdesk.com`** on Namecheap, point apex `A` records at GitHub
-   Pages (185.199.108-111.153), attach as the repo's custom domain, then move
-   `deploy/CNAME` into the production build (drop `DAYBREAK_BASE_PATH`).
+1. **Finish `daybreak.rest` HTTPS production.** Keep apex `A` records pointed at
+   GitHub Pages (185.199.108-111.153), let the Pages workflow publish
+   `deploy/CNAME`, wait for GitHub's Pages certificate, then enforce HTTPS and
+   verify `https://daybreak.rest/`.
 2. **Create the real Stripe Payment Link** ($19 one-time) and set
    `CHECKOUT_URL` in `site/app/config.ts`. The readiness gate requires a
    `buy.stripe.com` URL that returns HTTP 2xx. Until then the page shows an

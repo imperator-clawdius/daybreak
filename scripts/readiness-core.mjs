@@ -1,6 +1,16 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { lookup } from "node:dns/promises";
 import { join } from "node:path";
+
+export const PRODUCTION_HOST = "daybreak.rest";
+export const PRODUCTION_URL = `https://${PRODUCTION_HOST}/`;
+export const GITHUB_PAGES_IPV4 = [
+  "185.199.108.153",
+  "185.199.109.153",
+  "185.199.110.153",
+  "185.199.111.153",
+];
 
 export function readText(root, relativePath) {
   try {
@@ -74,6 +84,92 @@ async function fetchAndHash(url, fetchImpl) {
   }
 }
 
+async function defaultLookup(host) {
+  const results = await lookup(host, { all: true, family: 4 });
+  return results.map((result) => result.address);
+}
+
+function normalizeAddresses(addresses) {
+  return addresses
+    .map((address) =>
+      typeof address === "string" ? address : String(address.address || ""),
+    )
+    .filter(Boolean);
+}
+
+async function fetchSite(url, fetchImpl) {
+  try {
+    const res = await fetchImpl(url, {
+      method: "GET",
+      redirect: "follow",
+      headers: { connection: "close" },
+    });
+    const body = await res.text();
+    return { ok: res.ok, status: res.status, hasApp: /Daybreak/.test(body) };
+  } catch (e) {
+    return { ok: false, status: 0, hasApp: false, error: String(e.message || e) };
+  }
+}
+
+export async function evaluateProductionDomain({
+  host = PRODUCTION_HOST,
+  url = PRODUCTION_URL,
+  lookupImpl = defaultLookup,
+  fetchImpl = fetch,
+}) {
+  let addresses = [];
+  try {
+    addresses = normalizeAddresses(await lookupImpl(host));
+  } catch (e) {
+    return {
+      pass: false,
+      reason: "dns_unresolved",
+      detail: `${host} unresolved (${String(e.message || e)})`,
+    };
+  }
+
+  if (addresses.length === 0) {
+    return {
+      pass: false,
+      reason: "dns_unresolved",
+      detail: `${host} unresolved`,
+    };
+  }
+
+  const missing = GITHUB_PAGES_IPV4.filter(
+    (address) => !addresses.includes(address),
+  );
+  const extra = addresses.filter(
+    (address) => !GITHUB_PAGES_IPV4.includes(address),
+  );
+  if (missing.length || extra.length) {
+    return {
+      pass: false,
+      reason: "dns_missing_github_pages_records",
+      detail: `${host} resolves to ${addresses.join(",")}; expected ${GITHUB_PAGES_IPV4.join(",")}`,
+    };
+  }
+
+  const site = await fetchSite(url, fetchImpl);
+  if (!site.ok || !site.hasApp) {
+    return {
+      pass: false,
+      reason: "apex_http_not_ready",
+      status: site.status,
+      detail: `HTTP ${site.status || "error"} contains_daybreak=${site.hasApp}${
+        site.error ? ` error=${site.error}` : ""
+      }`,
+      error: site.error,
+    };
+  }
+
+  return {
+    pass: true,
+    status: site.status,
+    detail: `DNS A records resolved to GitHub Pages and apex returned HTTP ${site.status}`,
+  };
+}
+
 export async function evaluateExternalLink({
   kind,
   url,
@@ -144,7 +240,11 @@ export async function evaluateExternalLink({
   return { pass: true, status: proof.status, detail: `HTTP ${proof.status}` };
 }
 
-export async function buildReadinessGates({ root, fetchImpl = fetch }) {
+export async function buildReadinessGates({
+  root,
+  fetchImpl = fetch,
+  lookupImpl = defaultLookup,
+}) {
   const configSrc = readText(root, "site/app/config.ts");
   const checkoutUrl = extractConfigUrl(configSrc, "CHECKOUT_URL");
   const downloadUrl = extractConfigUrl(configSrc, "DOWNLOAD_URL");
@@ -161,6 +261,7 @@ export async function buildReadinessGates({ root, fetchImpl = fetch }) {
     expectedSha256: downloadSha256,
     fetchImpl,
   });
+  const domain = await evaluateProductionDomain({ fetchImpl, lookupImpl });
 
   return [
     {
@@ -203,10 +304,12 @@ export async function buildReadinessGates({ root, fetchImpl = fetch }) {
     },
     {
       name: "Production domain owned + attached",
-      pass: false,
-      detail: "daybreakdesk.com (verified available on Namecheap, NOT purchased)",
+      pass: domain.pass,
+      detail: domain.pass
+        ? `${PRODUCTION_HOST} (${domain.detail})`
+        : `${PRODUCTION_HOST} (${domain.detail})`,
       blocker:
-        "buy daybreakdesk.com on Namecheap, point apex A records at GitHub Pages, attach as custom domain",
+        "point daybreak.rest apex A records at GitHub Pages, attach as custom domain, and wait for HTTPS to serve the app",
     },
     {
       name: "Real market signal (>=1 paid order)",

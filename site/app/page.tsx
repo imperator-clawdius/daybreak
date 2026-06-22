@@ -151,7 +151,7 @@ export default function Home() {
           <li>
             <strong>Domain</strong>
             <span>
-              Pending daybreakdesk.com purchase and GitHub Pages attachment.
+              daybreak.rest is attached; GitHub Pages HTTPS is pending.
             </span>
           </li>
           <li>
@@ -177,7 +177,7 @@ export default function Home() {
           </dd>
           <dt>What&apos;s the refund policy?</dt>
           <dd>
-            14-day no-questions refund. Email founder@daybreakdesk.com.
+            14-day no-questions refund. Email founder@daybreak.rest.
           </dd>
           <dt>Is it shipping yet?</dt>
           <dd>
@@ -189,7 +189,7 @@ export default function Home() {
       </section>
 
       <footer className="foot">
-        <p>Daybreak - Passive Print Labs LLC - founder@daybreakdesk.com</p>
+        <p>Daybreak - Passive Print Labs LLC - founder@daybreak.rest</p>
         <p>
           <a href="privacy/">Privacy</a> - <a href="terms/">Terms</a>
         </p>

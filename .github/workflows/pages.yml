@@ -6,6 +6,7 @@ on:
     paths:
       - "site/**"
       - "packages/**"
+      - "deploy/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -30,12 +31,10 @@ jobs:
       - run: npm ci
       - name: Build core
         run: npm run build:core
-      - name: Build site (preview base path)
+      - name: Build site (production apex)
         run: npm run build -w @daybreak/site
-        env:
-          # Preview lives under /daybreak. Remove this (and add deploy/CNAME)
-          # when the apex domain daybreakdesk.com is purchased and attached.
-          DAYBREAK_BASE_PATH: /daybreak
+      - name: Add Pages custom domain
+        run: cp deploy/CNAME site/out/CNAME
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site/out

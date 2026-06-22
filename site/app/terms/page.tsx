@@ -41,7 +41,7 @@ export default function TermsPage() {
         <h2>Refunds</h2>
         <p>
           The stated refund policy is 14 days, no questions asked. When checkout
-          is live, refund requests should be sent to founder@daybreakdesk.com
+          is live, refund requests should be sent to founder@daybreak.rest
           from the purchase email.
         </p>
       </section>
@@ -58,7 +58,7 @@ export default function TermsPage() {
 
       <section>
         <h2>Contact</h2>
-        <p>Email founder@daybreakdesk.com for support or terms questions.</p>
+        <p>Email founder@daybreak.rest for support or terms questions.</p>
       </section>
     </main>
   );

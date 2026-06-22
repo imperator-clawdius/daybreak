@@ -1,11 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
+  evaluateProductionDomain,
   evaluateExternalLink,
   extractConfigUrl,
 } from "./readiness-core.mjs";
 
 function fetchStatus(status: number) {
   return async () => ({ ok: status >= 200 && status < 300, status });
+}
+
+function fetchPage(status: number, body: string) {
+  return async () => ({
+    ok: status >= 200 && status < 300,
+    status,
+    text: async () => body,
+  });
+}
+
+function fetchError(message: string) {
+  return async () => {
+    throw new Error(message);
+  };
 }
 
 function fetchBody(status: number, body: string) {
@@ -109,6 +124,74 @@ describe("readiness external-link proof", () => {
       pass: true,
       status: 200,
       sha256: "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+    });
+  });
+
+  it("keeps production domain pending when DNS is unresolved", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => [],
+        fetchImpl: fetchPage(200, "Daybreak"),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "dns_unresolved",
+    });
+  });
+
+  it("keeps production domain pending until all GitHub Pages A records are present", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => ["185.199.108.153"],
+        fetchImpl: fetchPage(200, "Daybreak"),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "dns_missing_github_pages_records",
+    });
+  });
+
+  it("passes production domain when DNS points at GitHub Pages and the apex serves Daybreak", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: fetchPage(200, "Daybreak"),
+      }),
+    ).resolves.toMatchObject({
+      pass: true,
+      detail:
+        "DNS A records resolved to GitHub Pages and apex returned HTTP 200",
+    });
+  });
+
+  it("keeps the production domain pending with the HTTPS fetch error visible", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: fetchError("certificate pending"),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "apex_http_not_ready",
+      detail: "HTTP error contains_daybreak=false error=certificate pending",
     });
   });
 });
