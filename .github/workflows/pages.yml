@@ -6,6 +6,8 @@ on:
     paths:
       - "site/**"
       - "packages/**"
+      - "package.json"
+      - "package-lock.json"
       - "proof/stripe-payment-link.json"
       - "proof/installer-download.json"
       - "deploy/**"

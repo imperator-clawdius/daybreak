@@ -15,4 +15,11 @@ describe("Pages deploy workflow", () => {
   it("redeploys when signed installer proof changes", () => {
     expect(pagesWorkflowSource()).toContain('"proof/installer-download.json"');
   });
+
+  it("redeploys when root dependency manifests change", () => {
+    const workflow = pagesWorkflowSource();
+
+    expect(workflow).toContain('"package.json"');
+    expect(workflow).toContain('"package-lock.json"');
+  });
 });
