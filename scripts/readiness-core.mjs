@@ -216,6 +216,16 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
 
   const expectedCents = expectedPriceUsd * 100;
   const items = proof.line_items?.data ?? [];
+  if (
+    proof.line_items?.has_more !== undefined &&
+    typeof proof.line_items.has_more !== "boolean"
+  ) {
+    return {
+      pass: false,
+      reason: "checkout_proof_malformed",
+      detail: "proof line_items.has_more must be a boolean when present",
+    };
+  }
   if (proof.line_items?.has_more === true) {
     return {
       pass: false,

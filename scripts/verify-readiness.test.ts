@@ -677,6 +677,42 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("rejects malformed checkout line item pagination proof", async () => {
+    const baseProof = stripeProof();
+
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          ...baseProof,
+          line_items: { ...baseProof.line_items, has_more: "false" },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_proof_malformed",
+    });
+
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          ...baseProof,
+          line_items: { ...baseProof.line_items, has_more: 0 },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_proof_malformed",
+    });
+  });
+
   it("rejects checkout proof with no line items", async () => {
     await expect(
       evaluateExternalLink({

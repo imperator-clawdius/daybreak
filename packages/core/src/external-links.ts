@@ -171,6 +171,12 @@ export function getCheckoutProofState({
 
   const items = checkoutProof.line_items?.data ?? [];
   const expectedCents = expectedPriceUsd * 100;
+  if (
+    checkoutProof.line_items?.has_more !== undefined &&
+    typeof checkoutProof.line_items.has_more !== "boolean"
+  ) {
+    return { ready: false, reason: "checkout_proof_malformed" };
+  }
   if (checkoutProof.line_items?.has_more === true) {
     return { ready: false, reason: "checkout_line_items_incomplete" };
   }
