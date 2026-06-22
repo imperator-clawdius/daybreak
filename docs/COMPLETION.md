@@ -8,12 +8,13 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **30 tests, 5 files passed** (wipe machine, carry-over, streak, commit validation, readiness URL proof) |
+| Core mechanic works and is tested | `vitest run` -> **38 tests, 6 files passed** (wipe machine, carry-over, streak, commit validation, readiness URL proof, release preflight) |
 | App actually launches | `DAYBREAK_SMOKE=1 electron .` -> `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true`, exit 0 |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `canDismiss()` re-validated in main |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
+| Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `signature_status=NotSigned`, exit 1 until a real cert signs it |
 | Domain is available | RDAP 404 plus no nameservers for `daybreakdesk.com` (Namecheap-registerable) |
 
 ## Honestly pending (real blockers - readiness gate = 3/7)
@@ -49,8 +50,11 @@ npm run check
 npm run verify:readiness
 npm run verify:launch
 npm run package -w @daybreak/desktop
+npm run verify:release
 DAYBREAK_SMOKE=1 npx electron . --prefix desktop
 ```
 
 `npm run verify:readiness` must keep exiting 1 until the real domain, Stripe
 Payment Link, signed hosted installer, and first paid order exist.
+`npm run verify:release` must keep exiting 1 until the installer is actually
+signed.

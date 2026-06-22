@@ -18,6 +18,7 @@ counts, screenshots, or testimonials.
 | Critical production dependency advisories | A sale page should not ship on a known critical Next.js audit set. | Upgraded Next and `eslint-config-next` from `15.1.6` to `15.5.19`; migrated linting from deprecated `next lint` to direct ESLint CLI. |
 | Random 200 OK file satisfies installer readiness | A mistyped, stale, or spoofed download URL could look sale-ready even if it is not the signed Daybreak installer. | `verify:readiness` now requires `DOWNLOAD_SHA256` and hashes the fetched installer bytes before the installer gate can pass. |
 | Pages deploy workflow ages into a runtime deprecation | A professional launch should not depend on action runtimes GitHub has already started warning about. | Pages CI now uses Node 24-compatible official actions and builds with Node 24. |
+| Local release artifact lacks proof | Packaging could produce a file while leaving signing status and checksum to manual inspection. | Added `npm run verify:release`, which computes the installer SHA-256 and checks Authenticode status before any hosted release is considered ready. |
 
 ## Still blocked by real-world artifacts
 
@@ -43,7 +44,10 @@ npm run check
 npm run verify:readiness
 npm run verify:launch
 DAYBREAK_SMOKE=1 npx electron . --prefix desktop
+npm run package -w @daybreak/desktop
+npm run verify:release
 ```
 
 `verify:readiness` should keep exiting 1 until all four real-world artifacts
-exist and are verified.
+exist and are verified. `verify:release` should keep exiting 1 until the
+installer is signed with a real code-signing certificate.

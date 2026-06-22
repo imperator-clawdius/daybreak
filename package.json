@@ -20,6 +20,7 @@
     "check": "npm run lint && npm run test && npm run build",
     "verify:launch": "node scripts/verify-launch.mjs",
     "verify:readiness": "node scripts/verify-readiness.mjs",
+    "verify:release": "node scripts/verify-release.mjs",
     "dev:desktop": "npm run dev -w @daybreak/desktop",
     "dev:site": "npm run dev -w @daybreak/site"
   },
