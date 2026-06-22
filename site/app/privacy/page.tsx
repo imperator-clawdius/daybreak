@@ -1,12 +1,30 @@
 import { getPublicCheckoutState } from "../checkout-state";
-import { SITE_URL } from "../site";
+import { SITE_IMAGE, SITE_URL } from "../site";
+
+const title = "Privacy - Daybreak";
+const description =
+  "Daybreak privacy policy: local-only Windows commitment data, no account, no cloud sync, no telemetry.";
 
 export const metadata = {
-  title: "Privacy - Daybreak",
-  description:
-    "Daybreak privacy policy: local-only Windows commitment data, no account, no cloud sync, no telemetry.",
+  title,
+  description,
   alternates: {
     canonical: `${SITE_URL}/privacy/`,
+  },
+  openGraph: {
+    title,
+    description,
+    url: `${SITE_URL}/privacy/`,
+    siteName: "Daybreak",
+    type: "website",
+    images: [
+      {
+        url: SITE_IMAGE,
+        width: 1002,
+        height: 753,
+        alt: "Daybreak Windows app showing a morning commitment ready to be wiped",
+      },
+    ],
   },
 };
 

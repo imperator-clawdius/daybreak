@@ -52,6 +52,18 @@ describe("site static export metadata", () => {
         `rel="canonical" href="${SITE_URL}/privacy/"`,
       );
       expect(termsHtml).toContain(`rel="canonical" href="${SITE_URL}/terms/"`);
+      expect(privacyHtml).toContain(
+        `property="og:url" content="${SITE_URL}/privacy/"`,
+      );
+      expect(privacyHtml).toContain(
+        'property="og:title" content="Privacy - Daybreak"',
+      );
+      expect(termsHtml).toContain(
+        `property="og:url" content="${SITE_URL}/terms/"`,
+      );
+      expect(termsHtml).toContain(
+        'property="og:title" content="Terms - Daybreak"',
+      );
       expect(indexHtml).toContain(
         `property="og:image" content="${SITE_URL}/daybreak-app.png"`,
       );

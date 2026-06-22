@@ -1,13 +1,31 @@
 import { PRICE_USD } from "../config";
 import { getPublicCheckoutState } from "../checkout-state";
-import { SITE_URL } from "../site";
+import { SITE_IMAGE, SITE_URL } from "../site";
+
+const title = "Terms - Daybreak";
+const description =
+  "Daybreak terms for the Windows commitment app, one-time purchase, refunds, local-only app scope, and launch status.";
 
 export const metadata = {
-  title: "Terms - Daybreak",
-  description:
-    "Daybreak terms for the Windows commitment app, one-time purchase, refunds, local-only app scope, and launch status.",
+  title,
+  description,
   alternates: {
     canonical: `${SITE_URL}/terms/`,
+  },
+  openGraph: {
+    title,
+    description,
+    url: `${SITE_URL}/terms/`,
+    siteName: "Daybreak",
+    type: "website",
+    images: [
+      {
+        url: SITE_IMAGE,
+        width: 1002,
+        height: 753,
+        alt: "Daybreak Windows app showing a morning commitment ready to be wiped",
+      },
+    ],
   },
 };
 

@@ -45,7 +45,7 @@ fabricated proof**.
 | HTTP apex status is separated from HTTPS readiness | `npm run verify:launch` reports `APEX_HTTP_SITE` so an HTTP 200 cannot be mistaken for production HTTPS readiness |
 | Public launch status copy matches HTTP/HTTPS reality | The homepage status section says `daybreak.rest` serves over HTTP while GitHub Pages provisions HTTPS; `scripts/site-export-metadata.test.ts` rejects the older "GitHub Pages preview is online" overclaim |
 | Required legal routes are checked live | `npm run verify:launch` checks `/privacy/` and `/terms/` on the preview, HTTP apex, and HTTPS apex instead of trusting the homepage alone |
-| Production crawler/social metadata is exported | `scripts/site-export-metadata.test.ts` builds the site and checks `robots.txt`, `sitemap.xml`, homepage canonical URL, legal page self-canonical URLs, and Open Graph/Twitter image metadata for `https://daybreak.rest`; `npm run verify:launch` checks crawler routes alongside legal routes live |
+| Production crawler/social metadata is exported | `scripts/site-export-metadata.test.ts` builds the site and checks `robots.txt`, `sitemap.xml`, homepage canonical URL, legal page self-canonical URLs, legal page Open Graph title/URL identity, and Open Graph/Twitter image metadata for `https://daybreak.rest`; `npm run verify:launch` checks crawler routes alongside legal routes live |
 | Actionable dependency advisories closed | Electron/electron-builder/esbuild/Vitest upgraded; Next's pinned PostCSS copy is overridden/deduped to `postcss@8.5.15`; `scripts/dependency-security.test.ts` rejects locked PostCSS packages below `8.5.10`; `npm audit --omit=dev --audit-level=moderate` -> `found 0 vulnerabilities` |
 
 ## Honestly pending (real blockers - readiness gate = 3/7)
