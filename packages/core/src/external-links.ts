@@ -9,6 +9,7 @@ export type ExternalLinkReason =
   | "checkout_price_mismatch"
   | "checkout_not_one_time"
   | "checkout_extra_line_items"
+  | "checkout_line_items_invalid"
   | "checkout_proof_contains_sensitive_data"
   | "url_not_configured"
   | "checksum_not_configured"
@@ -154,6 +155,10 @@ export function getCheckoutProofState({
 
   const items = checkoutProof.line_items?.data ?? [];
   const expectedCents = expectedPriceUsd * 100;
+  if (!Array.isArray(items)) {
+    return { ready: false, reason: "checkout_line_items_invalid" };
+  }
+
   if (items.length > 1) {
     return { ready: false, reason: "checkout_extra_line_items" };
   }

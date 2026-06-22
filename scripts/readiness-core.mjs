@@ -194,6 +194,14 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
 
   const expectedCents = expectedPriceUsd * 100;
   const items = proof.line_items?.data ?? [];
+  if (!Array.isArray(items)) {
+    return {
+      pass: false,
+      reason: "checkout_line_items_invalid",
+      detail: "proof line_items.data must be an array",
+    };
+  }
+
   if (items.length > 1) {
     return {
       pass: false,
