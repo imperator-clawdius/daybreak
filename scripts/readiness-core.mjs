@@ -630,6 +630,16 @@ export function evaluateMarketSignal({
     };
   }
 
+  if (containsDisallowedPaidOrderProofData(proof)) {
+    return {
+      pass: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_contains_customer_data",
+    };
+  }
+
   const session = proof.checkout_session;
   const paymentLink = proof.payment_link;
   const refundData = proof.refunds?.data;
@@ -668,9 +678,6 @@ export function evaluateMarketSignal({
     session.currency !== "usd"
   ) {
     return pending("paid_order_amount_mismatch");
-  }
-  if (containsDisallowedPaidOrderProofData(proof)) {
-    return pending("paid_order_proof_contains_customer_data");
   }
   if (!Array.isArray(refundData)) {
     return pending("paid_order_refund_proof_missing");

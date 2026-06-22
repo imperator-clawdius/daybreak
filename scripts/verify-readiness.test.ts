@@ -261,6 +261,29 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending for sensitive proof before other proof mismatches", () => {
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          audit: {
+            request: {
+              headers: {
+                authorization: "Bearer sk_live_secret",
+              },
+            },
+          },
+        },
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("keeps market signal pending when paid-order proof contains request logs or private material", () => {
     expect(
       evaluateMarketSignal({

@@ -108,6 +108,15 @@ export function getPaidOrderProofState({
   }
 
   const orderProof = proof as PaidOrderProof;
+  if (containsDisallowedCustomerData(orderProof)) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
+
   const session = orderProof.checkout_session;
   const paymentLink = orderProof.payment_link;
   const refundData = orderProof.refunds?.data;
@@ -168,15 +177,6 @@ export function getPaidOrderProofState({
     return {
       ready: false,
       reason: "paid_order_amount_mismatch",
-      paidOrders: 0,
-      refunds,
-    };
-  }
-
-  if (containsDisallowedCustomerData(orderProof)) {
-    return {
-      ready: false,
-      reason: "paid_order_proof_contains_customer_data",
       paidOrders: 0,
       refunds,
     };

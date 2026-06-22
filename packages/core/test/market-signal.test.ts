@@ -188,6 +188,29 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects sensitive first-order proof before other proof mismatches", () => {
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          audit: {
+            request: {
+              headers: {
+                authorization: "Bearer sk_live_secret",
+              },
+            },
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("rejects first-order proof that includes request logs or private material", () => {
     expect(
       getPaidOrderProofState({
