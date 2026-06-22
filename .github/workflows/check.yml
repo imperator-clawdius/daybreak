@@ -22,3 +22,4 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=moderate
       - run: npm run check
+      - run: npm run verify:local-only

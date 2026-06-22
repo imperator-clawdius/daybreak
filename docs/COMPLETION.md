@@ -20,7 +20,7 @@ fabricated proof**.
 | Desktop packaging uses current core output | `@daybreak/desktop` builds `@daybreak/core` before esbuild bundling so direct packaging does not depend on stale core `dist` output |
 | Built core package is Node-ESM importable | `scripts/core-package.test.ts` builds `@daybreak/core` and imports `packages/core/dist/index.js` in plain Node, proving emitted relative specifiers resolve without Vitest aliases or bundler help |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |
-| CI runs repo gates | `.github/workflows/check.yml` runs on pushes and pull requests with Node 24, `npm ci`, `npm audit --omit=dev --audit-level=moderate`, and `npm run check`; `scripts/ci-workflow.test.ts` proves the workflow contains those gates |
+| CI runs repo gates | `.github/workflows/check.yml` runs on pushes and pull requests with Node 24, `npm ci`, `npm audit --omit=dev --audit-level=moderate`, `npm run check`, and `npm run verify:local-only`; `scripts/ci-workflow.test.ts` proves the workflow contains those gates |
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
 | Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `icon_status=configured`, `signature_status=NotSigned`, exit 1 until a real cert signs it |
