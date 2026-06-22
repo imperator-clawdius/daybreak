@@ -1,7 +1,19 @@
-import { existsSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+import {
+  EXPECTED_SIGNER_SUBJECT,
+  readAuthenticodeSignature,
+} from "./release-core.mjs";
 
 export const PRODUCTION_HOST = "daybreak.rest";
 export const PRODUCTION_URL = `https://${PRODUCTION_HOST}/`;
@@ -78,9 +90,23 @@ async function fetchAndHash(url, fetchImpl) {
 
     const bytes = Buffer.from(await res.arrayBuffer());
     const sha256 = createHash("sha256").update(bytes).digest("hex");
-    return { ok: true, status: res.status, sha256 };
+    return { ok: true, status: res.status, sha256, bytes };
   } catch (e) {
     return { ok: false, status: 0, error: String(e.message || e) };
+  }
+}
+
+export async function readInstallerSignatureFromBytes(
+  bytes,
+  signatureReader = readAuthenticodeSignature,
+) {
+  const dir = mkdtempSync(join(tmpdir(), "daybreak-installer-proof-"));
+  const installerPath = join(dir, "Daybreak Setup.exe");
+  try {
+    writeFileSync(installerPath, bytes);
+    return signatureReader(installerPath);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 }
 
@@ -175,6 +201,7 @@ export async function evaluateExternalLink({
   url,
   expectedSha256 = "",
   fetchImpl = fetch,
+  signatureImpl = readInstallerSignatureFromBytes,
 }) {
   if (!isHttpsUrl(url)) {
     return { pass: false, reason: "not_configured", detail: "not configured" };
@@ -218,11 +245,40 @@ export async function evaluateExternalLink({
       };
     }
 
+    const signature = await signatureImpl(proof.bytes);
+    const signatureStatus = signature.status || "Unknown";
+    const signer = signature.subject || "";
+    if (signatureStatus !== "Valid") {
+      return {
+        pass: false,
+        reason: "signature_not_valid",
+        status: proof.status,
+        sha256: proof.sha256,
+        signatureStatus,
+        detail: `signature_status=${signatureStatus}${
+          signature.statusMessage ? ` ${signature.statusMessage}` : ""
+        }`,
+      };
+    }
+    if (!signer.includes(EXPECTED_SIGNER_SUBJECT)) {
+      return {
+        pass: false,
+        reason: "signer_mismatch",
+        status: proof.status,
+        sha256: proof.sha256,
+        signatureStatus,
+        signer,
+        detail: `signer=${signer || "missing"} expected=${EXPECTED_SIGNER_SUBJECT}`,
+      };
+    }
+
     return {
       pass: true,
       status: proof.status,
       sha256: proof.sha256,
-      detail: `HTTP ${proof.status} sha256=${proof.sha256}`,
+      signatureStatus,
+      signer,
+      detail: `HTTP ${proof.status} sha256=${proof.sha256} signature_status=${signatureStatus} signer=${signer}`,
     };
   }
 
@@ -300,7 +356,7 @@ export async function buildReadinessGates({
         ? `${downloadUrl} (${download.detail})`
         : `site/app/config.ts -> DOWNLOAD_URL/DOWNLOAD_SHA256 (${download.detail})`,
       blocker:
-        "produce a signed Windows installer, publish its SHA-256, host it, set DOWNLOAD_URL and DOWNLOAD_SHA256, and verify the bytes match",
+        "produce a signed Windows installer, publish its SHA-256, host it, set DOWNLOAD_URL and DOWNLOAD_SHA256, and verify the bytes and Passive Print Labs Authenticode signer match",
     },
     {
       name: "Production domain owned + attached",

@@ -31,6 +31,10 @@ function fetchBody(status: number, body: string) {
   });
 }
 
+function signature(status: string, subject = "") {
+  return async () => ({ status, statusMessage: "", subject });
+}
+
 describe("readiness external-link proof", () => {
   it("extracts configured URLs from the site config source", () => {
     const src = 'export const CHECKOUT_URL = "https://buy.stripe.com/live";';
@@ -111,7 +115,7 @@ describe("readiness external-link proof", () => {
     });
   });
 
-  it("passes installer download only when the fetched bytes match the configured checksum", async () => {
+  it("keeps installer download pending when matching bytes are unsigned", async () => {
     await expect(
       evaluateExternalLink({
         kind: "download",
@@ -119,6 +123,39 @@ describe("readiness external-link proof", () => {
         expectedSha256:
           "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
         fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("NotSigned"),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "signature_not_valid",
+    });
+  });
+
+  it("keeps installer download pending when matching bytes are signed by another publisher", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Unrelated Publisher LLC"),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "signer_mismatch",
+    });
+  });
+
+  it("passes installer download only when the fetched bytes match and the signer is Passive Print Labs", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
       }),
     ).resolves.toMatchObject({
       pass: true,
