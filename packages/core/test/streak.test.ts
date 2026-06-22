@@ -50,14 +50,24 @@ describe("streak math", () => {
     expect(currentStreak(history, new Date(2026, 5, 19))).toBe(0);
   });
 
-  it("counts distinct Monday-anchored weeks for the weekly streak", () => {
+  it("counts consecutive Monday-anchored weeks for the weekly streak", () => {
     // 2026-06-15 is a Monday; 2026-06-22 is the next Monday.
     const history = [
       day("2026-06-16", true), // week of 06-15
       day("2026-06-19", true), // same week
       day("2026-06-23", true), // week of 06-22
     ];
-    expect(weeklyStreak(history)).toBe(2);
+    expect(weeklyStreak(history, new Date(2026, 5, 23))).toBe(2);
+  });
+
+  it("breaks the weekly streak when a week has no counted day", () => {
+    const history = [
+      day("2026-06-16", true), // week of 06-15
+      // week of 06-22 missed entirely
+      day("2026-07-01", true), // week of 06-29
+    ];
+
+    expect(weeklyStreak(history, new Date(2026, 6, 1))).toBe(1);
   });
 
   it("summarizes daily and weekly streaks using the current in-memory day", () => {

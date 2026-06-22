@@ -26,8 +26,8 @@ export function currentStreak(history: DayLog[], today: Date): number {
   return streak;
 }
 
-/** Distinct ISO weeks (Monday-anchored) in which at least one day counted. */
-export function weeklyStreak(history: DayLog[]): number {
+/** Current weekly streak ending at today's Monday-anchored week. */
+export function weeklyStreak(history: DayLog[], today: Date): number {
   const weeks = new Set<string>();
   for (const log of history) {
     if (dayCounts(log)) {
@@ -39,7 +39,16 @@ export function weeklyStreak(history: DayLog[]): number {
       weeks.add(weekStartKey(new Date(y, m - 1, d)));
     }
   }
-  return weeks.size;
+
+  let streak = 0;
+  let cursor = today;
+  for (;;) {
+    const week = weekStartKey(cursor);
+    if (!weeks.has(week)) break;
+    streak += 1;
+    cursor = addDays(cursor, -7);
+  }
+  return streak;
 }
 
 export interface StreakSummary {
@@ -55,6 +64,6 @@ export function summarizeStreak(
   const merged = [...history.filter((log) => log.day !== current.day), current];
   return {
     daily: currentStreak(merged, today),
-    weekly: weeklyStreak(merged),
+    weekly: weeklyStreak(merged, today),
   };
 }
