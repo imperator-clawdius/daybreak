@@ -8,6 +8,7 @@ export type PaidOrderProofReason =
   | "paid_order_not_paid"
   | "paid_order_amount_mismatch"
   | "paid_order_proof_contains_customer_data"
+  | "paid_order_refund_proof_missing"
   | "paid_order_refunded";
 
 export interface PaidOrderProofState {
@@ -109,7 +110,8 @@ export function getPaidOrderProofState({
   const orderProof = proof as PaidOrderProof;
   const session = orderProof.checkout_session;
   const paymentLink = orderProof.payment_link;
-  const refunds = orderProof.refunds?.data?.length ?? 0;
+  const refundData = orderProof.refunds?.data;
+  const refunds = Array.isArray(refundData) ? refundData.length : 0;
 
   if (!session || !paymentLink || paymentLink.url !== checkoutUrl) {
     return {
@@ -177,6 +179,15 @@ export function getPaidOrderProofState({
       reason: "paid_order_proof_contains_customer_data",
       paidOrders: 0,
       refunds,
+    };
+  }
+
+  if (!Array.isArray(refundData)) {
+    return {
+      ready: false,
+      reason: "paid_order_refund_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
     };
   }
 

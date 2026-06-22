@@ -120,6 +120,36 @@ describe("paid order proof", () => {
     ).toMatchObject({ ready: false, reason: "paid_order_checkout_mismatch" });
   });
 
+  it("requires explicit empty refund data before counting a paid order", () => {
+    const { refunds: _refunds, ...missingRefunds } = paidOrderProof();
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: missingRefunds,
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_refund_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({ refunds: { data: "not-an-array" } }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_refund_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("rejects first-order proof that includes customer personal data", () => {
     const base = paidOrderProof();
 

@@ -592,7 +592,8 @@ export function evaluateMarketSignal({
 
   const session = proof.checkout_session;
   const paymentLink = proof.payment_link;
-  const refunds = proof.refunds?.data?.length ?? 0;
+  const refundData = proof.refunds?.data;
+  const refunds = Array.isArray(refundData) ? refundData.length : 0;
 
   function pending(reason, paidOrders = 0) {
     return {
@@ -630,6 +631,9 @@ export function evaluateMarketSignal({
   }
   if (containsDisallowedPaidOrderProofData(proof)) {
     return pending("paid_order_proof_contains_customer_data");
+  }
+  if (!Array.isArray(refundData)) {
+    return pending("paid_order_refund_proof_missing");
   }
   if (refunds > 0) {
     return pending("paid_order_refunded", 1);

@@ -207,6 +207,36 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending until refund proof explicitly shows no refunds", () => {
+    const { refunds: _refunds, ...missingRefunds } = paidOrderProof();
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: missingRefunds,
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_refund_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({ refunds: { data: "not-an-array" } }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_refund_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("keeps market signal pending when paid-order proof contains customer personal data", () => {
     const base = paidOrderProof();
 
