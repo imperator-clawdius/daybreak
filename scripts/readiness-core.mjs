@@ -683,6 +683,20 @@ export function evaluateMarketSignal({
   if (session.payment_link !== paymentLink.id) {
     return pending("paid_order_checkout_mismatch");
   }
+  if (
+    typeof session.livemode !== "boolean" ||
+    typeof session.mode !== "string" ||
+    typeof session.status !== "string" ||
+    typeof session.payment_status !== "string"
+  ) {
+    return {
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
+    };
+  }
   if (session.livemode !== true) {
     return pending("paid_order_not_live_mode");
   }

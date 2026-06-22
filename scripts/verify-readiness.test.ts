@@ -303,6 +303,30 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending when first-order status proof is malformed", () => {
+    const base = paidOrderProof();
+
+    for (const checkout_session of [
+      { ...base.checkout_session, livemode: "true" },
+      { ...base.checkout_session, mode: 123 },
+      { ...base.checkout_session, status: true },
+      { ...base.checkout_session, payment_status: true },
+    ]) {
+      expect(
+        evaluateMarketSignal({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof: paidOrderProof({ checkout_session }),
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "paid_order_proof_malformed",
+        paidOrders: 0,
+        refunds: 0,
+      });
+    }
+  });
+
   it("keeps market signal pending when paid-order proof contains customer personal data", () => {
     const base = paidOrderProof();
 

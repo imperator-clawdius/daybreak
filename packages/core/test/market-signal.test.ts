@@ -219,6 +219,33 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects malformed first-order status proof", () => {
+    const base = paidOrderProof();
+
+    for (const checkout_session of [
+      { ...base.checkout_session, livemode: "true" },
+      { ...base.checkout_session, mode: 123 },
+      { ...base.checkout_session, status: true },
+      { ...base.checkout_session, payment_status: true },
+    ]) {
+      expect(
+        getPaidOrderProofState({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof: {
+            ...base,
+            checkout_session,
+          },
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "paid_order_proof_malformed",
+        paidOrders: 0,
+        refunds: 0,
+      });
+    }
+  });
+
   it("rejects first-order proof that includes customer personal data", () => {
     const base = paidOrderProof();
 

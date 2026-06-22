@@ -150,6 +150,19 @@ export function getPaidOrderProofState({
       refunds,
     };
   }
+  if (
+    typeof session.livemode !== "boolean" ||
+    typeof session.mode !== "string" ||
+    typeof session.status !== "string" ||
+    typeof session.payment_status !== "string"
+  ) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
   if (session.livemode !== true) {
     return {
       ready: false,
