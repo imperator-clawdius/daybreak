@@ -4,7 +4,9 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   buildAuthenticodeCommand,
+  evaluateBuildIcon,
   evaluateInstallerArtifact,
+  evaluateReleasePreflight,
   renderReleaseReport,
 } from "./release-core.mjs";
 
@@ -105,5 +107,67 @@ describe("release preflight", () => {
       expect(renderReleaseReport(result)).toContain(
         "installer_sha256=2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
       );
+    }));
+
+  it("keeps release pending when the Windows app icon is not configured", () =>
+    withTempDir((dir) => {
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({ build: { productName: "Daybreak", win: {} } }),
+      );
+
+      const icon = evaluateBuildIcon({
+        root: dir,
+        packagePath: "desktop-package.json",
+      });
+
+      expect(icon).toMatchObject({
+        pass: false,
+        reason: "icon_not_configured",
+      });
+    }));
+
+  it("passes the icon check only when the configured icon exists", () =>
+    withTempDir((dir) => {
+      writeFileSync(join(dir, "daybreak.ico"), "ico-bytes");
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({
+          build: { productName: "Daybreak", win: { icon: "daybreak.ico" } },
+        }),
+      );
+
+      const icon = evaluateBuildIcon({
+        root: dir,
+        packagePath: "desktop-package.json",
+      });
+
+      expect(icon).toMatchObject({
+        pass: true,
+        reason: "icon_configured",
+      });
+    }));
+
+  it("keeps the release pending if signing passes but icon proof is missing", () =>
+    withTempDir((dir) => {
+      const installerPath = join(dir, "Daybreak Setup 0.1.0.exe");
+      writeFileSync(installerPath, "hello", "utf8");
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({ build: { productName: "Daybreak", win: {} } }),
+      );
+
+      const result = evaluateReleasePreflight({
+        root: dir,
+        installerPath,
+        packagePath: "desktop-package.json",
+        signature: { status: "Valid", statusMessage: "", subject: "CN=Test" },
+      });
+
+      expect(result).toMatchObject({
+        pass: false,
+        icon: { pass: false, reason: "icon_not_configured" },
+      });
+      expect(renderReleaseReport(result)).toContain("icon_status=missing");
     }));
 });

@@ -8,13 +8,14 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **50 tests, 8 files passed** (wipe machine, carry-over, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| Core mechanic works and is tested | `vitest run` -> **53 tests, 8 files passed** (wipe machine, carry-over, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
 | App actually launches | `DAYBREAK_SMOKE=1 electron .` -> `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true`, exit 0 |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `canDismiss()` re-validated in main |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
-| Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `signature_status=NotSigned`, exit 1 until a real cert signs it |
+| Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `icon_status=configured`, `signature_status=NotSigned`, exit 1 until a real cert signs it |
+| Windows app icon configured | `desktop/package.json` sets `build.win.icon` to `desktop/assets/icon.ico`; `npm run package -w @daybreak/desktop` no longer emits the default Electron icon warning |
 | Domain is attached over HTTP | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages and the repo Pages custom domain is set to `daybreak.rest`; HTTPS certificate issuance is still pending |
 | Actionable dependency advisories reduced | Electron/electron-builder/esbuild/Vitest upgraded; `npm audit --omit=dev` and full `npm audit --audit-level=moderate` now report only the bounded Next/PostCSS moderate advisory whose npm force-fix would downgrade Next to 9.3.3 |
 
