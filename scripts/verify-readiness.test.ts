@@ -57,13 +57,14 @@ function stripeProof({
   recurring = null,
   livemode = true,
   active = true,
+  quantity = 1,
 } = {}) {
   return {
     payment_link: { url, active, livemode },
     line_items: {
       data: [
         {
-          quantity: 1,
+          quantity,
           price: {
             unit_amount: unitAmount,
             currency: "usd",
@@ -944,6 +945,21 @@ describe("readiness external-link proof", () => {
             ],
           },
         },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_line_items_invalid",
+    });
+  });
+
+  it("rejects checkout line items with fractional quantity proof", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: stripeProof({ quantity: 1.5 }),
         fetchImpl: fetchStatus(200),
       }),
     ).resolves.toMatchObject({

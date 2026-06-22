@@ -286,6 +286,7 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
     items.some(
       (item) =>
         typeof item.quantity !== "number" ||
+        !Number.isInteger(item.quantity) ||
         !("price" in item) ||
         !item.price ||
         typeof item.price !== "object" ||

@@ -210,6 +210,7 @@ export function getCheckoutProofState({
     items.some(
       (item) =>
         typeof item.quantity !== "number" ||
+        !Number.isInteger(item.quantity) ||
         !("price" in item) ||
         !item.price ||
         typeof item.price !== "object" ||
