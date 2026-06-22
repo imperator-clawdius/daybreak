@@ -34,6 +34,21 @@ function fetchByUrl(responses: Record<string, { status: number; body: string }>)
   };
 }
 
+function validRobots() {
+  return "User-Agent: *\nAllow: /\n\nSitemap: https://daybreak.rest/sitemap.xml\n";
+}
+
+function validSitemap() {
+  return [
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+    "<urlset>",
+    "<loc>https://daybreak.rest/</loc>",
+    "<loc>https://daybreak.rest/privacy/</loc>",
+    "<loc>https://daybreak.rest/terms/</loc>",
+    "</urlset>",
+  ].join("\n");
+}
+
 describe("launch verifier", () => {
   it("uses the production apex as the default primary URL", () => {
     expect(getPrimaryUrl(["node", "scripts/verify-launch.mjs"])).toBe(
@@ -51,7 +66,15 @@ describe("launch verifier", () => {
     const report = await verifyLaunch({
       argv: ["node", "scripts/verify-launch.mjs"],
       lookupImpl: async () => ["185.199.108.153"],
-      fetchImpl: fetchPage(200, "Daybreak"),
+      fetchImpl: async (url: string) => {
+        if (url.endsWith("/robots.txt")) {
+          return { ok: true, status: 200, text: async () => validRobots() };
+        }
+        if (url.endsWith("/sitemap.xml")) {
+          return { ok: true, status: 200, text: async () => validSitemap() };
+        }
+        return { ok: true, status: 200, text: async () => "Daybreak" };
+      },
     });
 
     expect(report.ok).toBe(true);
@@ -130,6 +153,62 @@ describe("launch verifier", () => {
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
       "APEX_ROUTES=pending privacy=pass(200) terms=pending(404)",
+    );
+  });
+
+  it("keeps launch pending when crawler metadata routes are missing", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: { status: 200, body: "Daybreak" },
+        "https://daybreak.rest/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak",
+        },
+        "https://daybreak.rest/terms/": { status: 200, body: "Terms - Daybreak" },
+        "https://daybreak.rest/robots.txt": {
+          status: 200,
+          body: validRobots(),
+        },
+        "https://daybreak.rest/sitemap.xml": { status: 404, body: "Not found" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
+        "http://daybreak.rest/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak",
+        },
+        "http://daybreak.rest/terms/": { status: 200, body: "Terms - Daybreak" },
+        "http://daybreak.rest/robots.txt": {
+          status: 200,
+          body: validRobots(),
+        },
+        "http://daybreak.rest/sitemap.xml": {
+          status: 200,
+          body: validSitemap(),
+        },
+        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+        "https://imperator-clawdius.github.io/daybreak/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak",
+        },
+        "https://imperator-clawdius.github.io/daybreak/terms/": {
+          status: 200,
+          body: "Terms - Daybreak",
+        },
+        "https://imperator-clawdius.github.io/daybreak/robots.txt": {
+          status: 200,
+          body: validRobots(),
+        },
+        "https://imperator-clawdius.github.io/daybreak/sitemap.xml": {
+          status: 200,
+          body: validSitemap(),
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pending(404)",
     );
   });
 });

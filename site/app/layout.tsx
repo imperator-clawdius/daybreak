@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const SITE_URL = "https://daybreak.rest";
+import { SITE_DESCRIPTION, SITE_IMAGE, SITE_TITLE, SITE_URL } from "./site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Daybreak — wipe the morning before it owns you",
-  description:
-    "A Windows app that takes over your screen at first login and won't let go until you've wiped every commitment. Morning intent, evening review, weekly streak. $19 once.",
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   keywords: [
     "morning routine app",
     "Windows focus app",
@@ -16,19 +15,31 @@ export const metadata: Metadata = {
     "productivity",
     "ship discipline",
   ],
+  alternates: {
+    canonical: `${SITE_URL}/`,
+  },
   openGraph: {
-    title: "Daybreak — wipe the morning before it owns you",
+    title: SITE_TITLE,
     description:
       "Full-screen at first login. You can't dismiss it until every item is wiped. $19 once, no subscription.",
     url: SITE_URL,
     siteName: "Daybreak",
     type: "website",
+    images: [
+      {
+        url: SITE_IMAGE,
+        width: 1002,
+        height: 753,
+        alt: "Daybreak Windows app showing a morning commitment ready to be wiped",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Daybreak — wipe the morning before it owns you",
+    title: SITE_TITLE,
     description:
       "Full-screen at first login. You can't dismiss it until every item is wiped. $19 once.",
+    images: [SITE_IMAGE],
   },
 };
 

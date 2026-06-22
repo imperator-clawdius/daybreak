@@ -4,7 +4,12 @@ import { PRODUCTION_HOST, PRODUCTION_URL } from "./readiness-core.mjs";
 
 export const PREVIEW_URL = "https://imperator-clawdius.github.io/daybreak/";
 export const PRODUCTION_HTTP_URL = `http://${PRODUCTION_HOST}/`;
-export const REQUIRED_ROUTES = ["privacy/", "terms/"];
+export const REQUIRED_ROUTES = [
+  "privacy/",
+  "terms/",
+  "robots.txt",
+  "sitemap.xml",
+];
 
 export function getPrimaryUrl(argv = []) {
   return argv[2] || PRODUCTION_URL;
@@ -20,7 +25,12 @@ export async function fetchSite(url, fetchImpl = fetch) {
       headers: { connection: "close" },
     });
     const body = await res.text();
-    return { ok: res.ok, status: res.status, hasApp: /Daybreak/.test(body) };
+    return {
+      ok: res.ok,
+      status: res.status,
+      hasApp: /Daybreak/.test(body),
+      body,
+    };
   } catch (e) {
     return { ok: false, status: 0, error: String(e.message || e) };
   }
@@ -44,6 +54,24 @@ function routeName(route) {
 }
 
 function routePass(routeResult) {
+  const body = routeResult.res.body ?? "";
+  if (routeResult.route === "robots.txt") {
+    return (
+      routeResult.res.ok &&
+      body.includes("Allow: /") &&
+      body.includes(`Sitemap: ${PRODUCTION_URL}sitemap.xml`)
+    );
+  }
+
+  if (routeResult.route === "sitemap.xml") {
+    return (
+      routeResult.res.ok &&
+      body.includes(`<loc>${PRODUCTION_URL}</loc>`) &&
+      body.includes(`<loc>${PRODUCTION_URL}privacy/</loc>`) &&
+      body.includes(`<loc>${PRODUCTION_URL}terms/</loc>`)
+    );
+  }
+
   return routeResult.res.ok && routeResult.res.hasApp;
 }
 
