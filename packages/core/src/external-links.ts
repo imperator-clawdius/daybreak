@@ -166,6 +166,17 @@ export function getCheckoutProofState({
   if (items.some((item) => !item || typeof item !== "object")) {
     return { ready: false, reason: "checkout_line_items_invalid" };
   }
+  if (
+    items.some(
+      (item) =>
+        !("price" in item) ||
+        !item.price ||
+        typeof item.price !== "object" ||
+        Array.isArray(item.price),
+    )
+  ) {
+    return { ready: false, reason: "checkout_line_items_invalid" };
+  }
 
   const matchingOneTimeItem = items.find((item) => {
     const price = item.price;

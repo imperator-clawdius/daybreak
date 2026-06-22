@@ -217,6 +217,21 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
       detail: "proof line_items.data entries must be objects",
     };
   }
+  if (
+    items.some(
+      (item) =>
+        !("price" in item) ||
+        !item.price ||
+        typeof item.price !== "object" ||
+        Array.isArray(item.price),
+    )
+  ) {
+    return {
+      pass: false,
+      reason: "checkout_line_items_invalid",
+      detail: "proof line item price must be an object",
+    };
+  }
 
   const matchingOneTimeItem = items.find((item) => {
     const price = item.price || {};
