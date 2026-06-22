@@ -1,4 +1,4 @@
-import type { Phase, WipeAction } from "./model";
+import type { Phase, WipeAction } from "./model.js";
 
 const DEFAULT_THRESHOLD = 80;
 

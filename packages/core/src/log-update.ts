@@ -1,5 +1,5 @@
-import type { DayLog, Item, ItemState, Phase } from "./model";
-import { validateNewCommit } from "./commit";
+import type { DayLog, Item, ItemState, Phase } from "./model.js";
+import { validateNewCommit } from "./commit.js";
 
 export type LogUpdateFailureReason =
   | "day-mismatch"

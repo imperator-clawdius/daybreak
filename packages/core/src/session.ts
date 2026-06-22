@@ -2,9 +2,9 @@
 // Carry-over rule: any item left "open" or "deferred" on a prior day is
 // surfaced again on the next morning, with its carryCount incremented.
 
-import { DayLog, Item, Phase } from "./model";
-import { dayKey } from "./dates";
-import { canDismiss } from "./wipe";
+import { DayLog, Item, Phase } from "./model.js";
+import { dayKey } from "./dates.js";
+import { canDismiss } from "./wipe.js";
 
 let idCounter = 0;
 

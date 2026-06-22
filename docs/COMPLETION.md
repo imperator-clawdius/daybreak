@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **105 tests, 15 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight) |
+| Core mechanic works and is tested | `vitest run` -> **106 tests, 16 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, core package importability) |
 | App actually launches and completes the wipe flows | `DAYBREAK_SMOKE=1 electron .` -> `scenario=morning swipe_flow=true`, exit 0; `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
@@ -17,6 +17,7 @@ fabricated proof**.
 | Weekly streak display is history-backed and consecutive | Main returns stored day history to the renderer, core merges it with the current in-memory day, missed weeks break the weekly streak, and evening smoke proves a two-week historical streak renders after review |
 | Local persistence is crash-tolerant | Desktop `Store` writes via `.tmp`, preserves `.bak`, rejects malformed day logs, and recovers from corrupt or malformed primary JSON in automated tests |
 | Desktop packaging uses current core output | `@daybreak/desktop` builds `@daybreak/core` before esbuild bundling so direct packaging does not depend on stale core `dist` output |
+| Built core package is Node-ESM importable | `scripts/core-package.test.ts` builds `@daybreak/core` and imports `packages/core/dist/index.js` in plain Node, proving emitted relative specifiers resolve without Vitest aliases or bundler help |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |

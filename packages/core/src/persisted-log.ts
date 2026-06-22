@@ -1,4 +1,4 @@
-import type { DayLog, Item, ItemState } from "./model";
+import type { DayLog, Item, ItemState } from "./model.js";
 
 const ITEM_STATES: ReadonlySet<ItemState> = new Set([
   "pending",

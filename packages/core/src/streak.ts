@@ -1,8 +1,8 @@
 // Streak math. A day "counts" toward the streak when the morning ritual was
 // completed AND the user committed to at least one thing that day.
 
-import { DayLog } from "./model";
-import { addDays, dayKey, weekStartKey } from "./dates";
+import { DayLog } from "./model.js";
+import { addDays, dayKey, weekStartKey } from "./dates.js";
 
 export function dayCounts(log: DayLog): boolean {
   return log.morningResolved && log.items.some((i) => i.state !== "killed");

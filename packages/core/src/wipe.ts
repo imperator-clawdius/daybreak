@@ -2,7 +2,13 @@
 // A morning cannot be dismissed until every surfaced item has been wiped
 // (resolved) by an explicit gesture. This module owns that invariant.
 
-import { Item, ItemState, WipeAction, Phase, MAX_DAILY_COMMITS } from "./model";
+import {
+  Item,
+  ItemState,
+  WipeAction,
+  Phase,
+  MAX_DAILY_COMMITS,
+} from "./model.js";
 
 /** States that count as "resolved" outside the morning decision gate. */
 const RESOLVED: ReadonlySet<ItemState> = new Set<ItemState>([

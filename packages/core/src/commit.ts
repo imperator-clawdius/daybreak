@@ -1,5 +1,5 @@
-import { Item, MAX_DAILY_COMMITS } from "./model";
-import { committedCount } from "./wipe";
+import { Item, MAX_DAILY_COMMITS } from "./model.js";
+import { committedCount } from "./wipe.js";
 
 export const MAX_COMMIT_TEXT_LENGTH = 120;
 
