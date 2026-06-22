@@ -10,6 +10,7 @@ export type ExternalLinkReason =
   | "checkout_not_one_time"
   | "checkout_extra_line_items"
   | "checkout_line_items_invalid"
+  | "checkout_proof_malformed"
   | "checkout_proof_contains_sensitive_data"
   | "url_not_configured"
   | "checksum_not_configured"
@@ -145,6 +146,12 @@ export function getCheckoutProofState({
   const paymentLink = checkoutProof.payment_link;
   if (paymentLink?.url !== checkoutUrl) {
     return { ready: false, reason: "checkout_url_mismatch" };
+  }
+  if (
+    typeof paymentLink.active !== "boolean" ||
+    typeof paymentLink.livemode !== "boolean"
+  ) {
+    return { ready: false, reason: "checkout_proof_malformed" };
   }
   if (paymentLink.active !== true) {
     return { ready: false, reason: "checkout_not_active" };

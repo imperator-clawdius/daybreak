@@ -177,6 +177,16 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
       detail: "proof payment_link.url does not match CHECKOUT_URL",
     };
   }
+  if (
+    typeof paymentLink.active !== "boolean" ||
+    typeof paymentLink.livemode !== "boolean"
+  ) {
+    return {
+      pass: false,
+      reason: "checkout_proof_malformed",
+      detail: "Stripe Payment Link proof has malformed active or livemode fields",
+    };
+  }
   if (paymentLink.active !== true) {
     return {
       pass: false,

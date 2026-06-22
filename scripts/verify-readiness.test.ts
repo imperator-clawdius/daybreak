@@ -538,6 +538,29 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("rejects malformed checkout Payment Link state proof", async () => {
+    for (const payment_link of [
+      { url: "https://buy.stripe.com/live_123", active: "true", livemode: true },
+      { url: "https://buy.stripe.com/live_123", active: true, livemode: "true" },
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "checkout",
+          url: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          checkoutProof: {
+            ...stripeProof(),
+            payment_link,
+          },
+          fetchImpl: fetchStatus(200),
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "checkout_proof_malformed",
+      });
+    }
+  });
+
   it("rejects malformed checkout line item proof without throwing", async () => {
     await expect(
       evaluateExternalLink({
