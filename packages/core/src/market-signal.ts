@@ -146,6 +146,19 @@ export function getPaidOrderProofState({
       refunds: 0,
     };
   }
+  if (
+    Array.isArray(refundData) &&
+    refundData.some(
+      (refund) => !refund || typeof refund !== "object" || Array.isArray(refund),
+    )
+  ) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
   if (!session || !paymentLink || paymentLink.url !== checkoutUrl) {
     return {
       ready: false,

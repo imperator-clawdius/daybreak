@@ -716,6 +716,20 @@ export function evaluateMarketSignal({
       detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
     };
   }
+  if (
+    Array.isArray(refundData) &&
+    refundData.some(
+      (refund) => !refund || typeof refund !== "object" || Array.isArray(refund),
+    )
+  ) {
+    return {
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
+    };
+  }
   function pending(reason, paidOrders = 0) {
     return {
       pass: false,
