@@ -55,6 +55,7 @@ counts, screenshots, or testimonials.
 | Valid signature from the wrong publisher passes release | Authenticode can be valid while still not proving the installer was signed by the Daybreak publisher. | Release preflight now rejects valid signatures unless the signer subject includes `Passive Print Labs LLC`. |
 | Preview health gets confused with production HTTPS | During certificate issuance, the project Pages preview may redirect to the custom domain, and a redirect-following verifier can accidentally borrow the apex response. | Launch verification now reports `PREVIEW_SITE` separately from `LIVE_SITE` and `APEX_SITE`, and preview checks use manual redirects so a custom-domain redirect reports pending instead of pass. |
 | HTTP apex success masks HTTPS failure | GitHub Pages can serve the apex over HTTP while the certificate is still wrong, which looks "live" in a browser but is not production-ready. | Launch verification now reports `APEX_HTTP_SITE` separately from the HTTPS `APEX_SITE` gate. |
+| WWW domain breaks silently | Buyers may type `www.daybreak.rest`; checking only the apex would miss a broken or certificate-pending `www` redirect. | Launch verification now reports `WWW_DNS`, `WWW_HTTP_SITE`, and `WWW_SITE`, and default production launch stays pending unless `www` HTTPS also serves Daybreak. |
 
 ## Still blocked by real-world artifacts
 

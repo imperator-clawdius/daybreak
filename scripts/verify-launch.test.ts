@@ -30,7 +30,12 @@ function fetchErrorWithCause(message: string, cause: { code: string; message: st
 
 function fetchByUrl(responses: Record<string, { status: number; body: string }>) {
   return async (url: string) => {
-    const response = responses[url];
+    const response =
+      responses[url] ??
+      (url === "https://www.daybreak.rest/" ||
+      url === "http://www.daybreak.rest/"
+        ? { status: 200, body: "Daybreak" }
+        : undefined);
     if (!response) throw new Error(`unexpected fetch ${url}`);
     return {
       ok: response.status >= 200 && response.status < 300,
@@ -258,6 +263,46 @@ describe("launch verifier", () => {
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
       "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pending(404)",
+    );
+  });
+
+  it("reports www DNS and HTTPS status alongside the apex", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: { status: 200, body: "Daybreak" },
+        "https://daybreak.rest/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak",
+        },
+        "https://daybreak.rest/terms/": { status: 200, body: "Terms - Daybreak" },
+        "https://daybreak.rest/robots.txt": {
+          status: 200,
+          body: validRobots(),
+        },
+        "https://daybreak.rest/sitemap.xml": {
+          status: 200,
+          body: validSitemap(),
+        },
+        "https://www.daybreak.rest/": {
+          status: 495,
+          body: "certificate pending",
+        },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
+        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "WWW_DNS host=www.daybreak.rest resolves=185.199.108.153",
+    );
+    expect(report.text).toContain(
+      "WWW_HTTP_SITE=pass status=200 contains_daybreak=true",
+    );
+    expect(report.text).toContain(
+      "WWW_SITE=pending status=495 contains_daybreak=false",
     );
   });
 });

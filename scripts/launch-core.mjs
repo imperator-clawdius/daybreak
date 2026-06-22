@@ -4,6 +4,9 @@ import { PRODUCTION_HOST, PRODUCTION_URL } from "./readiness-core.mjs";
 
 export const PREVIEW_URL = "https://imperator-clawdius.github.io/daybreak/";
 export const PRODUCTION_HTTP_URL = `http://${PRODUCTION_HOST}/`;
+export const WWW_HOST = `www.${PRODUCTION_HOST}`;
+export const WWW_URL = `https://${WWW_HOST}/`;
+export const WWW_HTTP_URL = `http://${WWW_HOST}/`;
 export const REQUIRED_ROUTES = [
   "privacy/",
   "terms/",
@@ -142,6 +145,10 @@ export function renderLaunchReport({
   apexDns,
   apexLive,
   apexRoutes,
+  wwwHost,
+  wwwDns,
+  wwwHttpRes,
+  wwwLive,
 }) {
   const lines = [];
   lines.push(`PRIMARY ${primary}`);
@@ -175,6 +182,23 @@ export function renderLaunchReport({
       `APEX_SITE=pending reason=dns_or_pages_not_ready (point ${apexHost} at GitHub Pages and wait for HTTPS)`,
     );
   }
+  lines.push(
+    `WWW_HTTP_SITE=${wwwHttpRes.ok ? "pass" : "pending"} status=${wwwHttpRes.status} contains_daybreak=${wwwHttpRes.hasApp ?? false}${
+      wwwHttpRes.error ? ` error=${wwwHttpRes.error}` : ""
+    }`,
+  );
+  lines.push(`WWW_DNS host=${wwwHost} resolves=${wwwDns}`);
+  if (wwwLive) {
+    lines.push(
+      `WWW_SITE=${wwwLive.ok ? "pass" : "pending"} status=${wwwLive.status} contains_daybreak=${wwwLive.hasApp ?? false}${
+        wwwLive.error ? ` error=${wwwLive.error}` : ""
+      }`,
+    );
+  } else {
+    lines.push(
+      `WWW_SITE=pending reason=dns_or_pages_not_ready (point ${wwwHost} at GitHub Pages and wait for HTTPS)`,
+    );
+  }
 
   return lines.join("\n");
 }
@@ -186,10 +210,13 @@ export async function verifyLaunch({
 } = {}) {
   const primary = getPrimaryUrl(argv);
   const apexDns = await resolveHost(PRODUCTION_HOST, lookupImpl);
+  const wwwDns = await resolveHost(WWW_HOST, lookupImpl);
   const apexLive =
     apexDns !== "unresolved"
       ? await fetchSite(PRODUCTION_URL, fetchImpl)
       : null;
+  const wwwLive =
+    wwwDns !== "unresolved" ? await fetchSite(WWW_URL, fetchImpl) : null;
   const apexRoutes =
     apexDns !== "unresolved"
       ? await fetchRequiredRoutes(PRODUCTION_URL, fetchImpl)
@@ -205,6 +232,7 @@ export async function verifyLaunch({
   });
   const apexHttpRes = await fetchSite(PRODUCTION_HTTP_URL, fetchImpl);
   const apexHttpRoutes = await fetchRequiredRoutes(PRODUCTION_HTTP_URL, fetchImpl);
+  const wwwHttpRes = await fetchSite(WWW_HTTP_URL, fetchImpl);
   const primaryRoutes =
     primary === PRODUCTION_URL
       ? apexRoutes
@@ -212,9 +240,13 @@ export async function verifyLaunch({
         ? previewRoutes
         : await fetchRequiredRoutes(primary, fetchImpl);
   const primaryRoutesOk = primaryRoutes ? routesPass(primaryRoutes) : false;
+  const wwwOk = wwwLive ? wwwLive.ok && wwwLive.hasApp : false;
 
   return {
-    ok: primaryRes.ok && primaryRoutesOk,
+    ok:
+      primaryRes.ok &&
+      primaryRoutesOk &&
+      (primary === PRODUCTION_URL ? wwwOk : true),
     text: renderLaunchReport({
       primary,
       primaryRes,
@@ -226,6 +258,10 @@ export async function verifyLaunch({
       apexDns,
       apexLive,
       apexRoutes,
+      wwwHost: WWW_HOST,
+      wwwDns,
+      wwwHttpRes,
+      wwwLive,
     }),
   };
 }
