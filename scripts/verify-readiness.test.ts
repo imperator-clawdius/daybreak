@@ -180,6 +180,21 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending when top-level paid-order proof is malformed", () => {
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: [],
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("passes market signal only with unrefunded live paid-order proof", () => {
     expect(
       evaluateMarketSignal({

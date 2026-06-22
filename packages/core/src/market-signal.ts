@@ -109,6 +109,14 @@ export function getPaidOrderProofState({
       refunds: 0,
     };
   }
+  if (Array.isArray(proof)) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
 
   const orderProof = proof as PaidOrderProof;
   if (containsDisallowedCustomerData(orderProof)) {

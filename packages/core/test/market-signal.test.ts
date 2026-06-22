@@ -57,6 +57,21 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects malformed top-level paid-order proof", () => {
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: [],
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("rejects test mode, unpaid, refunded, wrong price, and wrong link proof", () => {
     const base = paidOrderProof();
 
