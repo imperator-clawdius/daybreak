@@ -21,6 +21,18 @@ function fetchError(message: string) {
   };
 }
 
+function fetchByUrl(responses: Record<string, { status: number; body: string }>) {
+  return async (url: string) => {
+    const response = responses[url];
+    if (!response) throw new Error(`unexpected fetch ${url}`);
+    return {
+      ok: response.status >= 200 && response.status < 300,
+      status: response.status,
+      text: async () => response.body,
+    };
+  };
+}
+
 describe("launch verifier", () => {
   it("uses the production apex as the default primary URL", () => {
     expect(getPrimaryUrl(["node", "scripts/verify-launch.mjs"])).toBe(
@@ -58,6 +70,23 @@ describe("launch verifier", () => {
     expect(report.text).toContain("LIVE_SITE=FAIL status=0");
     expect(report.text).toContain(
       "APEX_SITE=pending status=0 error=certificate pending",
+    );
+  });
+
+  it("reports the GitHub Pages preview even when production HTTPS is pending", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: { status: 495, body: "certificate pending" },
+        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain("LIVE_SITE=FAIL status=495");
+    expect(report.text).toContain(
+      "PREVIEW_SITE=pass status=200 contains_daybreak=true",
     );
   });
 });

@@ -36,6 +36,7 @@ counts, screenshots, or testimonials.
 | Local release artifact lacks proof | Packaging could produce a file while leaving signing status and checksum to manual inspection. | Added `npm run verify:release`, which computes the installer SHA-256 and checks Authenticode status before any hosted release is considered ready. |
 | Domain verifier hides the real HTTPS blocker | A generic HTTP failure message can make an attached-but-cert-pending GitHub Pages domain look misconfigured. | Launch and readiness verifiers now label apex failures as HTTPS readiness failures and surface the certificate fetch error. |
 | Installer metadata drifts before signing | A signed installer with a missing app id, wrong product name, or nonstandard target would still look amateurish even if Authenticode passes. | Release preflight now validates Daybreak's app id, product name, author, NSIS x64 target, and installer mode before marking release ready. |
+| Preview health gets confused with production HTTPS | During certificate issuance, the project Pages preview can be healthy while the apex is still pending, and a single failing line hides that distinction. | Launch verification now reports `PREVIEW_SITE` separately from `LIVE_SITE` and `APEX_SITE`. |
 
 ## Still blocked by real-world artifacts
 

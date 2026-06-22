@@ -43,6 +43,7 @@ export async function resolveHost(host, lookupImpl = lookup) {
 export function renderLaunchReport({
   primary,
   primaryRes,
+  previewRes,
   apexHost,
   apexDns,
   apexLive,
@@ -52,6 +53,11 @@ export function renderLaunchReport({
   lines.push(
     `LIVE_SITE=${primaryRes.ok ? "pass" : "FAIL"} status=${primaryRes.status} contains_daybreak=${primaryRes.hasApp ?? false}${
       primaryRes.error ? ` error=${primaryRes.error}` : ""
+    }`,
+  );
+  lines.push(
+    `PREVIEW_SITE=${previewRes.ok ? "pass" : "pending"} status=${previewRes.status} contains_daybreak=${previewRes.hasApp ?? false}${
+      previewRes.error ? ` error=${previewRes.error}` : ""
     }`,
   );
   lines.push(`APEX_DNS host=${apexHost} resolves=${apexDns}`);
@@ -82,12 +88,14 @@ export async function verifyLaunch({
       ? await fetchSite(PRODUCTION_URL, fetchImpl)
       : null;
   const primaryRes = await fetchSite(primary, fetchImpl);
+  const previewRes = await fetchSite(PREVIEW_URL, fetchImpl);
 
   return {
     ok: primaryRes.ok,
     text: renderLaunchReport({
       primary,
       primaryRes,
+      previewRes,
       apexHost: PRODUCTION_HOST,
       apexDns,
       apexLive,
