@@ -12,6 +12,7 @@ const BANNED_SOURCE_PATTERNS = [
   { label: "http module", pattern: /from\s+["']http["']|require\(["']http["']\)/ },
   { label: "https module", pattern: /from\s+["']https["']|require\(["']https["']\)/ },
   { label: "electron net", pattern: /\bnet\s*\.\s*request\b/ },
+  { label: "remote URL", pattern: /\bhttps?:\/\/|(?<!:)\/\/[a-z0-9.-]/i },
 ];
 
 const BANNED_DEPENDENCIES = [
@@ -34,6 +35,8 @@ export const DESKTOP_RUNTIME_FILES = [
   "desktop/src/main/main.ts",
   "desktop/src/main/preload.ts",
   "desktop/src/main/store.ts",
+  "desktop/src/renderer/index.html",
+  "desktop/src/renderer/renderer.css",
   "desktop/src/renderer/renderer.ts",
 ];
 

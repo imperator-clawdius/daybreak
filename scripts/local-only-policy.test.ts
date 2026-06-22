@@ -49,4 +49,23 @@ describe("local-only desktop policy", () => {
     expect(renderLocalOnlyReport(result)).toContain("node:https");
     expect(renderLocalOnlyReport(result)).toContain("posthog");
   });
+
+  it("fails when desktop static assets reference remote network URLs", () => {
+    const result = evaluateLocalOnlyPolicy({
+      files: [
+        {
+          path: "desktop/src/renderer/index.html",
+          text: '<script src="https://analytics.example/tag.js"></script>',
+        },
+        {
+          path: "desktop/src/renderer/renderer.css",
+          text: ".panel { background-image: url(//cdn.example/pixel.png); }",
+        },
+      ],
+      dependencies: { "@daybreak/core": "*" },
+    });
+
+    expect(result.pass).toBe(false);
+    expect(renderLocalOnlyReport(result)).toContain("remote URL");
+  });
 });
