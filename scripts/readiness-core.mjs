@@ -72,6 +72,22 @@ function isSha256(value) {
   return /^[a-f0-9]{64}$/i.test(value);
 }
 
+function formatFetchError(error) {
+  const message = String(error?.message || error);
+  const cause = error?.cause;
+  if (!cause || typeof cause !== "object") {
+    return message;
+  }
+
+  const causeCode = typeof cause.code === "string" ? cause.code : "";
+  const causeMessage =
+    typeof cause.message === "string" && cause.message !== message
+      ? cause.message
+      : "";
+  const detail = [causeCode, causeMessage].filter(Boolean).join(": ");
+  return detail ? `${message} cause=${detail}` : message;
+}
+
 function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
   if (!proof || typeof proof !== "object") {
     return {
@@ -200,7 +216,7 @@ async function fetchProof(url, fetchImpl) {
     }
     return { ok: res.ok, status: res.status };
   } catch (e) {
-    return { ok: false, status: 0, error: String(e.message || e) };
+    return { ok: false, status: 0, error: formatFetchError(e) };
   }
 }
 
@@ -219,7 +235,7 @@ async function fetchAndHash(url, fetchImpl) {
     const sha256 = createHash("sha256").update(bytes).digest("hex");
     return { ok: true, status: res.status, sha256, bytes };
   } catch (e) {
-    return { ok: false, status: 0, error: String(e.message || e) };
+    return { ok: false, status: 0, error: formatFetchError(e) };
   }
 }
 
@@ -260,7 +276,7 @@ async function fetchSite(url, fetchImpl) {
     const body = await res.text();
     return { ok: res.ok, status: res.status, hasApp: /Daybreak/.test(body) };
   } catch (e) {
-    return { ok: false, status: 0, hasApp: false, error: String(e.message || e) };
+    return { ok: false, status: 0, hasApp: false, error: formatFetchError(e) };
   }
 }
 

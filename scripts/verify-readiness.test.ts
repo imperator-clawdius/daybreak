@@ -24,6 +24,12 @@ function fetchError(message: string) {
   };
 }
 
+function fetchErrorWithCause(message: string, cause: { code: string; message: string }) {
+  return async () => {
+    throw new Error(message, { cause });
+  };
+}
+
 function fetchBody(status: number, body: string) {
   return async () => ({
     ok: status >= 200 && status < 300,
@@ -378,6 +384,30 @@ describe("readiness external-link proof", () => {
       pass: false,
       reason: "apex_https_not_ready",
       detail: "HTTPS error contains_daybreak=false error=certificate pending",
+    });
+  });
+
+  it("keeps the production domain pending with the underlying TLS cause visible", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: fetchErrorWithCause("fetch failed", {
+          code: "ERR_TLS_CERT_ALTNAME_INVALID",
+          message: "Hostname/IP does not match certificate's altnames",
+        }),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "apex_https_not_ready",
+      detail:
+        "HTTPS error contains_daybreak=false error=fetch failed cause=ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames",
     });
   });
 });

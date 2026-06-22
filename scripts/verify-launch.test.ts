@@ -22,6 +22,12 @@ function fetchError(message: string) {
   };
 }
 
+function fetchErrorWithCause(message: string, cause: { code: string; message: string }) {
+  return async () => {
+    throw new Error(message, { cause });
+  };
+}
+
 function fetchByUrl(responses: Record<string, { status: number; body: string }>) {
   return async (url: string) => {
     const response = responses[url];
@@ -94,6 +100,22 @@ describe("launch verifier", () => {
     expect(report.text).toContain("LIVE_SITE=FAIL status=0");
     expect(report.text).toContain(
       "APEX_SITE=pending status=0 error=certificate pending",
+    );
+  });
+
+  it("includes the underlying TLS cause when HTTPS certificate verification fails", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchErrorWithCause("fetch failed", {
+        code: "ERR_TLS_CERT_ALTNAME_INVALID",
+        message: "Hostname/IP does not match certificate's altnames",
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "error=fetch failed cause=ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames",
     );
   });
 
