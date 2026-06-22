@@ -360,6 +360,47 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("rejects checkout proof with extra line items", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 500,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_extra_line_items",
+    });
+  });
+
   it("rejects checkout proof that contains keys or customer data", async () => {
     await expect(
       evaluateExternalLink({

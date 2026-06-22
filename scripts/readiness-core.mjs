@@ -194,6 +194,14 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
 
   const expectedCents = expectedPriceUsd * 100;
   const items = proof.line_items?.data ?? [];
+  if (items.length > 1) {
+    return {
+      pass: false,
+      reason: "checkout_extra_line_items",
+      detail: "proof must contain exactly one line item",
+    };
+  }
+
   const matchingOneTimeItem = items.find((item) => {
     const price = item.price || {};
     return (

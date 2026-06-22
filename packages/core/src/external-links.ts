@@ -8,6 +8,7 @@ export type ExternalLinkReason =
   | "checkout_not_live_mode"
   | "checkout_price_mismatch"
   | "checkout_not_one_time"
+  | "checkout_extra_line_items"
   | "checkout_proof_contains_sensitive_data"
   | "url_not_configured"
   | "checksum_not_configured"
@@ -153,6 +154,10 @@ export function getCheckoutProofState({
 
   const items = checkoutProof.line_items?.data ?? [];
   const expectedCents = expectedPriceUsd * 100;
+  if (items.length > 1) {
+    return { ready: false, reason: "checkout_extra_line_items" };
+  }
+
   const matchingOneTimeItem = items.find((item) => {
     const price = item.price;
     return (
