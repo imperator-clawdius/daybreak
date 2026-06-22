@@ -147,9 +147,12 @@ export default function Home() {
       <section className="status" id="status">
         <h2>Launch status</h2>
         <ul className="status-list" aria-label="Current launch status">
-          <li className="status-pass">
-            <strong>Live preview</strong>
-            <span>GitHub Pages preview is online and checked by script.</span>
+          <li>
+            <strong>HTTP domain</strong>
+            <span>
+              daybreak.rest serves the app over HTTP while GitHub Pages
+              provisions HTTPS.
+            </span>
           </li>
           <li>
             <strong>Checkout</strong>
