@@ -13,7 +13,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname } from "node:path";
-import type { DayLog } from "@daybreak/core";
+import { isPersistedDayLogArray, type DayLog } from "@daybreak/core";
 
 export interface PersistShape {
   version: 1;
@@ -24,13 +24,14 @@ export interface PersistShape {
 const EMPTY: PersistShape = { version: 1, days: [], lastSeenIso: null };
 
 function asPersistShape(raw: unknown): PersistShape | null {
+  if (!raw || typeof raw !== "object") return null;
+  const candidate = raw as PersistShape;
   if (
-    raw &&
-    typeof raw === "object" &&
-    (raw as PersistShape).version === 1 &&
-    Array.isArray((raw as PersistShape).days)
+    candidate.version === 1 &&
+    isPersistedDayLogArray(candidate.days) &&
+    (candidate.lastSeenIso === null || typeof candidate.lastSeenIso === "string")
   ) {
-    return raw as PersistShape;
+    return candidate;
   }
   return null;
 }

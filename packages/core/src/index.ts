@@ -9,3 +9,4 @@ export * from "./external-links";
 export * from "./log-update";
 export * from "./desktop-shell";
 export * from "./startup";
+export * from "./persisted-log";

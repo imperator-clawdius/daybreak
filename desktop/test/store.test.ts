@@ -56,6 +56,19 @@ describe("Store", () => {
     expect(new Store(file).read()).toEqual(good);
   });
 
+  it("recovers from backup when the primary JSON has malformed day logs", () => {
+    const file = tempFile();
+    const good = shape("2026-06-22", "ship");
+    writeFileSync(
+      file,
+      JSON.stringify({ version: 1, days: [{ day: "2026-06-22" }] }),
+      "utf8",
+    );
+    writeFileSync(`${file}.bak`, JSON.stringify(good, null, 2), "utf8");
+
+    expect(new Store(file).read()).toEqual(good);
+  });
+
   it("keeps the previous valid store as a backup after replacing it", () => {
     const file = tempFile();
     const store = new Store(file);

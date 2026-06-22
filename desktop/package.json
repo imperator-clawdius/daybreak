@@ -7,7 +7,7 @@
   "main": "dist/main.js",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "bundle": "node build.mjs",
+    "bundle": "npm run build -w @daybreak/core && node build.mjs",
     "build": "npm run bundle",
     "dev": "npm run bundle && electron .",
     "package": "npm run bundle && electron-builder --win --publish never"
