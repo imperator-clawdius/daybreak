@@ -9,6 +9,11 @@
     "desktop",
     "site"
   ],
+  "overrides": {
+    "next": {
+      "postcss": "8.5.15"
+    }
+  },
   "scripts": {
     "build:core": "npm run build -w @daybreak/core",
     "build:desktop": "npm run build -w @daybreak/desktop",

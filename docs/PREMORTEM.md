@@ -35,6 +35,7 @@ counts, screenshots, or testimonials.
 | Pending CTA points nowhere | A disabled-looking checkout link to a missing anchor feels unfinished. | Pending checkout is rendered as non-clickable status, and the page now exposes a launch status section. |
 | Sale page has no product visual | A text-only product page asks buyers to trust copy without seeing the actual Windows ritual. | The landing page now uses an Electron smoke-captured PNG from the current desktop build, with deterministic text and no fabricated mockup. |
 | Critical production dependency advisories | A sale page should not ship on a known critical Next.js audit set. | Upgraded Next and `eslint-config-next` from `15.1.6` to `15.5.19`; migrated linting from deprecated `next lint` to direct ESLint CLI. |
+| Nested PostCSS advisory remains under Next | Next `15.5.19` declares `postcss@8.4.31`, so the lockfile could keep a moderate `postcss <8.5.10` advisory even though the app exports static HTML. | Added a site-level `postcss@8.5.15` dependency plus a root npm override for Next's PostCSS edge; regenerated the lockfile from manifests; added `scripts/dependency-security.test.ts` so `npm run check` rejects locked PostCSS packages below `8.5.10`; `npm audit --omit=dev --audit-level=moderate` now reports `found 0 vulnerabilities`. |
 | Random 200 OK file satisfies installer readiness | A mistyped, stale, or spoofed download URL could look sale-ready even if it is not the signed Daybreak installer. | `verify:readiness` now requires `DOWNLOAD_SHA256` and hashes the fetched installer bytes before the installer gate can pass. |
 | Hosted unsigned installer passes readiness | A matching SHA-256 proves byte identity, but not that the hosted Windows installer is signed or belongs to Daybreak. | `verify:readiness` now writes the downloaded bytes to a temporary `.exe`, checks Authenticode, and requires a valid signer subject containing `Passive Print Labs LLC`. |
 | Landing page renders bad HTTPS links as live | The verifier could reject a non-Stripe checkout URL or an installer URL without a checksum while the public page still shows a live button. | External-link readiness policy now lives in `@daybreak/core` with tests, and the landing page uses it before rendering checkout or download links as active. |
@@ -64,18 +65,19 @@ These remain intentionally pending and must not be faked:
 
 | Risk | Current evidence | Position |
 | --- | --- | --- |
-| Nested PostCSS audit warning in Next | `npm audit --omit=dev` and full `npm audit --audit-level=moderate` still report only the moderate `postcss <8.5.10` advisory under `node_modules/next/node_modules/postcss`; npm's suggested force fix would downgrade Next to 9.3.3. | Accepted as a bounded static-export build-time risk for now. Daybreak does not stringify untrusted CSS, does not run a public Next server, and deploys static HTML to GitHub Pages. Recheck when Next publishes a patched dependency path. |
+| npm reports the intentional PostCSS override as invalid in `npm ls postcss` | `npm audit --omit=dev --audit-level=moderate` is clean and `package-lock.json` contains only `postcss@8.5.15`, but `npm ls postcss` exits with `ELSPROBLEMS` because Next's published manifest still says `postcss: 8.4.31`. | Do not use `npm ls postcss` as a launch gate for this override. Keep `npm audit`, `scripts/dependency-security.test.ts`, and `npm run check` as the authoritative dependency-safety gates; remove the override when Next publishes a patched direct PostCSS dependency. |
 
 ## Verification policy
 
 Run these after each sale-readiness change:
 
-```bash
+```powershell
 npm run check
+npm audit --omit=dev --audit-level=moderate
 npm run verify:readiness
 npm run verify:launch
-DAYBREAK_SMOKE=1 npx electron . --prefix desktop
-DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening npx electron . --prefix desktop
+$env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE
+$env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .; Remove-Item Env:DAYBREAK_SMOKE,Env:DAYBREAK_SMOKE_SCENARIO
 npm run package -w @daybreak/desktop
 npm run verify:release
 ```
