@@ -190,8 +190,8 @@ describe("readiness external-link proof", () => {
       }),
     ).resolves.toMatchObject({
       pass: false,
-      reason: "apex_http_not_ready",
-      detail: "HTTP error contains_daybreak=false error=certificate pending",
+      reason: "apex_https_not_ready",
+      detail: "HTTPS error contains_daybreak=false error=certificate pending",
     });
   });
 });

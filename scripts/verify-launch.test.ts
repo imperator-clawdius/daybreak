@@ -15,6 +15,12 @@ function fetchPage(status: number, body: string) {
   });
 }
 
+function fetchError(message: string) {
+  return async () => {
+    throw new Error(message);
+  };
+}
+
 describe("launch verifier", () => {
   it("uses the production apex as the default primary URL", () => {
     expect(getPrimaryUrl(["node", "scripts/verify-launch.mjs"])).toBe(
@@ -39,5 +45,19 @@ describe("launch verifier", () => {
     expect(report.text).toContain(`PRIMARY ${PRODUCTION_URL}`);
     expect(report.text).toContain("LIVE_SITE=pass status=200");
     expect(report.text).toContain("APEX_SITE=pass status=200");
+  });
+
+  it("reports apex HTTPS fetch errors instead of hiding the reason", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchError("certificate pending"),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain("LIVE_SITE=FAIL status=0");
+    expect(report.text).toContain(
+      "APEX_SITE=pending status=0 error=certificate pending",
+    );
   });
 });

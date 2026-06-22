@@ -57,7 +57,9 @@ export function renderLaunchReport({
   lines.push(`APEX_DNS host=${apexHost} resolves=${apexDns}`);
   if (apexLive) {
     lines.push(
-      `APEX_SITE=${apexLive.ok ? "pass" : "pending"} status=${apexLive.status}`,
+      `APEX_SITE=${apexLive.ok ? "pass" : "pending"} status=${apexLive.status}${
+        apexLive.error ? ` error=${apexLive.error}` : ""
+      }`,
     );
   } else {
     lines.push(

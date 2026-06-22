@@ -154,9 +154,9 @@ export async function evaluateProductionDomain({
   if (!site.ok || !site.hasApp) {
     return {
       pass: false,
-      reason: "apex_http_not_ready",
+      reason: "apex_https_not_ready",
       status: site.status,
-      detail: `HTTP ${site.status || "error"} contains_daybreak=${site.hasApp}${
+      detail: `HTTPS ${site.status || "error"} contains_daybreak=${site.hasApp}${
         site.error ? ` error=${site.error}` : ""
       }`,
       error: site.error,

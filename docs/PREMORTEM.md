@@ -34,6 +34,7 @@ counts, screenshots, or testimonials.
 | Installer ships with the default Electron icon | A paid Windows app with the stock Electron icon looks unfinished and weakens trust before first launch. | Added a Daybreak Windows icon asset, configured `build.win.icon`, and extended `verify:release` so the release preflight rejects missing icon configuration. |
 | Pages deploy workflow ages into a runtime deprecation | A professional launch should not depend on action runtimes GitHub has already started warning about. | Pages CI now uses Node 24-compatible official actions and builds with Node 24. |
 | Local release artifact lacks proof | Packaging could produce a file while leaving signing status and checksum to manual inspection. | Added `npm run verify:release`, which computes the installer SHA-256 and checks Authenticode status before any hosted release is considered ready. |
+| Domain verifier hides the real HTTPS blocker | A generic HTTP failure message can make an attached-but-cert-pending GitHub Pages domain look misconfigured. | Launch and readiness verifiers now label apex failures as HTTPS readiness failures and surface the certificate fetch error. |
 
 ## Still blocked by real-world artifacts
 
