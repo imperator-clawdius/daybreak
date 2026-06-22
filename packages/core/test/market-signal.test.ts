@@ -179,6 +179,34 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects malformed first-order refund pagination proof", () => {
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({ refunds: { data: [], has_more: "false" } }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({ refunds: { data: [], has_more: 0 } }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("rejects malformed first-order refund proof containers", () => {
     expect(
       getPaidOrderProofState({

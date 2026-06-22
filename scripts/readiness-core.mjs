@@ -806,6 +806,15 @@ export function evaluateMarketSignal({
   if (!Array.isArray(refundData)) {
     return pending("paid_order_refund_proof_missing");
   }
+  if (refundHasMore !== undefined && typeof refundHasMore !== "boolean") {
+    return {
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
+    };
+  }
   if (refundHasMore !== false) {
     return pending("paid_order_refund_proof_incomplete");
   }

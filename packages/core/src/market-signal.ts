@@ -266,6 +266,15 @@ export function getPaidOrderProofState({
     };
   }
 
+  if (refundHasMore !== undefined && typeof refundHasMore !== "boolean") {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
+
   if (refundHasMore !== false) {
     return {
       ready: false,
