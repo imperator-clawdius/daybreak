@@ -16,6 +16,7 @@ fabricated proof**.
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
 | Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `signature_status=NotSigned`, exit 1 until a real cert signs it |
 | Domain is attached over HTTP | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages and the repo Pages custom domain is set to `daybreak.rest`; HTTPS certificate issuance is still pending |
+| Actionable dependency advisories reduced | Electron/electron-builder/esbuild/Vitest upgraded; `npm audit --omit=dev` and full `npm audit --audit-level=moderate` now report only the bounded Next/PostCSS moderate advisory whose npm force-fix would downgrade Next to 9.3.3 |
 
 ## Honestly pending (real blockers - readiness gate = 3/7)
 

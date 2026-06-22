@@ -18,6 +18,7 @@ counts, screenshots, or testimonials.
 | Critical production dependency advisories | A sale page should not ship on a known critical Next.js audit set. | Upgraded Next and `eslint-config-next` from `15.1.6` to `15.5.19`; migrated linting from deprecated `next lint` to direct ESLint CLI. |
 | Random 200 OK file satisfies installer readiness | A mistyped, stale, or spoofed download URL could look sale-ready even if it is not the signed Daybreak installer. | `verify:readiness` now requires `DOWNLOAD_SHA256` and hashes the fetched installer bytes before the installer gate can pass. |
 | Landing page renders bad HTTPS links as live | The verifier could reject a non-Stripe checkout URL or an installer URL without a checksum while the public page still shows a live button. | External-link readiness policy now lives in `@daybreak/core` with tests, and the landing page uses it before rendering checkout or download links as active. |
+| Desktop/toolchain advisories accumulate before launch | Old Electron, electron-builder, esbuild, and Vitest versions carried high/critical audit findings that would undermine a professional Windows release. | Upgraded Electron to 42.4.1, electron-builder to 26.15.3, esbuild to 0.28.1, and Vitest to 4.1.9; `npm run check`, Electron smoke, and NSIS packaging pass after the upgrade. |
 | Pages deploy workflow ages into a runtime deprecation | A professional launch should not depend on action runtimes GitHub has already started warning about. | Pages CI now uses Node 24-compatible official actions and builds with Node 24. |
 | Local release artifact lacks proof | Packaging could produce a file while leaving signing status and checksum to manual inspection. | Added `npm run verify:release`, which computes the installer SHA-256 and checks Authenticode status before any hosted release is considered ready. |
 
@@ -34,7 +35,7 @@ These remain intentionally pending and must not be faked:
 
 | Risk | Current evidence | Position |
 | --- | --- | --- |
-| Nested PostCSS audit warning in Next | `npm audit --omit=dev` still reports a moderate `postcss <8.5.10` advisory under `node_modules/next/node_modules/postcss`; npm's suggested force fix would downgrade Next to 9.3.3. | Accepted as a bounded static-export build-time risk for now. Daybreak does not stringify untrusted CSS, does not run a public Next server, and deploys static HTML to GitHub Pages. Recheck when Next publishes a patched dependency path. |
+| Nested PostCSS audit warning in Next | `npm audit --omit=dev` and full `npm audit --audit-level=moderate` still report only the moderate `postcss <8.5.10` advisory under `node_modules/next/node_modules/postcss`; npm's suggested force fix would downgrade Next to 9.3.3. | Accepted as a bounded static-export build-time risk for now. Daybreak does not stringify untrusted CSS, does not run a public Next server, and deploys static HTML to GitHub Pages. Recheck when Next publishes a patched dependency path. |
 
 ## Verification policy
 
