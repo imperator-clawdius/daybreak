@@ -1,7 +1,9 @@
 import { getCheckoutLinkState, getInstallerLinkState } from "@daybreak/core";
+import Image from "next/image";
 
 import { CHECKOUT_URL, DOWNLOAD_SHA256, DOWNLOAD_URL, PRICE_USD } from "./config";
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 const checkoutReady = getCheckoutLinkState(CHECKOUT_URL).ready;
 const downloadReady = getInstallerLinkState({
   url: DOWNLOAD_URL,
@@ -61,6 +63,18 @@ export default function Home() {
           No account. No cloud. Your commitments stay in a local file on your
           machine.
         </p>
+        <figure className="product-shot">
+          <Image
+            src={`${basePath}/daybreak-app.png`}
+            width={1002}
+            height={753}
+            alt="Daybreak Windows app showing a morning commitment ready to be wiped"
+            priority
+          />
+          <figcaption>
+            Actual Daybreak desktop app captured from the current Windows build.
+          </figcaption>
+        </figure>
       </section>
 
       <section className="how">

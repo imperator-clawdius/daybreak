@@ -4,6 +4,7 @@
 // computes that with @daybreak/core's canDismiss(); main trusts only the
 // boolean it is told AND re-validates against the persisted board.
 import { app, BrowserWindow, ipcMain, screen } from "electron";
+import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -23,10 +24,12 @@ import { Store } from "./store";
 const SMOKE = process.env.DAYBREAK_SMOKE === "1";
 const SMOKE_SCENARIO =
   process.env.DAYBREAK_SMOKE_SCENARIO === "evening" ? "evening" : "morning";
+const SMOKE_SCREENSHOT = process.env.DAYBREAK_SMOKE_SCREENSHOT;
 const SMOKE_DAY = "2026-06-22";
 const SMOKE_MORNING_NOW = `${SMOKE_DAY}T09:00:00`;
 const SMOKE_EVENING_NOW = `${SMOKE_DAY}T18:00:00`;
-const SMOKE_COMMIT_TEXT = `Daybreak smoke ${process.pid}`;
+const SMOKE_COMMIT_TEXT =
+  process.env.DAYBREAK_SMOKE_COMMIT_TEXT ?? `Daybreak smoke ${process.pid}`;
 
 if (SMOKE) {
   app.setPath("userData", join(tmpdir(), `daybreak-smoke-${process.pid}`));
@@ -147,12 +150,23 @@ async function runSmokeFlow(): Promise<void> {
       ? await exerciseEveningSwipeFlow()
       : await exerciseMorningSwipeFlow();
   const data = store.read();
-  const ok = !smokeFailed && data.version === 1 && swipeFlow;
+  let screenshotCaptured = false;
+  let ok = !smokeFailed && data.version === 1 && swipeFlow;
+  if (ok && SMOKE_SCREENSHOT && win) {
+    try {
+      const image = await win.webContents.capturePage();
+      await writeFile(SMOKE_SCREENSHOT, image.toPNG());
+      screenshotCaptured = true;
+    } catch (error) {
+      console.error("smoke screenshot failed:", error);
+      ok = false;
+    }
+  }
   console.log(
     ok
       ? `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=${SMOKE_SCENARIO} swipe_flow=true${
           SMOKE_SCENARIO === "evening" ? " streak_summary=true" : ""
-        }`
+        }${screenshotCaptured ? " screenshot=true" : ""}`
       : "DAYBREAK_SMOKE=fail",
   );
   dismissAllowed = true;
