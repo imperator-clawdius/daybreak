@@ -210,6 +210,14 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
     };
   }
 
+  if (items.some((item) => !item || typeof item !== "object")) {
+    return {
+      pass: false,
+      reason: "checkout_line_items_invalid",
+      detail: "proof line_items.data entries must be objects",
+    };
+  }
+
   const matchingOneTimeItem = items.find((item) => {
     const price = item.price || {};
     return (

@@ -163,6 +163,10 @@ export function getCheckoutProofState({
     return { ready: false, reason: "checkout_extra_line_items" };
   }
 
+  if (items.some((item) => !item || typeof item !== "object")) {
+    return { ready: false, reason: "checkout_line_items_invalid" };
+  }
+
   const matchingOneTimeItem = items.find((item) => {
     const price = item.price;
     return (

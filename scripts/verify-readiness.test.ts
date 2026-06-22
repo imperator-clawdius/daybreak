@@ -425,6 +425,30 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("rejects malformed checkout line item entries without throwing", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [null],
+          },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_line_items_invalid",
+    });
+  });
+
   it("rejects checkout proof that contains keys or customer data", async () => {
     await expect(
       evaluateExternalLink({
