@@ -5,6 +5,7 @@ import {
   carryForward,
   makeItem,
   phaseForHour,
+  resolveLogForPhase,
 } from "../src/session";
 import { DayLog, Item } from "../src/model";
 
@@ -44,6 +45,38 @@ describe("session building", () => {
     expect(session.morningResolved).toBe(false);
   });
 
+  it("carries only the latest unresolved copy of an item", () => {
+    const item = makeItem("same promise", "2026-06-17", () => "same-id");
+    const history: DayLog[] = [
+      logFor("2026-06-17", [{ ...item, state: "open", carryCount: 0 }]),
+      logFor("2026-06-18", [
+        { ...item, day: "2026-06-18", state: "open", carryCount: 1 },
+      ]),
+    ];
+
+    const carried = carryForward(history);
+
+    expect(carried).toHaveLength(1);
+    expect(carried[0]).toMatchObject({
+      id: "same-id",
+      text: "same promise",
+      carryCount: 2,
+      state: "open",
+    });
+  });
+
+  it("does not resurrect an item resolved after it was carried", () => {
+    const item = makeItem("decide", "2026-06-17", () => "resolved-id");
+    const history: DayLog[] = [
+      logFor("2026-06-17", [{ ...item, state: "open", carryCount: 0 }]),
+      logFor("2026-06-18", [
+        { ...item, day: "2026-06-18", state: "killed", carryCount: 1 },
+      ]),
+    ];
+
+    expect(carryForward(history)).toEqual([]);
+  });
+
   it("evening session deep-copies today's items", () => {
     const today = logFor("2026-06-19", [makeItem("a", "2026-06-19")]);
     const evening = buildEveningSession(today);
@@ -56,5 +89,20 @@ describe("session building", () => {
     expect(phaseForHour(16)).toBe("morning");
     expect(phaseForHour(17)).toBe("evening");
     expect(phaseForHour(22)).toBe("evening");
+  });
+
+  it("marks only the active phase as resolved", () => {
+    const log = logFor("2026-06-19", [
+      { ...makeItem("done", "2026-06-19"), state: "done" },
+    ]);
+
+    expect(resolveLogForPhase(log, "morning")).toMatchObject({
+      morningResolved: true,
+      eveningResolved: false,
+    });
+    expect(resolveLogForPhase(log, "evening")).toMatchObject({
+      morningResolved: true,
+      eveningResolved: true,
+    });
   });
 });

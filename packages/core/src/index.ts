@@ -4,3 +4,4 @@ export * from "./dates";
 export * from "./wipe";
 export * from "./session";
 export * from "./streak";
+export * from "./commit";

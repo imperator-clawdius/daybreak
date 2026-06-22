@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Daybreak — a Windows morning intent-setter you can't dismiss until you've wiped every commitment. $19 one-time.",
+  "description": "Daybreak - a Windows morning intent-setter you can't dismiss until you've wiped every commitment. $19 one-time.",
   "workspaces": [
     "packages/*",
     "desktop",

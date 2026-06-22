@@ -4,6 +4,7 @@
 
 import { DayLog, Item, Phase } from "./model";
 import { dayKey } from "./dates";
+import { canDismiss } from "./wipe";
 
 let idCounter = 0;
 
@@ -28,19 +29,24 @@ export function makeItem(
 
 /** Items that should roll forward into the next morning. */
 export function carryForward(history: DayLog[]): Item[] {
-  const carried: Item[] = [];
-  for (const log of history) {
+  const latestById = new Map<string, Item>();
+  const chronological = [...history].sort((a, b) =>
+    a.day < b.day ? -1 : a.day > b.day ? 1 : 0,
+  );
+
+  for (const log of chronological) {
     for (const item of log.items) {
-      if (item.state === "open" || item.state === "deferred") {
-        carried.push({
-          ...item,
-          state: "open",
-          carryCount: item.carryCount + 1,
-        });
-      }
+      latestById.set(item.id, item);
     }
   }
-  return carried;
+
+  return [...latestById.values()]
+    .filter((item) => item.state === "open" || item.state === "deferred")
+    .map((item) => ({
+      ...item,
+      state: "open",
+      carryCount: item.carryCount + 1,
+    }));
 }
 
 /**
@@ -65,4 +71,12 @@ export function buildEveningSession(today: DayLog): DayLog {
 export function phaseForHour(hour: number): Phase {
   // Before 17:00 local → morning ritual; 17:00+ → evening review.
   return hour < 17 ? "morning" : "evening";
+}
+
+/** Return a log with only the active ritual's resolved flag recalculated. */
+export function resolveLogForPhase(log: DayLog, phase: Phase): DayLog {
+  const resolved = canDismiss(log.items, phase);
+  return phase === "morning"
+    ? { ...log, morningResolved: resolved }
+    : { ...log, eveningResolved: resolved };
 }

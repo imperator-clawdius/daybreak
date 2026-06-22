@@ -7,15 +7,15 @@ function Cta() {
   if (checkoutReady) {
     return (
       <a className="btn btn-primary" href={CHECKOUT_URL}>
-        Get Daybreak — ${PRICE_USD} once
+        Get Daybreak - ${PRICE_USD} once
       </a>
     );
   }
-  // Honest state: checkout is not live yet. We do not fake a working button.
+
   return (
-    <a className="btn btn-primary is-pending" href="#notify" aria-disabled>
-      Checkout opening soon — ${PRICE_USD} once
-    </a>
+    <span className="btn btn-primary is-pending" aria-disabled="true">
+      Checkout opening soon - ${PRICE_USD} once
+    </span>
   );
 }
 
@@ -28,7 +28,7 @@ export default function Home() {
       </header>
 
       <section className="hero">
-        <p className="kicker">Windows · one-time $19 · no subscription</p>
+        <p className="kicker">Windows - one-time $19 - no subscription</p>
         <h1>
           Wipe the morning
           <br />
@@ -37,7 +37,7 @@ export default function Home() {
         <p className="lede">
           Daybreak takes over your screen the moment you log in. It shows
           yesterday&apos;s unfinished business and asks for today&apos;s three
-          commitments — and it will not get out of your way until you&apos;ve{" "}
+          commitments, and it will not get out of your way until you&apos;ve{" "}
           <strong>physically wiped every item</strong>: commit, defer, or kill.
         </p>
         <div className="cta-row">
@@ -47,7 +47,7 @@ export default function Home() {
               Download for Windows
             </a>
           ) : (
-            <span className="btn btn-ghost is-pending" aria-disabled>
+            <span className="btn btn-ghost is-pending" aria-disabled="true">
               Installer in final packaging
             </span>
           )}
@@ -116,7 +116,7 @@ export default function Home() {
           <p className="kicker">One-time purchase</p>
           <p className="price">
             <span className="amount">${PRICE_USD}</span>
-            <span className="per">once · lifetime updates</span>
+            <span className="per">once - lifetime updates</span>
           </p>
           <ul className="price-points">
             <li>Windows 10 &amp; 11</li>
@@ -128,19 +128,49 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="status" id="status">
+        <h2>Launch status</h2>
+        <ul className="status-list" aria-label="Current launch status">
+          <li className="status-pass">
+            <strong>Live preview</strong>
+            <span>GitHub Pages preview is online and checked by script.</span>
+          </li>
+          <li>
+            <strong>Checkout</strong>
+            <span>
+              Pending a real Stripe Payment Link. No placeholder payment URLs.
+            </span>
+          </li>
+          <li>
+            <strong>Installer</strong>
+            <span>Pending signed Windows build and hosted download URL.</span>
+          </li>
+          <li>
+            <strong>Domain</strong>
+            <span>
+              Pending daybreakdesk.com purchase and GitHub Pages attachment.
+            </span>
+          </li>
+          <li>
+            <strong>Market signal</strong>
+            <span>Pending the first genuine paid order. No fabricated proof.</span>
+          </li>
+        </ul>
+      </section>
+
       <section className="faq">
         <h2>Straight answers</h2>
         <dl>
           <dt>Is this really un-closable?</dt>
           <dd>
             The morning window stays until every surfaced item is wiped. You can
-            always <em>kill</em> an item in one gesture — Daybreak forces a
+            always <em>kill</em> an item in one gesture; Daybreak forces a
             decision, not busywork.
           </dd>
           <dt>Does it phone home?</dt>
           <dd>
             No. There is no account and no server. Your commitments live in a
-            local database on your PC.
+            local file on your PC.
           </dd>
           <dt>What&apos;s the refund policy?</dt>
           <dd>
@@ -150,17 +180,18 @@ export default function Home() {
           <dd>
             Daybreak is in active build-in-public as ship-or-die cycle 2. This
             page reflects real status: where you see &ldquo;opening soon,&rdquo;
-            that step is genuinely not live yet — we don&apos;t fake buttons.
+            that step is genuinely not live yet; we don&apos;t fake buttons.
           </dd>
         </dl>
       </section>
 
       <footer className="foot">
+        <p>Daybreak - Passive Print Labs LLC - founder@daybreakdesk.com</p>
         <p>
-          Daybreak · Passive Print Labs LLC · founder@daybreakdesk.com
+          <a href="privacy/">Privacy</a> - <a href="terms/">Terms</a>
         </p>
         <p className="fine">
-          Built in public. No fabricated reviews on this page — when there are
+          Built in public. No fabricated reviews on this page; when there are
           real users, their words will appear here with attribution.
         </p>
       </footer>

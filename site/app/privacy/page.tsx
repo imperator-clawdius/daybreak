@@ -1,0 +1,55 @@
+export const metadata = {
+  title: "Privacy - Daybreak",
+  description:
+    "Daybreak privacy policy: local-only Windows commitment data, no account, no cloud sync, no telemetry.",
+};
+
+export default function PrivacyPage() {
+  return (
+    <main className="legal">
+      <a className="back-link" href="../">
+        Daybreak
+      </a>
+      <h1>Privacy</h1>
+      <p className="lede">
+        Daybreak is built to stay local. The Windows app does not require an
+        account, does not sync commitments to a server, and does not include
+        telemetry.
+      </p>
+
+      <section>
+        <h2>What the app stores</h2>
+        <p>
+          The desktop app stores your daily commitments, wipe decisions, day
+          logs, and last-seen timestamp in a local file on your PC. That file is
+          used only to restore your board, carry unresolved items forward, and
+          calculate streaks.
+        </p>
+      </section>
+
+      <section>
+        <h2>What the app does not collect</h2>
+        <p>
+          Daybreak does not collect analytics events, usage recordings, contact
+          lists, calendar data, screenshots, or the text of your commitments.
+          There is no cloud account for the app.
+        </p>
+      </section>
+
+      <section>
+        <h2>Checkout and support</h2>
+        <p>
+          Checkout is not live yet. When it opens, payment will be handled by
+          Stripe, and Stripe may process payment details under its own privacy
+          terms. If you email support, your email and message are used to answer
+          that request.
+        </p>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>Email founder@daybreakdesk.com with privacy questions.</p>
+      </section>
+    </main>
+  );
+}

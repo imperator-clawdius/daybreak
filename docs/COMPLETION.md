@@ -1,6 +1,6 @@
-# Daybreak — completion ledger
+# Daybreak completion ledger
 
-Same standard we held TraceReady to: a thing is "done" only when it's real and
+Same standard we held TraceReady to: a thing is "done" only when it is real and
 verified by command output, and remaining gaps are stated honestly with **no
 fabricated proof**.
 
@@ -8,26 +8,28 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works & is tested | `vitest run` → **16 tests, 3 files passed** (wipe machine, carry-over, streak) |
-| App actually launches | `DAYBREAK_SMOKE=1 electron .` → `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true`, exit 0 |
-| Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler + `canDismiss()` re-validated in main |
-| Whole repo builds clean | `npm run check` → lint + test + build (core, desktop, site) **exit 0** |
-| Site exports as static HTML | `next build` → 4 static pages exported to `site/out/` |
-| Domain is available | RDAP 404 + no nameservers for `daybreakdesk.com` (Namecheap-registerable) |
+| Core mechanic works and is tested | `vitest run` -> **30 tests, 5 files passed** (wipe machine, carry-over, streak, commit validation, readiness URL proof) |
+| App actually launches | `DAYBREAK_SMOKE=1 electron .` -> `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true`, exit 0 |
+| Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `canDismiss()` re-validated in main |
+| Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |
+| Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
+| Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
+| Domain is available | RDAP 404 plus no nameservers for `daybreakdesk.com` (Namecheap-registerable) |
 
-## Honestly pending (real blockers — readiness gate = 3/7)
+## Honestly pending (real blockers - readiness gate = 3/7)
 
 These require the owner; none are faked to look done.
 
 1. **Buy `daybreakdesk.com`** on Namecheap, point apex `A` records at GitHub
-   Pages (185.199.108–111.153), attach as the repo's custom domain, then move
+   Pages (185.199.108-111.153), attach as the repo's custom domain, then move
    `deploy/CNAME` into the production build (drop `DAYBREAK_BASE_PATH`).
 2. **Create the real Stripe Payment Link** ($19 one-time) and set
-   `CHECKOUT_URL` in `site/app/config.ts`. Until then the page shows an honest
-   "checkout opening soon" state — not a fake button.
-3. **Produce a signed Windows installer.** `npm run package` is wired
-   (electron-builder/NSIS), but a real release needs a code-signing cert so
-   SmartScreen doesn't flag it; then host it and set `DOWNLOAD_URL`.
+   `CHECKOUT_URL` in `site/app/config.ts`. The readiness gate requires a
+   `buy.stripe.com` URL that returns HTTP 2xx. Until then the page shows an
+   honest "checkout opening soon" state - not a fake button.
+3. **Produce a signed Windows installer.** Unsigned NSIS packaging works, but a
+   real release needs a code-signing cert so SmartScreen does not flag it; then
+   host it, set `DOWNLOAD_URL`, and let the readiness gate verify HTTP 2xx.
 4. **Earn the first real $19 order.** Market signal is `0` and stays `0` in the
    readiness gate until a genuine paid order exists.
 
@@ -42,7 +44,12 @@ These require the owner; none are faked to look done.
 
 ```bash
 npm install
-npm run check                 # all gates green
-npm run verify:readiness      # 3/7 pass, honest blockers listed (exit 1)
-DAYBREAK_SMOKE=1 npx electron . --prefix desktop   # app launch proof
+npm run check
+npm run verify:readiness
+npm run verify:launch
+npm run package -w @daybreak/desktop
+DAYBREAK_SMOKE=1 npx electron . --prefix desktop
 ```
+
+`npm run verify:readiness` must keep exiting 1 until the real domain, Stripe
+Payment Link, signed hosted installer, and first paid order exist.

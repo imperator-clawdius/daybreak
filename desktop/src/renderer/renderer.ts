@@ -3,11 +3,11 @@
 import {
   applyWipe,
   canDismiss,
-  committedCount,
   currentStreak,
-  isOverCommitted,
   makeItem,
   MAX_DAILY_COMMITS,
+  resolveLogForPhase,
+  validateNewCommit,
   type DayLog,
   type Item,
   type Phase,
@@ -120,12 +120,12 @@ function wipe(id: string, action: WipeAction) {
 }
 
 function addCommit(text: string) {
-  if (!text.trim()) return;
-  if (isOverCommitted([...log.items, makeItem(text, log.day)])) {
-    flashHint(`Three is the cap. You have ${committedCount(log.items)} live.`);
+  const validation = validateNewCommit(text, log.items);
+  if (!validation.ok) {
+    flashHint(validation.message);
     return;
   }
-  log = { ...log, items: [...log.items, makeItem(text, log.day)] };
+  log = { ...log, items: [...log.items, makeItem(validation.text, log.day)] };
   render();
   void persist();
 }
@@ -149,7 +149,7 @@ function flashHint(msg: string) {
 }
 
 async function persist() {
-  log = { ...log, morningResolved: canDismiss(log.items, "morning") };
+  log = resolveLogForPhase(log, phase);
   await api.save({ log, phase });
   updateGate();
 }
