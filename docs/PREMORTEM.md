@@ -19,6 +19,7 @@ counts, screenshots, or testimonials.
 | Malformed local JSON crashes the ritual | A hand-edited or partially corrupted file with `version: 1` and a `days` array could pass the old shallow check and break session construction. | Core now validates persisted day logs and items; the desktop store rejects malformed primary data and falls back to a valid backup. |
 | Desktop packaging uses stale core output | Packaging the desktop workspace directly could bundle an older `@daybreak/core/dist` if the core workspace had not been rebuilt first. | `@daybreak/desktop` now builds `@daybreak/core` before esbuild bundling, and Vitest aliases `@daybreak/core` to source so tests never pass against stale dist output. |
 | Product promises swipe-to-wipe but ships button-only interaction | A buyer expecting the core ritual gesture would immediately feel the app is unfinished if the desktop app only exposed small action buttons. | Core now owns a tested swipe gesture policy; the renderer supports mouse/touch pointer swipes with button fallback, and Electron smoke proves an add-and-swipe flow persists correctly. |
+| Evening review works only in unit tests | The v1 loop includes an evening review; without a runtime proof, a packaging or IPC regression could ship a morning-only app. | Main-process session selection now lives in core with tests, and Electron smoke has separate morning and evening scenarios that prove swipe persistence in both phases. |
 | Fake HTTPS checkout/download URLs turn gates green | A placeholder external URL could make readiness look complete without real proof. | `verify:readiness` now requires a `buy.stripe.com` Payment Link for checkout and HTTP 2xx proof for checkout/download URLs. |
 | Public site promises legal/privacy posture without pages | A paid product needs visible policy pages before checkout opens. | Added `/privacy/` and `/terms/`, linked from the footer. |
 | Landing page copy drifts from implementation | The site said "local database" while v1 persists local JSON. | FAQ now says "local file," matching the completion ledger. |
@@ -55,6 +56,7 @@ npm run check
 npm run verify:readiness
 npm run verify:launch
 DAYBREAK_SMOKE=1 npx electron . --prefix desktop
+DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening npx electron . --prefix desktop
 npm run package -w @daybreak/desktop
 npm run verify:release
 ```

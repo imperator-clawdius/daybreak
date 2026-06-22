@@ -8,8 +8,8 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **84 tests, 14 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
-| App actually launches and completes the wipe flow | `DAYBREAK_SMOKE=1 electron .` -> `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true swipe_flow=true`, exit 0 |
+| Core mechanic works and is tested | `vitest run` -> **86 tests, 14 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| App actually launches and completes the wipe flows | `DAYBREAK_SMOKE=1 electron .` -> `scenario=morning swipe_flow=true`, exit 0; `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening electron .` -> `scenario=evening swipe_flow=true`, exit 0 |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
 | Desktop shell is contained | BrowserWindow uses context isolation, no node integration, `sandbox: true`, denied new windows, and a core-tested file-navigation allowlist |
 | Packaged Windows app registers for first-login startup | `desktop/src/main/main.ts` calls `app.setLoginItemSettings({ openAtLogin: true })` only for packaged Windows production builds; smoke and dev runs are excluded by core-tested policy |
@@ -59,6 +59,7 @@ npm run verify:launch
 npm run package -w @daybreak/desktop
 npm run verify:release
 DAYBREAK_SMOKE=1 npx electron . --prefix desktop
+DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening npx electron . --prefix desktop
 ```
 
 `npm run verify:readiness` must keep exiting 1 until the real domain, Stripe

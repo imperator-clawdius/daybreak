@@ -92,6 +92,25 @@ export function phaseForHour(hour: number): Phase {
   return hour < 17 ? "morning" : "evening";
 }
 
+export function buildDaySession(
+  now: Date,
+  history: DayLog[],
+): { phase: Phase; log: DayLog } {
+  const phase = phaseForHour(now.getHours());
+  if (phase === "morning") {
+    return { phase, log: buildMorningSession(now, history) };
+  }
+
+  const today = dayKey(now);
+  const existing = history.find((log) => log.day === today);
+  return {
+    phase,
+    log: existing
+      ? buildEveningSession(existing)
+      : buildMorningSession(now, history),
+  };
+}
+
 /** Return a log with only the active ritual's resolved flag recalculated. */
 export function resolveLogForPhase(log: DayLog, phase: Phase): DayLog {
   const resolved = canDismiss(log.items, phase);

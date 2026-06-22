@@ -8,11 +8,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
-  buildEveningSession,
-  buildMorningSession,
+  buildDaySession,
   canDismiss,
   isAllowedDesktopNavigation,
-  phaseForHour,
+  makeItem,
   planStartupRegistration,
   resolveLogForPhase,
   validateLogUpdate,
@@ -22,7 +21,11 @@ import {
 import { Store } from "./store";
 
 const SMOKE = process.env.DAYBREAK_SMOKE === "1";
-const SMOKE_NOW = "2026-06-22T09:00:00.000Z";
+const SMOKE_SCENARIO =
+  process.env.DAYBREAK_SMOKE_SCENARIO === "evening" ? "evening" : "morning";
+const SMOKE_DAY = "2026-06-22";
+const SMOKE_MORNING_NOW = `${SMOKE_DAY}T09:00:00`;
+const SMOKE_EVENING_NOW = `${SMOKE_DAY}T18:00:00`;
 const SMOKE_COMMIT_TEXT = `Daybreak smoke ${process.pid}`;
 
 if (SMOKE) {
@@ -35,11 +38,32 @@ let activeSession: { phase: Phase; log: DayLog } | null = null;
 let dismissAllowed = false;
 let smokeFailed = false;
 
+if (SMOKE && SMOKE_SCENARIO === "evening") {
+  const item = {
+    ...makeItem(SMOKE_COMMIT_TEXT, SMOKE_DAY, () => "smoke-evening-item"),
+    state: "open" as const,
+  };
+  store.write({
+    version: 1,
+    lastSeenIso: null,
+    days: [
+      {
+        day: SMOKE_DAY,
+        morningResolved: true,
+        eveningResolved: false,
+        items: [item],
+      },
+    ],
+  });
+}
+
 function nowForSession(): Date {
   if (!SMOKE) return new Date();
-  const raw = process.env.DAYBREAK_SMOKE_NOW ?? SMOKE_NOW;
+  const defaultNow =
+    SMOKE_SCENARIO === "evening" ? SMOKE_EVENING_NOW : SMOKE_MORNING_NOW;
+  const raw = process.env.DAYBREAK_SMOKE_NOW ?? defaultNow;
   const forced = new Date(raw);
-  return Number.isNaN(forced.getTime()) ? new Date(SMOKE_NOW) : forced;
+  return Number.isNaN(forced.getTime()) ? new Date(defaultNow) : forced;
 }
 
 function delay(ms: number): Promise<void> {
@@ -47,19 +71,7 @@ function delay(ms: number): Promise<void> {
 }
 
 function todaySession(now: Date): { phase: Phase; log: DayLog } {
-  const phase = phaseForHour(now.getHours());
-  const data = store.read();
-  if (phase === "evening") {
-    const todayKey = buildMorningSession(now, []).day;
-    const existing = data.days.find((d) => d.day === todayKey);
-    const log = existing
-      ? buildEveningSession(existing)
-      : buildMorningSession(now, data.days);
-    return { phase, log };
-  }
-  // Morning: carry forward unresolved history into a fresh board.
-  const history = data.days;
-  return { phase, log: buildMorningSession(now, history) };
+  return buildDaySession(now, store.read().days);
 }
 
 function createWindow(): void {
@@ -124,19 +136,22 @@ function createWindow(): void {
 async function runSmokeFlow(): Promise<void> {
   // Give the renderer's boot() (load + first save round-trip) time to run.
   await delay(500);
-  const swipeFlow = await exerciseSwipeFlow();
+  const swipeFlow =
+    SMOKE_SCENARIO === "evening"
+      ? await exerciseEveningSwipeFlow()
+      : await exerciseMorningSwipeFlow();
   const data = store.read();
   const ok = !smokeFailed && data.version === 1 && swipeFlow;
   console.log(
     ok
-      ? "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true swipe_flow=true"
+      ? `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=${SMOKE_SCENARIO} swipe_flow=true`
       : "DAYBREAK_SMOKE=fail",
   );
   dismissAllowed = true;
   app.exit(ok ? 0 : 1);
 }
 
-async function exerciseSwipeFlow(): Promise<boolean> {
+async function exerciseMorningSwipeFlow(): Promise<boolean> {
   if (!win) return false;
 
   const point = (await win.webContents.executeJavaScript(`
@@ -174,29 +189,7 @@ async function exerciseSwipeFlow(): Promise<boolean> {
     return false;
   }
 
-  win.webContents.sendInputEvent({
-    type: "mouseDown",
-    button: "left",
-    clickCount: 1,
-    x: point.x,
-    y: point.y,
-  });
-  for (const offset of [24, 48, 72, 96, 120]) {
-    win.webContents.sendInputEvent({
-      type: "mouseMove",
-      x: point.x + offset,
-      y: point.y,
-      movementX: 24,
-      movementY: 0,
-    });
-    await delay(16);
-  }
-  win.webContents.sendInputEvent({
-    type: "mouseUp",
-    button: "left",
-    x: point.x + 120,
-    y: point.y,
-  });
+  await sendMouseSwipe(point.x, point.y, 120, 0);
 
   await delay(400);
   const domResult = (await win.webContents.executeJavaScript(`
@@ -224,6 +217,102 @@ async function exerciseSwipeFlow(): Promise<boolean> {
     });
   }
   return domResult.doneEnabled && domResult.stateOpen && persistedOpen;
+}
+
+async function exerciseEveningSwipeFlow(): Promise<boolean> {
+  if (!win) return false;
+
+  const point = (await win.webContents.executeJavaScript(`
+    (async () => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      await wait(150);
+      const form = document.getElementById("add-form");
+      if (form instanceof HTMLElement && getComputedStyle(form).display !== "none") {
+        return { ok: false, reason: "form_visible" };
+      }
+      const row = Array.from(document.querySelectorAll(".item")).find((element) =>
+        element.textContent.includes(${JSON.stringify(SMOKE_COMMIT_TEXT)}),
+      );
+      if (!(row instanceof HTMLElement)) {
+        return { ok: false, reason: "row_missing" };
+      }
+      const rect = row.getBoundingClientRect();
+      return {
+        ok: true,
+        x: Math.round(rect.left + Math.min(40, rect.width / 3)),
+        y: Math.round(rect.top + rect.height / 2),
+      };
+    })()
+  `)) as { ok: boolean; reason?: string; x?: number; y?: number };
+
+  if (!point.ok || point.x === undefined || point.y === undefined) {
+    console.error("evening smoke flow setup failed:", point.reason ?? "unknown");
+    return false;
+  }
+
+  await sendMouseSwipe(point.x, point.y, 120, 0);
+
+  await delay(400);
+  const domResult = (await win.webContents.executeJavaScript(`
+    (() => {
+      const doneBtn = document.getElementById("done-btn");
+      const row = Array.from(document.querySelectorAll(".item")).find((element) =>
+        element.textContent.includes(${JSON.stringify(SMOKE_COMMIT_TEXT)}),
+      );
+      return {
+        doneEnabled: doneBtn instanceof HTMLButtonElement && !doneBtn.disabled,
+        stateDone: row instanceof HTMLElement && row.classList.contains("state-done"),
+      };
+    })()
+  `)) as { doneEnabled: boolean; stateDone: boolean };
+  const persisted = store.read();
+  const persistedDone = persisted.days.some(
+    (day) =>
+      day.day === SMOKE_DAY &&
+      day.eveningResolved &&
+      day.items.some(
+        (item) => item.text === SMOKE_COMMIT_TEXT && item.state === "done",
+      ),
+  );
+  if (!domResult.doneEnabled || !domResult.stateDone || !persistedDone) {
+    console.error("evening smoke flow verification failed:", {
+      ...domResult,
+      persistedDone,
+    });
+  }
+  return domResult.doneEnabled && domResult.stateDone && persistedDone;
+}
+
+async function sendMouseSwipe(
+  startX: number,
+  startY: number,
+  deltaX: number,
+  deltaY: number,
+): Promise<void> {
+  if (!win) return;
+  win.webContents.sendInputEvent({
+    type: "mouseDown",
+    button: "left",
+    clickCount: 1,
+    x: startX,
+    y: startY,
+  });
+  for (const step of [0.2, 0.4, 0.6, 0.8, 1]) {
+    win.webContents.sendInputEvent({
+      type: "mouseMove",
+      x: Math.round(startX + deltaX * step),
+      y: Math.round(startY + deltaY * step),
+      movementX: Math.round(deltaX / 5),
+      movementY: Math.round(deltaY / 5),
+    });
+    await delay(16);
+  }
+  win.webContents.sendInputEvent({
+    type: "mouseUp",
+    button: "left",
+    x: startX + deltaX,
+    y: startY + deltaY,
+  });
 }
 
 function configureStartupRegistration(): void {

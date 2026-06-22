@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildDaySession,
   buildEveningSession,
   buildMorningSession,
   carryForward,
@@ -14,6 +15,43 @@ function logFor(day: string, items: Item[]): DayLog {
 }
 
 describe("session building", () => {
+  it("builds a morning day session before 17:00", () => {
+    const history: DayLog[] = [
+      logFor("2026-06-21", [
+        { ...makeItem("carry me", "2026-06-21"), state: "open" },
+      ]),
+    ];
+
+    const session = buildDaySession(new Date(2026, 5, 22, 8, 0, 0), history);
+
+    expect(session.phase).toBe("morning");
+    expect(session.log).toMatchObject({
+      day: "2026-06-22",
+      morningResolved: false,
+    });
+    expect(session.log.items[0]).toMatchObject({
+      text: "carry me",
+      state: "pending",
+      day: "2026-06-22",
+    });
+  });
+
+  it("builds an evening day session from today's saved commitments", () => {
+    const today = logFor("2026-06-22", [
+      { ...makeItem("ship", "2026-06-22"), state: "open" },
+    ]);
+
+    const session = buildDaySession(new Date(2026, 5, 22, 18, 0, 0), [today]);
+
+    expect(session.phase).toBe("evening");
+    expect(session.log.items[0]).toMatchObject({
+      text: "ship",
+      state: "open",
+      day: "2026-06-22",
+    });
+    expect(session.log.items[0]).not.toBe(today.items[0]);
+  });
+
   it("carries open and deferred items forward, dropping done and killed", () => {
     const history: DayLog[] = [
       logFor("2026-06-17", [
