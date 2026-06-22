@@ -385,6 +385,72 @@ export async function evaluateExternalLink({
   return { pass: true, status: proof.status, detail: `HTTP ${proof.status}` };
 }
 
+export function evaluateMarketSignal({
+  checkoutUrl,
+  expectedPriceUsd,
+  proof,
+}) {
+  if (!proof || typeof proof !== "object") {
+    return {
+      pass: false,
+      reason: "paid_order_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_missing",
+    };
+  }
+
+  const session = proof.checkout_session;
+  const paymentLink = proof.payment_link;
+  const refunds = proof.refunds?.data?.length ?? 0;
+
+  function pending(reason, paidOrders = 0) {
+    return {
+      pass: false,
+      reason,
+      paidOrders,
+      refunds,
+      detail: `paid_orders=${paidOrders} refunds=${refunds} reason=${reason}`,
+    };
+  }
+
+  if (!session || !paymentLink || paymentLink.url !== checkoutUrl) {
+    return pending("paid_order_checkout_mismatch");
+  }
+  if (session.payment_link !== paymentLink.id) {
+    return pending("paid_order_checkout_mismatch");
+  }
+  if (session.livemode !== true) {
+    return pending("paid_order_not_live_mode");
+  }
+  if (session.mode !== "payment") {
+    return pending("paid_order_not_one_time");
+  }
+  if (session.status !== "complete") {
+    return pending("paid_order_not_complete");
+  }
+  if (session.payment_status !== "paid") {
+    return pending("paid_order_not_paid");
+  }
+  if (
+    session.amount_total !== expectedPriceUsd * 100 ||
+    session.currency !== "usd"
+  ) {
+    return pending("paid_order_amount_mismatch");
+  }
+  if (refunds > 0) {
+    return pending("paid_order_refunded", 1);
+  }
+
+  return {
+    pass: true,
+    reason: "ready",
+    paidOrders: 1,
+    refunds: 0,
+    detail: "paid_orders=1 refunds=0 reason=ready",
+  };
+}
+
 export async function buildReadinessGates({
   root,
   fetchImpl = fetch,
@@ -396,6 +462,7 @@ export async function buildReadinessGates({
   const downloadSha256 = extractConfigUrl(configSrc, "DOWNLOAD_SHA256");
   const priceUsd = extractConfigNumber(configSrc, "PRICE_USD");
   const checkoutProof = readJsonProof(root, "proof/stripe-payment-link.json");
+  const paidOrderProof = readJsonProof(root, "proof/first-paid-order.json");
 
   const checkout = await evaluateExternalLink({
     kind: "checkout",
@@ -411,6 +478,11 @@ export async function buildReadinessGates({
     fetchImpl,
   });
   const domain = await evaluateProductionDomain({ fetchImpl, lookupImpl });
+  const marketSignal = evaluateMarketSignal({
+    checkoutUrl,
+    expectedPriceUsd: priceUsd,
+    proof: paidOrderProof,
+  });
 
   return [
     {
@@ -462,9 +534,12 @@ export async function buildReadinessGates({
     },
     {
       name: "Real market signal (>=1 paid order)",
-      pass: false,
-      detail: "paid_orders=0 refunds=0 - no fabricated proof permitted",
-      blocker: "ship checkout, then earn the first real $19 order",
+      pass: marketSignal.pass,
+      detail: marketSignal.pass
+        ? marketSignal.detail
+        : `${marketSignal.detail} - no fabricated proof permitted`,
+      blocker:
+        "ship checkout, earn the first real $19 order, and add proof/first-paid-order.json from Stripe",
     },
   ];
 }

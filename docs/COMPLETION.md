@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **100 tests, 14 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| Core mechanic works and is tested | `vitest run` -> **105 tests, 15 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight) |
 | App actually launches and completes the wipe flows | `DAYBREAK_SMOKE=1 electron .` -> `scenario=morning swipe_flow=true`, exit 0; `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
@@ -25,6 +25,7 @@ fabricated proof**.
 | Windows signer ownership is verified | `npm run verify:release` rejects even a valid Authenticode signature unless the signer subject includes `Passive Print Labs LLC` |
 | Hosted installer readiness verifies signing | `npm run verify:readiness` downloads the configured installer bytes, checks SHA-256, and rejects unsigned or wrong-publisher Authenticode signatures |
 | Checkout readiness requires Stripe price proof | `npm run verify:readiness` requires `proof/stripe-payment-link.json` to prove the configured Stripe Payment Link is active, live-mode, one-time, and USD 1900 cents |
+| First-order readiness requires Stripe paid-order proof | `npm run verify:readiness` keeps market signal pending until `proof/first-paid-order.json` proves a live, complete, paid, unrefunded USD 1900 Checkout Session for the configured Payment Link |
 | Windows app icon configured | `desktop/package.json` sets `build.win.icon` to `desktop/assets/icon.ico`; `npm run package -w @daybreak/desktop` no longer emits the default Electron icon warning |
 | Domain is attached over HTTP | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages and the repo Pages custom domain is set to `daybreak.rest`; HTTPS certificate issuance is still pending |
 | HTTPS domain blocker is visible | `npm run verify:launch` and `npm run verify:readiness` surface the apex HTTPS/certificate fetch error instead of hiding it behind a generic HTTP status |
@@ -52,7 +53,8 @@ These require the owner; none are faked to look done.
    verify HTTP 2xx, the downloaded file hash, and the Passive Print Labs
    Authenticode signer.
 4. **Earn the first real $19 order.** Market signal is `0` and stays `0` in the
-   readiness gate until a genuine paid order exists.
+   readiness gate until `proof/first-paid-order.json` proves a genuine live,
+   paid, unrefunded Stripe Checkout Session for USD 1900.
 
 ## Known deviation from the locked spec
 

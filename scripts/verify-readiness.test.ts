@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  evaluateMarketSignal,
   evaluateProductionDomain,
   evaluateExternalLink,
   extractConfigUrl,
@@ -59,6 +60,27 @@ function stripeProof({
   };
 }
 
+function paidOrderProof(overrides = {}) {
+  return {
+    checkout_session: {
+      id: "cs_live_123",
+      livemode: true,
+      mode: "payment",
+      status: "complete",
+      payment_status: "paid",
+      amount_total: 1900,
+      currency: "usd",
+      payment_link: "plink_live_123",
+    },
+    payment_link: {
+      id: "plink_live_123",
+      url: "https://buy.stripe.com/live_123",
+    },
+    refunds: { data: [] },
+    ...overrides,
+  };
+}
+
 describe("readiness external-link proof", () => {
   it("extracts configured URLs from the site config source", () => {
     const src = 'export const CHECKOUT_URL = "https://buy.stripe.com/live";';
@@ -86,6 +108,49 @@ describe("readiness external-link proof", () => {
         fetchImpl: fetchStatus(200),
       }),
     ).resolves.toMatchObject({ pass: false, reason: "not_stripe_payment_link" });
+  });
+
+  it("keeps market signal pending without real paid-order proof", () => {
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: null,
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
+  it("passes market signal only with unrefunded live paid-order proof", () => {
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof(),
+      }),
+    ).toMatchObject({
+      pass: true,
+      reason: "ready",
+      paidOrders: 1,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({ refunds: { data: [{ id: "re_live_123" }] } }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_refunded",
+      paidOrders: 1,
+      refunds: 1,
+    });
   });
 
   it("keeps checkout pending until Stripe proof shows the configured $19 live one-time link", async () => {

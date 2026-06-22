@@ -6,6 +6,7 @@ export * from "./session";
 export * from "./streak";
 export * from "./commit";
 export * from "./external-links";
+export * from "./market-signal";
 export * from "./log-update";
 export * from "./desktop-shell";
 export * from "./startup";
