@@ -699,6 +699,8 @@ describe("external launch links", () => {
     };
 
     for (const proof of [
+      { ...baseProof, download: "not-an-object" },
+      { ...baseProof, signature: "not-an-object" },
       { ...baseProof, download: { ...baseProof.download, sha256: 123 } },
       {
         ...baseProof,

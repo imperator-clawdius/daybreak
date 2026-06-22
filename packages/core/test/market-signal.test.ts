@@ -217,6 +217,22 @@ describe("paid order proof", () => {
       paidOrders: 0,
       refunds: 0,
     });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          payment_link: "not-an-object",
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
   });
 
   it("rejects malformed first-order status proof", () => {

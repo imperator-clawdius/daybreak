@@ -301,6 +301,21 @@ describe("readiness external-link proof", () => {
       paidOrders: 0,
       refunds: 0,
     });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          payment_link: "not-an-object",
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
   });
 
   it("keeps market signal pending when first-order status proof is malformed", () => {
@@ -936,6 +951,8 @@ describe("readiness external-link proof", () => {
 
   it("rejects malformed installer proof fields", async () => {
     for (const installerProofData of [
+      { ...installerProof(), download: "not-an-object" },
+      { ...installerProof(), signature: "not-an-object" },
       installerProof({ sha256: 123 }),
       installerProof({ status: true }),
       installerProof({ signer: 123 }),

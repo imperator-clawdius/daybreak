@@ -123,6 +123,17 @@ export function getPaidOrderProofState({
   const refundData = orderProof.refunds?.data;
   const refunds = Array.isArray(refundData) ? refundData.length : 0;
 
+  if (
+    paymentLink !== undefined &&
+    (!paymentLink || typeof paymentLink !== "object" || Array.isArray(paymentLink))
+  ) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
   if (!session || !paymentLink || paymentLink.url !== checkoutUrl) {
     return {
       ready: false,
