@@ -35,6 +35,30 @@ function signature(status: string, subject = "") {
   return async () => ({ status, statusMessage: "", subject });
 }
 
+function stripeProof({
+  url = "https://buy.stripe.com/live_123",
+  unitAmount = 1900,
+  recurring = null,
+  livemode = true,
+  active = true,
+} = {}) {
+  return {
+    payment_link: { url, active, livemode },
+    line_items: {
+      data: [
+        {
+          quantity: 1,
+          price: {
+            unit_amount: unitAmount,
+            currency: "usd",
+            recurring,
+          },
+        },
+      ],
+    },
+  };
+}
+
 describe("readiness external-link proof", () => {
   it("extracts configured URLs from the site config source", () => {
     const src = 'export const CHECKOUT_URL = "https://buy.stripe.com/live";';
@@ -64,11 +88,42 @@ describe("readiness external-link proof", () => {
     ).resolves.toMatchObject({ pass: false, reason: "not_stripe_payment_link" });
   });
 
-  it("passes checkout only when a Stripe Payment Link returns a 2xx response", async () => {
+  it("keeps checkout pending until Stripe proof shows the configured $19 live one-time link", async () => {
     await expect(
       evaluateExternalLink({
         kind: "checkout",
         url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_proof_missing",
+    });
+  });
+
+  it("rejects checkout proof for the wrong price", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: stripeProof({ unitAmount: 2000 }),
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_price_mismatch",
+    });
+  });
+
+  it("passes checkout only when a Stripe Payment Link returns 2xx and proof matches the $19 link", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: stripeProof(),
         fetchImpl: fetchStatus(200),
       }),
     ).resolves.toMatchObject({ pass: true, status: 200 });

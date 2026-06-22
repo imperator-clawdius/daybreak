@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  getCheckoutProofState,
   getCheckoutLinkState,
   getInstallerLinkState,
   isLiveCheckoutUrl,
@@ -25,6 +26,119 @@ describe("external launch links", () => {
       ready: false,
       reason: "not_stripe_payment_link",
     });
+  });
+
+  it("accepts only a live active one-time USD $19 Stripe proof for the checkout URL", () => {
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({ ready: true, reason: "ready" });
+  });
+
+  it("rejects checkout proof that does not prove the configured $19 live one-time link", () => {
+    const baseProof = {
+      payment_link: {
+        url: "https://buy.stripe.com/live_123",
+        active: true,
+        livemode: true,
+      },
+      line_items: {
+        data: [
+          {
+            quantity: 1,
+            price: {
+              unit_amount: 1900,
+              currency: "usd",
+              recurring: null,
+            },
+          },
+        ],
+      },
+    };
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/other",
+        expectedPriceUsd: 19,
+        proof: baseProof,
+      }),
+    ).toMatchObject({ ready: false, reason: "checkout_url_mismatch" });
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...baseProof,
+          payment_link: { ...baseProof.payment_link, livemode: false },
+        },
+      }),
+    ).toMatchObject({ ready: false, reason: "checkout_not_live_mode" });
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...baseProof,
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 2000,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({ ready: false, reason: "checkout_price_mismatch" });
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...baseProof,
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: { interval: "month" },
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({ ready: false, reason: "checkout_not_one_time" });
   });
 
   it("keeps installer download inactive until both URL and checksum are real", () => {

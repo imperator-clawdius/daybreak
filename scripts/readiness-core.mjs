@@ -39,6 +39,22 @@ export function extractConfigUrl(configSrc, exportName) {
   return pattern.exec(configSrc)?.[1] ?? "";
 }
 
+export function extractConfigNumber(configSrc, exportName) {
+  const pattern = new RegExp(
+    `export\\s+const\\s+${exportName}\\s*=\\s*([0-9]+)`,
+  );
+  const value = pattern.exec(configSrc)?.[1];
+  return value ? Number(value) : 0;
+}
+
+export function readJsonProof(root, relativePath) {
+  try {
+    return JSON.parse(readText(root, relativePath));
+  } catch {
+    return null;
+  }
+}
+
 function isHttpsUrl(url) {
   return /^https:\/\//.test(url);
 }
@@ -54,6 +70,66 @@ function isStripePaymentLink(url) {
 
 function isSha256(value) {
   return /^[a-f0-9]{64}$/i.test(value);
+}
+
+function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
+  if (!proof || typeof proof !== "object") {
+    return {
+      pass: false,
+      reason: "checkout_proof_missing",
+      detail: "Stripe proof file is missing or invalid",
+    };
+  }
+
+  const paymentLink = proof.payment_link || {};
+  if (paymentLink.url !== checkoutUrl) {
+    return {
+      pass: false,
+      reason: "checkout_url_mismatch",
+      detail: "proof payment_link.url does not match CHECKOUT_URL",
+    };
+  }
+  if (paymentLink.active !== true) {
+    return {
+      pass: false,
+      reason: "checkout_not_active",
+      detail: "Stripe Payment Link is not active",
+    };
+  }
+  if (paymentLink.livemode !== true) {
+    return {
+      pass: false,
+      reason: "checkout_not_live_mode",
+      detail: "Stripe Payment Link proof is not livemode=true",
+    };
+  }
+
+  const expectedCents = expectedPriceUsd * 100;
+  const items = proof.line_items?.data ?? [];
+  const matchingOneTimeItem = items.find((item) => {
+    const price = item.price || {};
+    return (
+      item.quantity === 1 &&
+      price.unit_amount === expectedCents &&
+      price.currency === "usd" &&
+      (price.recurring === null || price.recurring === undefined)
+    );
+  });
+
+  if (!matchingOneTimeItem) {
+    const hasRecurring = items.some((item) => item.price?.recurring);
+    return {
+      pass: false,
+      reason: hasRecurring ? "checkout_not_one_time" : "checkout_price_mismatch",
+      detail: `proof must contain one non-recurring USD ${expectedCents} cent line item`,
+    };
+  }
+
+  return {
+    pass: true,
+    reason: "checkout_proven",
+    detail: `Stripe proof active livemode one-time USD ${expectedCents}`,
+  };
 }
 
 async function fetchProof(url, fetchImpl) {
@@ -200,6 +276,8 @@ export async function evaluateExternalLink({
   kind,
   url,
   expectedSha256 = "",
+  expectedPriceUsd = 0,
+  checkoutProof = null,
   fetchImpl = fetch,
   signatureImpl = readInstallerSignatureFromBytes,
 }) {
@@ -213,6 +291,17 @@ export async function evaluateExternalLink({
       reason: "not_stripe_payment_link",
       detail: "configured URL is not a buy.stripe.com Payment Link",
     };
+  }
+
+  if (kind === "checkout") {
+    const proofState = evaluateCheckoutProof({
+      checkoutUrl: url,
+      expectedPriceUsd,
+      proof: checkoutProof,
+    });
+    if (!proofState.pass) {
+      return proofState;
+    }
   }
 
   if (kind === "download") {
@@ -305,10 +394,14 @@ export async function buildReadinessGates({
   const checkoutUrl = extractConfigUrl(configSrc, "CHECKOUT_URL");
   const downloadUrl = extractConfigUrl(configSrc, "DOWNLOAD_URL");
   const downloadSha256 = extractConfigUrl(configSrc, "DOWNLOAD_SHA256");
+  const priceUsd = extractConfigNumber(configSrc, "PRICE_USD");
+  const checkoutProof = readJsonProof(root, "proof/stripe-payment-link.json");
 
   const checkout = await evaluateExternalLink({
     kind: "checkout",
     url: checkoutUrl,
+    expectedPriceUsd: priceUsd,
+    checkoutProof,
     fetchImpl,
   });
   const download = await evaluateExternalLink({
@@ -347,7 +440,7 @@ export async function buildReadinessGates({
         ? `${checkoutUrl} (${checkout.detail})`
         : `site/app/config.ts -> CHECKOUT_URL (${checkout.detail})`,
       blocker:
-        "create a real Stripe Payment Link ($19 one-time), set CHECKOUT_URL, and verify it returns HTTP 2xx",
+        "create a real Stripe Payment Link ($19 one-time), set CHECKOUT_URL, add proof/stripe-payment-link.json from Stripe, and verify it returns HTTP 2xx",
     },
     {
       name: "Windows installer download wired",
