@@ -4,7 +4,14 @@
 // auth, no telemetry, which is the user-facing promise. The DayLog[] shape is
 // storage-agnostic on purpose: a SQLite-backed Store is a drop-in replacement
 // behind this same interface (see docs/COMPLETION.md → known deviations).
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname } from "node:path";
 import type { DayLog } from "@daybreak/core";
 
@@ -16,26 +23,58 @@ export interface PersistShape {
 
 const EMPTY: PersistShape = { version: 1, days: [], lastSeenIso: null };
 
+function asPersistShape(raw: unknown): PersistShape | null {
+  if (
+    raw &&
+    typeof raw === "object" &&
+    (raw as PersistShape).version === 1 &&
+    Array.isArray((raw as PersistShape).days)
+  ) {
+    return raw as PersistShape;
+  }
+  return null;
+}
+
 export class Store {
   constructor(private readonly file: string) {}
 
   read(): PersistShape {
-    if (!existsSync(this.file)) return { ...EMPTY };
+    const primary = this.readFile(this.file);
+    if (primary) return primary;
+
+    const backup = this.readFile(this.backupFile());
+    if (backup) return backup;
+
+    return { ...EMPTY };
+  }
+
+  private backupFile(): string {
+    return `${this.file}.bak`;
+  }
+
+  private tempFile(): string {
+    return `${this.file}.tmp`;
+  }
+
+  private readFile(file: string): PersistShape | null {
+    if (!existsSync(file)) return null;
     try {
-      const raw = JSON.parse(readFileSync(this.file, "utf8"));
-      if (raw && raw.version === 1 && Array.isArray(raw.days)) {
-        return raw as PersistShape;
-      }
-      return { ...EMPTY };
+      return asPersistShape(JSON.parse(readFileSync(file, "utf8")));
     } catch {
       // Corrupt file should never brick the morning ritual.
-      return { ...EMPTY };
+      return null;
     }
   }
 
   write(data: PersistShape): void {
     mkdirSync(dirname(this.file), { recursive: true });
-    writeFileSync(this.file, JSON.stringify(data, null, 2), "utf8");
+    const temp = this.tempFile();
+    const hasValidPrimary = this.readFile(this.file) !== null;
+    writeFileSync(temp, JSON.stringify(data, null, 2), "utf8");
+    if (hasValidPrimary) {
+      copyFileSync(this.file, this.backupFile());
+    }
+    renameSync(temp, this.file);
   }
 
   upsertDay(day: DayLog): PersistShape {
