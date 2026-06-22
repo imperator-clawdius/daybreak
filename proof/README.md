@@ -13,6 +13,7 @@ account after creating the live $19 one-time Payment Link. The verifier expects:
 - `payment_link.livemode` is `true`
 - `line_items.data` contains exactly the one-time USD 1900-cent price with
   `quantity: 1`
+- `line_items.has_more` is absent or `false`
 
 Keep API keys, authorization headers, cookies, customer data, session data,
 request/response logs, and order data out of this file.

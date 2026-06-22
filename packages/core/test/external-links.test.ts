@@ -220,6 +220,38 @@ describe("external launch links", () => {
     });
   });
 
+  it("rejects checkout proof with incomplete line item pagination", () => {
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            has_more: true,
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_line_items_incomplete",
+    });
+  });
+
   it("rejects checkout proof with no line items", () => {
     expect(
       getCheckoutProofState({

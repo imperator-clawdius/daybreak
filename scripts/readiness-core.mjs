@@ -216,6 +216,13 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
 
   const expectedCents = expectedPriceUsd * 100;
   const items = proof.line_items?.data ?? [];
+  if (proof.line_items?.has_more === true) {
+    return {
+      pass: false,
+      reason: "checkout_line_items_incomplete",
+      detail: "proof line_items list is paginated and incomplete",
+    };
+  }
   if (!Array.isArray(items)) {
     return {
       pass: false,

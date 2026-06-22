@@ -9,6 +9,7 @@ export type ExternalLinkReason =
   | "checkout_price_mismatch"
   | "checkout_not_one_time"
   | "checkout_extra_line_items"
+  | "checkout_line_items_incomplete"
   | "checkout_line_items_invalid"
   | "checkout_proof_malformed"
   | "checkout_proof_contains_sensitive_data"
@@ -113,6 +114,7 @@ interface StripeCheckoutProof {
     livemode?: unknown;
   };
   line_items?: {
+    has_more?: unknown;
     data?: Array<{
       quantity?: unknown;
       price?: {
@@ -169,6 +171,9 @@ export function getCheckoutProofState({
 
   const items = checkoutProof.line_items?.data ?? [];
   const expectedCents = expectedPriceUsd * 100;
+  if (checkoutProof.line_items?.has_more === true) {
+    return { ready: false, reason: "checkout_line_items_incomplete" };
+  }
   if (!Array.isArray(items)) {
     return { ready: false, reason: "checkout_line_items_invalid" };
   }
