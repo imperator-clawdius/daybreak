@@ -6,6 +6,7 @@ import {
   buildAuthenticodeCommand,
   evaluateBuildIcon,
   evaluateInstallerArtifact,
+  evaluateReleaseMetadata,
   evaluateReleasePreflight,
   renderReleaseReport,
 } from "./release-core.mjs";
@@ -145,6 +146,61 @@ describe("release preflight", () => {
       expect(icon).toMatchObject({
         pass: true,
         reason: "icon_configured",
+      });
+    }));
+
+  it("passes release metadata only when app identity and NSIS target are configured", () =>
+    withTempDir((dir) => {
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({
+          author: "Passive Print Labs LLC",
+          build: {
+            appId: "com.passiveprintlabs.daybreak",
+            productName: "Daybreak",
+            win: {
+              target: [{ target: "nsis", arch: ["x64"] }],
+            },
+            nsis: {
+              oneClick: false,
+              allowToChangeInstallationDirectory: true,
+            },
+          },
+        }),
+      );
+
+      expect(
+        evaluateReleaseMetadata({
+          root: dir,
+          packagePath: "desktop-package.json",
+        }),
+      ).toMatchObject({
+        pass: true,
+        reason: "metadata_configured",
+      });
+    }));
+
+  it("keeps release metadata pending when app identity is incomplete", () =>
+    withTempDir((dir) => {
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({
+          author: "",
+          build: {
+            productName: "Daybreak",
+            win: { target: [{ target: "nsis", arch: ["x64"] }] },
+          },
+        }),
+      );
+
+      expect(
+        evaluateReleaseMetadata({
+          root: dir,
+          packagePath: "desktop-package.json",
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "metadata_incomplete",
       });
     }));
 

@@ -133,6 +133,52 @@ export function evaluateBuildIcon({
   };
 }
 
+function hasNsisX64Target(target) {
+  const targets = Array.isArray(target) ? target : [target];
+  return targets.some((entry) => {
+    if (entry === "nsis") return true;
+    if (!entry || entry.target !== "nsis") return false;
+    return !entry.arch || entry.arch.includes("x64");
+  });
+}
+
+export function evaluateReleaseMetadata({
+  root,
+  packagePath = "desktop/package.json",
+}) {
+  const desktopPackage = readJson(root, packagePath);
+  const build = desktopPackage.build || {};
+  const missing = [];
+
+  if (desktopPackage.author !== "Passive Print Labs LLC") {
+    missing.push("author=Passive Print Labs LLC");
+  }
+  if (build.appId !== "com.passiveprintlabs.daybreak") {
+    missing.push("build.appId=com.passiveprintlabs.daybreak");
+  }
+  if (build.productName !== "Daybreak") {
+    missing.push("build.productName=Daybreak");
+  }
+  if (!hasNsisX64Target(build.win?.target)) {
+    missing.push("build.win.target=nsis x64");
+  }
+  if (build.nsis?.oneClick !== false) {
+    missing.push("build.nsis.oneClick=false");
+  }
+  if (build.nsis?.allowToChangeInstallationDirectory !== true) {
+    missing.push("build.nsis.allowToChangeInstallationDirectory=true");
+  }
+
+  return {
+    pass: missing.length === 0,
+    reason: missing.length === 0 ? "metadata_configured" : "metadata_incomplete",
+    detail:
+      missing.length === 0
+        ? "appId=com.passiveprintlabs.daybreak productName=Daybreak author=Passive Print Labs LLC target=nsis/x64"
+        : `missing ${missing.join(", ")}`,
+  };
+}
+
 export function evaluateReleasePreflight({
   root,
   installerPath,
@@ -141,11 +187,13 @@ export function evaluateReleasePreflight({
 }) {
   const installer = evaluateInstallerArtifact({ installerPath, signature });
   const icon = evaluateBuildIcon({ root, packagePath });
+  const metadata = evaluateReleaseMetadata({ root, packagePath });
 
   return {
     ...installer,
-    pass: installer.pass && icon.pass,
+    pass: installer.pass && icon.pass && metadata.pass,
     icon,
+    metadata,
   };
 }
 
@@ -174,6 +222,14 @@ export function renderReleaseReport(result) {
     if (result.icon.iconPath) lines.push(`icon_path=${result.icon.iconPath}`);
     if (!result.icon.pass) lines.push(`icon_message=${result.icon.detail}`);
   }
+  if (result.metadata) {
+    lines.push(
+      `metadata_status=${result.metadata.pass ? "configured" : "missing"}`,
+    );
+    if (!result.metadata.pass) {
+      lines.push(`metadata_message=${result.metadata.detail}`);
+    }
+  }
 
   if (!result.pass) {
     const blockers = [];
@@ -185,6 +241,11 @@ export function renderReleaseReport(result) {
     if (result.icon && !result.icon.pass) {
       blockers.push(
         "- Configure a real Windows application icon before shipping the installer.",
+      );
+    }
+    if (result.metadata && !result.metadata.pass) {
+      blockers.push(
+        "- Configure Windows release metadata before shipping the installer.",
       );
     }
     lines.push("", "## Remaining release blocker", "", ...blockers);
