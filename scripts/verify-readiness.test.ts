@@ -380,6 +380,24 @@ describe("readiness external-link proof", () => {
         proof: paidOrderProof({
           checkout_session: {
             ...base.checkout_session,
+            amount_total: 1900.5,
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
             currency: 1900,
           },
         }),

@@ -824,6 +824,7 @@ export function evaluateMarketSignal({
   }
   if (
     typeof session.amount_total !== "number" ||
+    !Number.isInteger(session.amount_total) ||
     typeof session.currency !== "string"
   ) {
     return {
