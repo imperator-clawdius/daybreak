@@ -1,10 +1,14 @@
 import { PRICE_USD } from "../config";
 import { getPublicCheckoutState } from "../checkout-state";
+import { SITE_URL } from "../site";
 
 export const metadata = {
   title: "Terms - Daybreak",
   description:
     "Daybreak terms for the Windows commitment app, one-time purchase, refunds, local-only app scope, and launch status.",
+  alternates: {
+    canonical: `${SITE_URL}/terms/`,
+  },
 };
 
 export default function TermsPage() {

@@ -1,9 +1,13 @@
 import { getPublicCheckoutState } from "../checkout-state";
+import { SITE_URL } from "../site";
 
 export const metadata = {
   title: "Privacy - Daybreak",
   description:
     "Daybreak privacy policy: local-only Windows commitment data, no account, no cloud sync, no telemetry.",
+  alternates: {
+    canonical: `${SITE_URL}/privacy/`,
+  },
 };
 
 export default function PrivacyPage() {

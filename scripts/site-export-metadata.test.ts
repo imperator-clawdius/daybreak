@@ -33,6 +33,8 @@ describe("site static export metadata", () => {
       const robotsPath = outFile("robots.txt");
       const sitemapPath = outFile("sitemap.xml");
       const indexHtml = readFileSync(outFile("index.html"), "utf8");
+      const privacyHtml = readFileSync(outFile("privacy/index.html"), "utf8");
+      const termsHtml = readFileSync(outFile("terms/index.html"), "utf8");
 
       expect(existsSync(robotsPath)).toBe(true);
       expect(readFileSync(robotsPath, "utf8")).toContain(
@@ -46,6 +48,10 @@ describe("site static export metadata", () => {
       expect(sitemap).toContain(`<loc>${SITE_URL}/terms/</loc>`);
 
       expect(indexHtml).toContain(`rel="canonical" href="${SITE_URL}/"`);
+      expect(privacyHtml).toContain(
+        `rel="canonical" href="${SITE_URL}/privacy/"`,
+      );
+      expect(termsHtml).toContain(`rel="canonical" href="${SITE_URL}/terms/"`);
       expect(indexHtml).toContain(
         `property="og:image" content="${SITE_URL}/daybreak-app.png"`,
       );
