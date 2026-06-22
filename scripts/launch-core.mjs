@@ -4,6 +4,7 @@ import { PRODUCTION_HOST, PRODUCTION_URL } from "./readiness-core.mjs";
 
 export const PREVIEW_URL = "https://imperator-clawdius.github.io/daybreak/";
 export const PRODUCTION_HTTP_URL = `http://${PRODUCTION_HOST}/`;
+export const REQUIRED_ROUTES = ["privacy/", "terms/"];
 
 export function getPrimaryUrl(argv = []) {
   return argv[2] || PRODUCTION_URL;
@@ -23,6 +24,43 @@ export async function fetchSite(url, fetchImpl = fetch) {
   } catch (e) {
     return { ok: false, status: 0, error: String(e.message || e) };
   }
+}
+
+function routeUrl(baseUrl, route) {
+  return new URL(route, baseUrl).href;
+}
+
+export async function fetchRequiredRoutes(baseUrl, fetchImpl = fetch) {
+  return Promise.all(
+    REQUIRED_ROUTES.map(async (route) => ({
+      route,
+      res: await fetchSite(routeUrl(baseUrl, route), fetchImpl),
+    })),
+  );
+}
+
+function routeName(route) {
+  return route.replace(/\/$/, "");
+}
+
+function routePass(routeResult) {
+  return routeResult.res.ok && routeResult.res.hasApp;
+}
+
+function routesPass(routeResults) {
+  return routeResults.every(routePass);
+}
+
+function formatRouteReport(label, routeResults) {
+  const allPass = routesPass(routeResults);
+  const routes = routeResults
+    .map((routeResult) => {
+      const res = routeResult.res;
+      const state = routePass(routeResult) ? "pass" : "pending";
+      return `${routeName(routeResult.route)}=${state}(${res.status})`;
+    })
+    .join(" ");
+  return `${label}=${allPass ? "pass" : "pending"} ${routes}`;
 }
 
 function normalizeAddresses(addresses) {
@@ -46,9 +84,12 @@ export function renderLaunchReport({
   primaryRes,
   previewRes,
   apexHttpRes,
+  previewRoutes,
+  apexHttpRoutes,
   apexHost,
   apexDns,
   apexLive,
+  apexRoutes,
 }) {
   const lines = [];
   lines.push(`PRIMARY ${primary}`);
@@ -62,11 +103,13 @@ export function renderLaunchReport({
       previewRes.error ? ` error=${previewRes.error}` : ""
     }`,
   );
+  lines.push(formatRouteReport("PREVIEW_ROUTES", previewRoutes));
   lines.push(
     `APEX_HTTP_SITE=${apexHttpRes.ok ? "pass" : "pending"} status=${apexHttpRes.status} contains_daybreak=${apexHttpRes.hasApp ?? false}${
       apexHttpRes.error ? ` error=${apexHttpRes.error}` : ""
     }`,
   );
+  lines.push(formatRouteReport("APEX_HTTP_ROUTES", apexHttpRoutes));
   lines.push(`APEX_DNS host=${apexHost} resolves=${apexDns}`);
   if (apexLive) {
     lines.push(
@@ -74,6 +117,7 @@ export function renderLaunchReport({
         apexLive.error ? ` error=${apexLive.error}` : ""
       }`,
     );
+    lines.push(formatRouteReport("APEX_ROUTES", apexRoutes));
   } else {
     lines.push(
       `APEX_SITE=pending reason=dns_or_pages_not_ready (point ${apexHost} at GitHub Pages and wait for HTTPS)`,
@@ -94,20 +138,36 @@ export async function verifyLaunch({
     apexDns !== "unresolved"
       ? await fetchSite(PRODUCTION_URL, fetchImpl)
       : null;
+  const apexRoutes =
+    apexDns !== "unresolved"
+      ? await fetchRequiredRoutes(PRODUCTION_URL, fetchImpl)
+      : null;
   const primaryRes = await fetchSite(primary, fetchImpl);
   const previewRes = await fetchSite(PREVIEW_URL, fetchImpl);
+  const previewRoutes = await fetchRequiredRoutes(PREVIEW_URL, fetchImpl);
   const apexHttpRes = await fetchSite(PRODUCTION_HTTP_URL, fetchImpl);
+  const apexHttpRoutes = await fetchRequiredRoutes(PRODUCTION_HTTP_URL, fetchImpl);
+  const primaryRoutes =
+    primary === PRODUCTION_URL
+      ? apexRoutes
+      : primary === PREVIEW_URL
+        ? previewRoutes
+        : await fetchRequiredRoutes(primary, fetchImpl);
+  const primaryRoutesOk = primaryRoutes ? routesPass(primaryRoutes) : false;
 
   return {
-    ok: primaryRes.ok,
+    ok: primaryRes.ok && primaryRoutesOk,
     text: renderLaunchReport({
       primary,
       primaryRes,
       previewRes,
       apexHttpRes,
+      previewRoutes,
+      apexHttpRoutes,
       apexHost: PRODUCTION_HOST,
       apexDns,
       apexLive,
+      apexRoutes,
     }),
   };
 }

@@ -94,4 +94,42 @@ describe("launch verifier", () => {
       "APEX_HTTP_SITE=pass status=200 contains_daybreak=true",
     );
   });
+
+  it("keeps launch pending when a required legal route is missing", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: { status: 200, body: "Daybreak" },
+        "https://daybreak.rest/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak",
+        },
+        "https://daybreak.rest/terms/": { status: 404, body: "Not found" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
+        "http://daybreak.rest/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak",
+        },
+        "http://daybreak.rest/terms/": {
+          status: 200,
+          body: "Terms - Daybreak",
+        },
+        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+        "https://imperator-clawdius.github.io/daybreak/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak",
+        },
+        "https://imperator-clawdius.github.io/daybreak/terms/": {
+          status: 200,
+          body: "Terms - Daybreak",
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "APEX_ROUTES=pending privacy=pass(200) terms=pending(404)",
+    );
+  });
 });

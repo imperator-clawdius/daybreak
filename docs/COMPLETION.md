@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **99 tests, 14 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| Core mechanic works and is tested | `vitest run` -> **100 tests, 14 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
 | App actually launches and completes the wipe flows | `DAYBREAK_SMOKE=1 electron .` -> `scenario=morning swipe_flow=true`, exit 0; `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
@@ -30,6 +30,7 @@ fabricated proof**.
 | HTTPS domain blocker is visible | `npm run verify:launch` and `npm run verify:readiness` surface the apex HTTPS/certificate fetch error instead of hiding it behind a generic HTTP status |
 | Preview remains visible while production waits | `npm run verify:launch` reports `PREVIEW_SITE` for the GitHub Pages project URL alongside the production apex status |
 | HTTP apex status is separated from HTTPS readiness | `npm run verify:launch` reports `APEX_HTTP_SITE` so an HTTP 200 cannot be mistaken for production HTTPS readiness |
+| Required legal routes are checked live | `npm run verify:launch` checks `/privacy/` and `/terms/` on the preview, HTTP apex, and HTTPS apex instead of trusting the homepage alone |
 | Actionable dependency advisories reduced | Electron/electron-builder/esbuild/Vitest upgraded; `npm audit --omit=dev` and full `npm audit --audit-level=moderate` now report only the bounded Next/PostCSS moderate advisory whose npm force-fix would downgrade Next to 9.3.3 |
 
 ## Honestly pending (real blockers - readiness gate = 3/7)
