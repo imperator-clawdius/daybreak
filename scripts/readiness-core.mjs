@@ -778,6 +778,15 @@ export function evaluateMarketSignal({
     };
   }
 
+  if (paymentLink && typeof paymentLink.url !== "string") {
+    return {
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
+    };
+  }
   if (!session || !paymentLink || paymentLink.url !== checkoutUrl) {
     return pending("paid_order_checkout_mismatch");
   }

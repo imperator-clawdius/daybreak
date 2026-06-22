@@ -291,6 +291,25 @@ describe("paid order proof", () => {
         expectedPriceUsd: 19,
         proof: {
           ...base,
+          payment_link: {
+            ...base.payment_link,
+            url: 123,
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
           checkout_session: {
             ...base.checkout_session,
             amount_total: 1900.5,
