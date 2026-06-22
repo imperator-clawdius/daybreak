@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedDesktopNavigation } from "../src/desktop-shell";
+import {
+  getDesktopContentSecurityPolicy,
+  isAllowedDesktopNavigation,
+} from "../src/desktop-shell";
 
 describe("desktop shell policy", () => {
   it("allows staying on the packaged Daybreak HTML entrypoint", () => {
@@ -36,5 +39,21 @@ describe("desktop shell policy", () => {
         "not a url",
       ),
     ).toBe(false);
+  });
+
+  it("defines a strict local-only renderer content security policy", () => {
+    expect(getDesktopContentSecurityPolicy()).toBe(
+      [
+        "default-src 'none'",
+        "script-src 'self'",
+        "style-src 'self'",
+        "img-src 'self' data:",
+        "font-src 'self'",
+        "connect-src 'none'",
+        "object-src 'none'",
+        "base-uri 'none'",
+        "form-action 'none'",
+      ].join("; "),
+    );
   });
 });
