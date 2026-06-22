@@ -56,12 +56,13 @@ counts, screenshots, or testimonials.
 | Preview health gets confused with production HTTPS | During certificate issuance, the project Pages preview may redirect to the custom domain, and a redirect-following verifier can accidentally borrow the apex response. | Launch verification now reports `PREVIEW_SITE` separately from `LIVE_SITE` and `APEX_SITE`, and preview checks use manual redirects so a custom-domain redirect reports pending instead of pass. |
 | HTTP apex success masks HTTPS failure | GitHub Pages can serve the apex over HTTP while the certificate is still wrong, which looks "live" in a browser but is not production-ready. | Launch verification now reports `APEX_HTTP_SITE` separately from the HTTPS `APEX_SITE` gate. |
 | WWW domain breaks silently | Buyers may type `www.daybreak.rest`; checking only the apex would miss a broken or certificate-pending `www` redirect. | Launch verification now reports `WWW_DNS`, `WWW_HTTP_SITE`, and `WWW_SITE`, and default production launch stays pending unless `www` HTTPS also serves Daybreak. |
+| Readiness domain gate ignores WWW | If readiness checked only the apex, it could advance the domain gate while `www.daybreak.rest` still failed for buyers. | The production-domain readiness gate now evaluates both `daybreak.rest` and `www.daybreak.rest`, accepts GitHub Pages IPv6 DNS for the CNAME, and keeps the gate pending until both hosts serve Daybreak over HTTPS. |
 
 ## Still blocked by real-world artifacts
 
 These remain intentionally pending and must not be faked:
 
-1. Finish `daybreak.rest` HTTPS certificate issuance and enforcement.
+1. Finish `daybreak.rest` and `www.daybreak.rest` HTTPS certificate issuance and enforcement.
 2. Create a real $19 one-time Stripe Payment Link.
 3. Sign and host the Windows installer, then publish the exact SHA-256 checksum.
 4. Earn at least one genuine paid order.

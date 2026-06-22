@@ -1,5 +1,14 @@
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  buildReadinessGates,
   evaluateMarketSignal,
   evaluateProductionDomain,
   evaluateExternalLink,
@@ -97,6 +106,33 @@ function installerProof({
     download: { url, sha256 },
     signature: { status, signer },
   };
+}
+
+function makeReadinessRoot() {
+  const root = mkdtempSync(join(tmpdir(), "daybreak-readiness-test-"));
+  const files = [
+    ["packages/core/dist/index.js", ""],
+    ["desktop/dist/main.js", ""],
+    ["desktop/dist/renderer.js", ""],
+    ["site/out/index.html", "<html>Daybreak</html>"],
+    [
+      "site/app/config.ts",
+      [
+        'export const CHECKOUT_URL = "PENDING_STRIPE_PAYMENT_LINK";',
+        'export const DOWNLOAD_URL = "PENDING_INSTALLER_DOWNLOAD";',
+        'export const DOWNLOAD_SHA256 = "PENDING_INSTALLER_SHA256";',
+        "export const PRICE_USD = 19;",
+      ].join("\n"),
+    ],
+  ];
+
+  for (const [relativePath, contents] of files) {
+    const fullPath = join(root, relativePath);
+    mkdirSync(dirname(fullPath), { recursive: true });
+    writeFileSync(fullPath, contents);
+  }
+
+  return root;
 }
 
 describe("readiness external-link proof", () => {
@@ -367,6 +403,26 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("accepts GitHub Pages IPv6 records alongside the required A records", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "www.daybreak.rest",
+        url: "https://www.daybreak.rest/",
+        lookupImpl: async () => [
+          "2606:50c0:8000::153",
+          "2606:50c0:8001::153",
+          "2606:50c0:8002::153",
+          "2606:50c0:8003::153",
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: fetchPage(200, "Daybreak"),
+      }),
+    ).resolves.toMatchObject({ pass: true });
+  });
+
   it("keeps the production domain pending with the HTTPS fetch error visible", async () => {
     await expect(
       evaluateProductionDomain({
@@ -409,5 +465,43 @@ describe("readiness external-link proof", () => {
       detail:
         "HTTPS error contains_daybreak=false error=fetch failed cause=ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames",
     });
+  });
+
+  it("keeps the readiness domain gate pending when www HTTPS is not ready", async () => {
+    const root = makeReadinessRoot();
+    try {
+      const gates = await buildReadinessGates({
+        root,
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: async (url: string) => {
+          if (url === "https://daybreak.rest/") {
+            return { ok: true, status: 200, text: async () => "Daybreak" };
+          }
+          if (url === "https://www.daybreak.rest/") {
+            return {
+              ok: false,
+              status: 495,
+              text: async () => "certificate pending",
+            };
+          }
+          throw new Error(`unexpected fetch ${url}`);
+        },
+      });
+
+      const domain = gates.find(
+        (gate) => gate.name === "Production domain owned + attached",
+      );
+
+      expect(domain).toMatchObject({ pass: false });
+      expect(domain?.detail).toContain("www.daybreak.rest");
+      expect(domain?.detail).toContain("HTTPS 495");
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

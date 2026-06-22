@@ -17,12 +17,21 @@ import {
 
 export const PRODUCTION_HOST = "daybreak.rest";
 export const PRODUCTION_URL = `https://${PRODUCTION_HOST}/`;
+export const WWW_HOST = `www.${PRODUCTION_HOST}`;
+export const WWW_URL = `https://${WWW_HOST}/`;
 export const GITHUB_PAGES_IPV4 = [
   "185.199.108.153",
   "185.199.109.153",
   "185.199.110.153",
   "185.199.111.153",
 ];
+export const GITHUB_PAGES_IPV6 = [
+  "2606:50c0:8000::153",
+  "2606:50c0:8001::153",
+  "2606:50c0:8002::153",
+  "2606:50c0:8003::153",
+];
+const GITHUB_PAGES_ADDRESSES = [...GITHUB_PAGES_IPV4, ...GITHUB_PAGES_IPV6];
 
 export function readText(root, relativePath) {
   try {
@@ -309,7 +318,7 @@ export async function evaluateProductionDomain({
     (address) => !addresses.includes(address),
   );
   const extra = addresses.filter(
-    (address) => !GITHUB_PAGES_IPV4.includes(address),
+    (address) => !GITHUB_PAGES_ADDRESSES.includes(address),
   );
   if (missing.length || extra.length) {
     return {
@@ -336,6 +345,32 @@ export async function evaluateProductionDomain({
     pass: true,
     status: site.status,
     detail: `DNS A records resolved to GitHub Pages and apex returned HTTP ${site.status}`,
+  };
+}
+
+export async function evaluateProductionDomains({
+  fetchImpl = fetch,
+  lookupImpl = defaultLookup,
+} = {}) {
+  const apex = await evaluateProductionDomain({
+    host: PRODUCTION_HOST,
+    url: PRODUCTION_URL,
+    fetchImpl,
+    lookupImpl,
+  });
+  const www = await evaluateProductionDomain({
+    host: WWW_HOST,
+    url: WWW_URL,
+    fetchImpl,
+    lookupImpl,
+  });
+
+  return {
+    pass: apex.pass && www.pass,
+    reason: apex.pass && www.pass ? "ready" : "production_domain_not_ready",
+    detail: `${PRODUCTION_HOST}: ${apex.detail}; ${WWW_HOST}: ${www.detail}`,
+    apex,
+    www,
   };
 }
 
@@ -563,7 +598,7 @@ export async function buildReadinessGates({
     installerProof,
     fetchImpl,
   });
-  const domain = await evaluateProductionDomain({ fetchImpl, lookupImpl });
+  const domain = await evaluateProductionDomains({ fetchImpl, lookupImpl });
   const marketSignal = evaluateMarketSignal({
     checkoutUrl,
     expectedPriceUsd: priceUsd,
@@ -612,11 +647,9 @@ export async function buildReadinessGates({
     {
       name: "Production domain owned + attached",
       pass: domain.pass,
-      detail: domain.pass
-        ? `${PRODUCTION_HOST} (${domain.detail})`
-        : `${PRODUCTION_HOST} (${domain.detail})`,
+      detail: domain.detail,
       blocker:
-        "point daybreak.rest apex A records at GitHub Pages, attach as custom domain, and wait for HTTPS to serve the app",
+        "point daybreak.rest apex A records and www CNAME at GitHub Pages, attach as custom domain, and wait for HTTPS to serve the app on both hosts",
     },
     {
       name: "Real market signal (>=1 paid order)",
