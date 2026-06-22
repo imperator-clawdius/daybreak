@@ -169,6 +169,7 @@ export function getCheckoutProofState({
   if (
     items.some(
       (item) =>
+        typeof item.quantity !== "number" ||
         !("price" in item) ||
         !item.price ||
         typeof item.price !== "object" ||
