@@ -37,6 +37,7 @@ counts, screenshots, or testimonials.
 | Domain verifier hides the real HTTPS blocker | A generic HTTP failure message can make an attached-but-cert-pending GitHub Pages domain look misconfigured. | Launch and readiness verifiers now label apex failures as HTTPS readiness failures and surface the certificate fetch error. |
 | Installer metadata drifts before signing | A signed installer with a missing app id, wrong product name, or nonstandard target would still look amateurish even if Authenticode passes. | Release preflight now validates Daybreak's app id, product name, author, NSIS x64 target, and installer mode before marking release ready. |
 | Preview health gets confused with production HTTPS | During certificate issuance, the project Pages preview can be healthy while the apex is still pending, and a single failing line hides that distinction. | Launch verification now reports `PREVIEW_SITE` separately from `LIVE_SITE` and `APEX_SITE`. |
+| HTTP apex success masks HTTPS failure | GitHub Pages can serve the apex over HTTP while the certificate is still wrong, which looks "live" in a browser but is not production-ready. | Launch verification now reports `APEX_HTTP_SITE` separately from the HTTPS `APEX_SITE` gate. |
 
 ## Still blocked by real-world artifacts
 

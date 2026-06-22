@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   PREVIEW_URL,
+  PRODUCTION_HTTP_URL,
   getPrimaryUrl,
   verifyLaunch,
 } from "./launch-core.mjs";
@@ -79,6 +80,7 @@ describe("launch verifier", () => {
       lookupImpl: async () => ["185.199.108.153"],
       fetchImpl: fetchByUrl({
         [PRODUCTION_URL]: { status: 495, body: "certificate pending" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
         [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
       }),
     });
@@ -87,6 +89,9 @@ describe("launch verifier", () => {
     expect(report.text).toContain("LIVE_SITE=FAIL status=495");
     expect(report.text).toContain(
       "PREVIEW_SITE=pass status=200 contains_daybreak=true",
+    );
+    expect(report.text).toContain(
+      "APEX_HTTP_SITE=pass status=200 contains_daybreak=true",
     );
   });
 });

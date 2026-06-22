@@ -3,6 +3,7 @@ import { lookup } from "node:dns/promises";
 import { PRODUCTION_HOST, PRODUCTION_URL } from "./readiness-core.mjs";
 
 export const PREVIEW_URL = "https://imperator-clawdius.github.io/daybreak/";
+export const PRODUCTION_HTTP_URL = `http://${PRODUCTION_HOST}/`;
 
 export function getPrimaryUrl(argv = []) {
   return argv[2] || PRODUCTION_URL;
@@ -44,6 +45,7 @@ export function renderLaunchReport({
   primary,
   primaryRes,
   previewRes,
+  apexHttpRes,
   apexHost,
   apexDns,
   apexLive,
@@ -58,6 +60,11 @@ export function renderLaunchReport({
   lines.push(
     `PREVIEW_SITE=${previewRes.ok ? "pass" : "pending"} status=${previewRes.status} contains_daybreak=${previewRes.hasApp ?? false}${
       previewRes.error ? ` error=${previewRes.error}` : ""
+    }`,
+  );
+  lines.push(
+    `APEX_HTTP_SITE=${apexHttpRes.ok ? "pass" : "pending"} status=${apexHttpRes.status} contains_daybreak=${apexHttpRes.hasApp ?? false}${
+      apexHttpRes.error ? ` error=${apexHttpRes.error}` : ""
     }`,
   );
   lines.push(`APEX_DNS host=${apexHost} resolves=${apexDns}`);
@@ -89,6 +96,7 @@ export async function verifyLaunch({
       : null;
   const primaryRes = await fetchSite(primary, fetchImpl);
   const previewRes = await fetchSite(PREVIEW_URL, fetchImpl);
+  const apexHttpRes = await fetchSite(PRODUCTION_HTTP_URL, fetchImpl);
 
   return {
     ok: primaryRes.ok,
@@ -96,6 +104,7 @@ export async function verifyLaunch({
       primary,
       primaryRes,
       previewRes,
+      apexHttpRes,
       apexHost: PRODUCTION_HOST,
       apexDns,
       apexLive,

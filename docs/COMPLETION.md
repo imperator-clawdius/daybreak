@@ -26,6 +26,7 @@ fabricated proof**.
 | Domain is attached over HTTP | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages and the repo Pages custom domain is set to `daybreak.rest`; HTTPS certificate issuance is still pending |
 | HTTPS domain blocker is visible | `npm run verify:launch` and `npm run verify:readiness` surface the apex HTTPS/certificate fetch error instead of hiding it behind a generic HTTP status |
 | Preview remains visible while production waits | `npm run verify:launch` reports `PREVIEW_SITE` for the GitHub Pages project URL alongside the production apex status |
+| HTTP apex status is separated from HTTPS readiness | `npm run verify:launch` reports `APEX_HTTP_SITE` so an HTTP 200 cannot be mistaken for production HTTPS readiness |
 | Actionable dependency advisories reduced | Electron/electron-builder/esbuild/Vitest upgraded; `npm audit --omit=dev` and full `npm audit --audit-level=moderate` now report only the bounded Next/PostCSS moderate advisory whose npm force-fix would downgrade Next to 9.3.3 |
 
 ## Honestly pending (real blockers - readiness gate = 3/7)
