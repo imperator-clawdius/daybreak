@@ -8,13 +8,15 @@ export type ExternalLinkReason =
   | "checkout_not_live_mode"
   | "checkout_price_mismatch"
   | "checkout_not_one_time"
+  | "checkout_proof_contains_sensitive_data"
   | "url_not_configured"
   | "checksum_not_configured"
   | "installer_proof_missing"
   | "installer_url_mismatch"
   | "installer_checksum_mismatch"
   | "installer_signature_not_valid"
-  | "installer_signer_mismatch";
+  | "installer_signer_mismatch"
+  | "installer_proof_contains_sensitive_data";
 
 export interface ExternalLinkState {
   ready: boolean;
@@ -40,6 +42,37 @@ export function isSha256(value: string): boolean {
 
 export function isLiveCheckoutUrl(url: string): boolean {
   return isStripePaymentLink(url);
+}
+
+const DISALLOWED_PROOF_KEYS = new Set([
+  "api_key",
+  "certificate_private_key",
+  "client_secret",
+  "customer",
+  "customer_details",
+  "customer_email",
+  "password",
+  "payment_intent",
+  "payment_method",
+  "payment_method_details",
+  "p12",
+  "pfx",
+  "private_key",
+  "receipt_email",
+  "request",
+  "request_headers",
+  "response",
+  "response_headers",
+  "signing_key",
+]);
+
+function containsSensitiveProofData(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+
+  return Object.entries(value).some(
+    ([key, nested]) =>
+      DISALLOWED_PROOF_KEYS.has(key) || containsSensitiveProofData(nested),
+  );
 }
 
 export function getCheckoutLinkState(url: string): ExternalLinkState {
@@ -83,6 +116,12 @@ export function getCheckoutProofState({
 }): ExternalLinkState {
   if (!proof || typeof proof !== "object") {
     return { ready: false, reason: "checkout_proof_missing" };
+  }
+  if (containsSensitiveProofData(proof)) {
+    return {
+      ready: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    };
   }
 
   const checkoutProof = proof as StripeCheckoutProof;
@@ -178,6 +217,12 @@ export function getInstallerProofState({
 }): ExternalLinkState {
   if (!proof || typeof proof !== "object") {
     return { ready: false, reason: "installer_proof_missing" };
+  }
+  if (containsSensitiveProofData(proof)) {
+    return {
+      ready: false,
+      reason: "installer_proof_contains_sensitive_data",
+    };
   }
 
   const installerProof = proof as InstallerDownloadProof;

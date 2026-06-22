@@ -14,7 +14,8 @@ account after creating the live $19 one-time Payment Link. The verifier expects:
 - `line_items.data` contains exactly the one-time USD 1900-cent price with
   `quantity: 1`
 
-Keep API keys, customer data, session data, and order data out of this file.
+Keep API keys, customer data, session data, request/response logs, and order
+data out of this file.
 
 ## `installer-download.json`
 
@@ -48,7 +49,9 @@ the first real paid checkout. The verifier expects:
 Keep customer email, customer name, payment method details, receipts, and API
 keys out of this file.
 
-The verifier rejects proof that includes Stripe customer or payment-detail
-fields such as `customer`, `customer_email`, `customer_details`,
-`payment_intent`, `payment_method`, `payment_method_details`, `receipt_email`,
-`client_secret`, or `api_key`.
+The verifier rejects any proof artifact that includes sensitive fields such as
+`customer`, `customer_email`, `customer_details`, `payment_intent`,
+`payment_method`, `payment_method_details`, `receipt_email`, `client_secret`,
+`api_key`, `request`, `response`, `request_headers`, `response_headers`,
+`private_key`, `certificate_private_key`, `signing_key`, `pfx`, `p12`, or
+`password`.

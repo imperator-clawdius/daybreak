@@ -43,6 +43,19 @@ const DISALLOWED_PAID_ORDER_PROOF_KEYS = new Set([
   "payment_method_details",
   "receipt_email",
 ]);
+const DISALLOWED_EXTERNAL_PROOF_KEYS = new Set([
+  ...DISALLOWED_PAID_ORDER_PROOF_KEYS,
+  "certificate_private_key",
+  "password",
+  "p12",
+  "pfx",
+  "private_key",
+  "request",
+  "request_headers",
+  "response",
+  "response_headers",
+  "signing_key",
+]);
 
 function containsDisallowedPaidOrderProofData(value) {
   if (!value || typeof value !== "object") return false;
@@ -50,6 +63,15 @@ function containsDisallowedPaidOrderProofData(value) {
     ([key, nested]) =>
       DISALLOWED_PAID_ORDER_PROOF_KEYS.has(key) ||
       containsDisallowedPaidOrderProofData(nested),
+  );
+}
+
+function containsDisallowedExternalProofData(value) {
+  if (!value || typeof value !== "object") return false;
+  return Object.entries(value).some(
+    ([key, nested]) =>
+      DISALLOWED_EXTERNAL_PROOF_KEYS.has(key) ||
+      containsDisallowedExternalProofData(nested),
   );
 }
 
@@ -125,6 +147,13 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
       detail: "Stripe proof file is missing or invalid",
     };
   }
+  if (containsDisallowedExternalProofData(proof)) {
+    return {
+      pass: false,
+      reason: "checkout_proof_contains_sensitive_data",
+      detail: "Stripe proof file contains keys, customer data, or request logs",
+    };
+  }
 
   const paymentLink = proof.payment_link || {};
   if (paymentLink.url !== checkoutUrl) {
@@ -183,6 +212,14 @@ function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) 
       pass: false,
       reason: "installer_proof_missing",
       detail: "installer proof file is missing or invalid",
+    };
+  }
+  if (containsDisallowedExternalProofData(proof)) {
+    return {
+      pass: false,
+      reason: "installer_proof_contains_sensitive_data",
+      detail:
+        "installer proof file contains signing secrets, customer data, or request logs",
     };
   }
 

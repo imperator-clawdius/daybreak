@@ -181,6 +181,40 @@ describe("external launch links", () => {
     ).toMatchObject({ ready: false, reason: "checkout_not_one_time" });
   });
 
+  it("rejects checkout proof that contains keys or customer data", () => {
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+          request: {
+            api_key: "sk_live_secret",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
+  });
+
   it("keeps installer download inactive until both URL and checksum are real", () => {
     expect(
       getInstallerLinkState({
@@ -233,5 +267,31 @@ describe("external launch links", () => {
         },
       }),
     ).toMatchObject({ ready: true, reason: "ready" });
+  });
+
+  it("rejects installer proof that contains signing secrets or request logs", () => {
+    const url = "https://downloads.example.com/daybreak.exe";
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url,
+        sha256,
+        proof: {
+          download: { url, sha256 },
+          signature: {
+            status: "Valid",
+            signer: "CN=Passive Print Labs LLC",
+          },
+          signing: {
+            certificate_private_key: "-----BEGIN PRIVATE KEY-----",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
   });
 });
