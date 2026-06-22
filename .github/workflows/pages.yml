@@ -6,6 +6,7 @@ on:
     paths:
       - "site/**"
       - "packages/**"
+      - "proof/stripe-payment-link.json"
       - "deploy/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
