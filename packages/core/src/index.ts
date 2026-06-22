@@ -6,3 +6,4 @@ export * from "./session";
 export * from "./streak";
 export * from "./commit";
 export * from "./external-links";
+export * from "./log-update";

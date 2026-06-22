@@ -10,6 +10,8 @@ import {
   buildMorningSession,
   canDismiss,
   phaseForHour,
+  resolveLogForPhase,
+  validateLogUpdate,
   type DayLog,
   type Phase,
 } from "@daybreak/core";
@@ -19,6 +21,7 @@ const SMOKE = process.env.DAYBREAK_SMOKE === "1";
 
 const store = new Store(join(app.getPath("userData"), "daybreak.json"));
 let win: BrowserWindow | null = null;
+let activeSession: { phase: Phase; log: DayLog } | null = null;
 let dismissAllowed = false;
 let smokeFailed = false;
 
@@ -102,23 +105,60 @@ ipcMain.handle("daybreak:load", () => {
   const now = new Date();
   dismissAllowed = false;
   const { phase, log } = todaySession(now);
+  activeSession = { phase, log };
   return { phase, log, now: now.toISOString() };
 });
 
 // Persist progress as the user wipes. Returns whether dismissal is now allowed.
 ipcMain.handle("daybreak:save", (_evt, payload: { log: DayLog; phase: Phase }) => {
-  const { log, phase } = payload;
+  if (!activeSession || activeSession.phase !== payload.phase) {
+    dismissAllowed = false;
+    return { canDismiss: false };
+  }
+
+  const update = validateLogUpdate(
+    activeSession.log,
+    payload.log,
+    payload.phase,
+  );
+  if (!update.ok) {
+    console.error("rejected log update:", update.reason);
+    dismissAllowed = false;
+    return { canDismiss: false };
+  }
+
+  const log = resolveLogForPhase(update.log, payload.phase);
   store.upsertDay(log);
-  const ok = canDismiss(log.items, phase);
+  activeSession = { phase: payload.phase, log };
+  const ok = canDismiss(log.items, payload.phase);
   dismissAllowed = ok;
   return { canDismiss: ok };
 });
 
 // Renderer asks to close after a confirmed-resolved board.
 ipcMain.handle("daybreak:dismiss", (_evt, payload: { log: DayLog; phase: Phase }) => {
-  const ok = canDismiss(payload.log.items, payload.phase);
+  if (!activeSession || activeSession.phase !== payload.phase) {
+    dismissAllowed = false;
+    return { closed: false };
+  }
+
+  const update = validateLogUpdate(
+    activeSession.log,
+    payload.log,
+    payload.phase,
+  );
+  if (!update.ok) {
+    console.error("rejected dismiss update:", update.reason);
+    dismissAllowed = false;
+    return { closed: false };
+  }
+
+  const log = resolveLogForPhase(update.log, payload.phase);
+  const ok = canDismiss(log.items, payload.phase);
   dismissAllowed = ok;
   if (ok) {
+    store.upsertDay(log);
+    activeSession = { phase: payload.phase, log };
     store.setLastSeen(new Date().toISOString());
     win?.close();
   }
