@@ -643,6 +643,42 @@ describe("external launch links", () => {
     ).toMatchObject({ ready: true, reason: "ready" });
   });
 
+  it("rejects malformed installer proof fields", () => {
+    const url = "https://downloads.example.com/daybreak.exe";
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+    const baseProof = {
+      download: { url, sha256 },
+      signature: {
+        status: "Valid",
+        signer: "CN=Passive Print Labs LLC",
+      },
+    };
+
+    for (const proof of [
+      { ...baseProof, download: { ...baseProof.download, sha256: 123 } },
+      {
+        ...baseProof,
+        signature: { ...baseProof.signature, status: true },
+      },
+      {
+        ...baseProof,
+        signature: { ...baseProof.signature, signer: 123 },
+      },
+    ]) {
+      expect(
+        getVerifiedInstallerLinkState({
+          url,
+          sha256,
+          proof,
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "installer_proof_malformed",
+      });
+    }
+  });
+
   it("rejects installer proof that contains signing secrets or request logs", () => {
     const url = "https://downloads.example.com/daybreak.exe";
     const sha256 =

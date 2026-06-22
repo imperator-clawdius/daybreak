@@ -887,6 +887,29 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("rejects malformed installer proof fields", async () => {
+    for (const installerProofData of [
+      installerProof({ sha256: 123 }),
+      installerProof({ status: true }),
+      installerProof({ signer: 123 }),
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "download",
+          url: "https://downloads.example.com/daybreak.exe",
+          expectedSha256:
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+          fetchImpl: fetchBody(200, "hello"),
+          signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+          installerProof: installerProofData,
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "installer_proof_malformed",
+      });
+    }
+  });
+
   it("rejects installer proof that contains signing secrets or request logs", async () => {
     await expect(
       evaluateExternalLink({

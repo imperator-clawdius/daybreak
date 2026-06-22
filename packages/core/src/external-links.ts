@@ -19,6 +19,7 @@ export type ExternalLinkReason =
   | "installer_checksum_mismatch"
   | "installer_signature_not_valid"
   | "installer_signer_mismatch"
+  | "installer_proof_malformed"
   | "installer_proof_contains_sensitive_data";
 
 export interface ExternalLinkState {
@@ -280,6 +281,16 @@ export function getInstallerProofState({
   }
 
   const installerProof = proof as InstallerDownloadProof;
+  const proofSigner =
+    installerProof.signature?.signer ?? installerProof.signature?.subject ?? "";
+  if (
+    typeof installerProof.download?.url !== "string" ||
+    typeof installerProof.download.sha256 !== "string" ||
+    typeof installerProof.signature?.status !== "string" ||
+    typeof proofSigner !== "string"
+  ) {
+    return { ready: false, reason: "installer_proof_malformed" };
+  }
   if (installerProof.download?.url !== url) {
     return { ready: false, reason: "installer_url_mismatch" };
   }
@@ -290,9 +301,7 @@ export function getInstallerProofState({
     return { ready: false, reason: "installer_signature_not_valid" };
   }
 
-  const signer =
-    installerProof.signature.signer ?? installerProof.signature.subject ?? "";
-  if (typeof signer !== "string" || !signer.includes(expectedSigner)) {
+  if (!proofSigner.includes(expectedSigner)) {
     return { ready: false, reason: "installer_signer_mismatch" };
   }
 

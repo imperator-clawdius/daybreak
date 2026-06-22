@@ -297,6 +297,19 @@ function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) 
     };
   }
 
+  const proofSigner = proof.signature?.signer ?? proof.signature?.subject ?? "";
+  if (
+    typeof proof.download?.url !== "string" ||
+    typeof proof.download.sha256 !== "string" ||
+    typeof proof.signature?.status !== "string" ||
+    typeof proofSigner !== "string"
+  ) {
+    return {
+      pass: false,
+      reason: "installer_proof_malformed",
+      detail: "installer proof has malformed download or signature fields",
+    };
+  }
   if (proof.download?.url !== downloadUrl) {
     return {
       pass: false,
@@ -319,9 +332,7 @@ function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) 
     };
   }
 
-  const proofSigner = proof.signature.signer ?? proof.signature.subject ?? "";
   if (
-    typeof proofSigner !== "string" ||
     !proofSigner.includes(EXPECTED_SIGNER_SUBJECT) ||
     proofSigner !== signer
   ) {
