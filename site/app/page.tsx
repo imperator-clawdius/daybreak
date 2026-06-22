@@ -1,7 +1,12 @@
-import { CHECKOUT_URL, DOWNLOAD_URL, PRICE_USD, isConfigured } from "./config";
+import { getCheckoutLinkState, getInstallerLinkState } from "@daybreak/core";
 
-const checkoutReady = isConfigured(CHECKOUT_URL);
-const downloadReady = isConfigured(DOWNLOAD_URL);
+import { CHECKOUT_URL, DOWNLOAD_SHA256, DOWNLOAD_URL, PRICE_USD } from "./config";
+
+const checkoutReady = getCheckoutLinkState(CHECKOUT_URL).ready;
+const downloadReady = getInstallerLinkState({
+  url: DOWNLOAD_URL,
+  sha256: DOWNLOAD_SHA256,
+}).ready;
 
 function Cta() {
   if (checkoutReady) {
