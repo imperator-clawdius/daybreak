@@ -1,4 +1,5 @@
 import { PRICE_USD } from "../config";
+import { getPublicCheckoutState } from "../checkout-state";
 
 export const metadata = {
   title: "Terms - Daybreak",
@@ -7,6 +8,8 @@ export const metadata = {
 };
 
 export default function TermsPage() {
+  const checkoutReady = getPublicCheckoutState().ready;
+
   return (
     <main className="legal">
       <a className="back-link" href="../">
@@ -15,8 +18,9 @@ export default function TermsPage() {
       <h1>Terms</h1>
       <p className="lede">
         These terms describe the intended Daybreak purchase and support policy.
-        Checkout is not live yet; the page will not accept payment until a real
-        Stripe Payment Link is connected.
+        {checkoutReady
+          ? " Checkout is live only through the verified Stripe Payment Link on the Daybreak homepage."
+          : " Checkout remains closed until a real Stripe Payment Link is connected and verified."}
       </p>
 
       <section>
@@ -40,9 +44,9 @@ export default function TermsPage() {
       <section>
         <h2>Refunds</h2>
         <p>
-          The stated refund policy is 14 days, no questions asked. When checkout
-          is live, refund requests should be sent to founder@daybreak.rest
-          from the purchase email.
+          The stated refund policy is 14 days, no questions asked. Refund
+          requests should be sent to founder@daybreak.rest from the purchase
+          email once checkout is live.
         </p>
       </section>
 

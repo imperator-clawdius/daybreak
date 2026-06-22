@@ -1,3 +1,5 @@
+import { getPublicCheckoutState } from "../checkout-state";
+
 export const metadata = {
   title: "Privacy - Daybreak",
   description:
@@ -5,6 +7,8 @@ export const metadata = {
 };
 
 export default function PrivacyPage() {
+  const checkoutReady = getPublicCheckoutState().ready;
+
   return (
     <main className="legal">
       <a className="back-link" href="../">
@@ -39,10 +43,11 @@ export default function PrivacyPage() {
       <section>
         <h2>Checkout and support</h2>
         <p>
-          Checkout is not live yet. When it opens, payment will be handled by
-          Stripe, and Stripe may process payment details under its own privacy
-          terms. If you email support, your email and message are used to answer
-          that request.
+          {checkoutReady
+            ? "Checkout is handled by Stripe, and Stripe may process payment details under its own privacy terms."
+            : "Checkout remains closed until a verified Stripe Payment Link is connected."}{" "}
+          If you email support, your email and message are used to answer that
+          request.
         </p>
       </section>
 
