@@ -269,6 +269,38 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending when paid-order proof contains auth header or secret key variants", () => {
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          headers: {
+            Authorization: "Bearer sk_live_secret",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          apiKey: "sk_live_secret",
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
+  });
+
   it("keeps checkout pending until Stripe proof shows the configured $19 live one-time link", async () => {
     await expect(
       evaluateExternalLink({
@@ -309,6 +341,42 @@ describe("readiness external-link proof", () => {
           request: {
             api_key: "sk_live_secret",
           },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
+  });
+
+  it("rejects checkout proof with auth header or camel-case secret key variants", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          ...stripeProof(),
+          headers: {
+            Authorization: "Bearer sk_live_secret",
+          },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
+
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          ...stripeProof(),
+          apiKey: "sk_live_secret",
         },
         fetchImpl: fetchStatus(200),
       }),
@@ -433,6 +501,46 @@ describe("readiness external-link proof", () => {
           signing: {
             certificate_private_key: "-----BEGIN PRIVATE KEY-----",
           },
+        },
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
+  });
+
+  it("rejects installer proof with auth header or secret key variants", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+        installerProof: {
+          ...installerProof(),
+          response_headers: {
+            "Set-Cookie": "session=secret",
+          },
+        },
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
+
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+        installerProof: {
+          ...installerProof(),
+          stripe_secret_key: "sk_live_secret",
         },
       }),
     ).resolves.toMatchObject({

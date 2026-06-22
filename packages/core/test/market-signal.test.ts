@@ -195,4 +195,36 @@ describe("paid order proof", () => {
       paidOrders: 0,
     });
   });
+
+  it("rejects first-order proof with auth header or camel-case secret key variants", () => {
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          headers: {
+            Authorization: "Bearer sk_live_secret",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          apiKey: "sk_live_secret",
+        }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
+  });
 });

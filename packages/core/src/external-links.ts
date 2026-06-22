@@ -46,8 +46,11 @@ export function isLiveCheckoutUrl(url: string): boolean {
 
 const DISALLOWED_PROOF_KEYS = new Set([
   "api_key",
+  "apikey",
+  "authorization",
   "certificate_private_key",
   "client_secret",
+  "cookie",
   "customer",
   "customer_details",
   "customer_email",
@@ -63,15 +66,27 @@ const DISALLOWED_PROOF_KEYS = new Set([
   "request_headers",
   "response",
   "response_headers",
+  "secret_key",
+  "set_cookie",
   "signing_key",
+  "stripe_secret_key",
+  "x_api_key",
 ]);
+
+function normalizeProofKey(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
 
 function containsSensitiveProofData(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
 
   return Object.entries(value).some(
     ([key, nested]) =>
-      DISALLOWED_PROOF_KEYS.has(key) || containsSensitiveProofData(nested),
+      DISALLOWED_PROOF_KEYS.has(normalizeProofKey(key)) ||
+      containsSensitiveProofData(nested),
   );
 }
 

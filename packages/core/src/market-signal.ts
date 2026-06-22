@@ -45,8 +45,11 @@ interface PaidOrderProof {
 
 const DISALLOWED_PROOF_KEYS = new Set([
   "api_key",
+  "apikey",
+  "authorization",
   "certificate_private_key",
   "client_secret",
+  "cookie",
   "customer",
   "customer_details",
   "customer_email",
@@ -62,13 +65,24 @@ const DISALLOWED_PROOF_KEYS = new Set([
   "request_headers",
   "response",
   "response_headers",
+  "secret_key",
+  "set_cookie",
   "signing_key",
+  "stripe_secret_key",
+  "x_api_key",
 ]);
+
+function normalizeProofKey(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
 
 function containsDisallowedCustomerData(value: unknown): boolean {
   if (!value || typeof value !== "object") return false;
   for (const [key, nested] of Object.entries(value)) {
-    if (DISALLOWED_PROOF_KEYS.has(key)) return true;
+    if (DISALLOWED_PROOF_KEYS.has(normalizeProofKey(key))) return true;
     if (containsDisallowedCustomerData(nested)) return true;
   }
   return false;

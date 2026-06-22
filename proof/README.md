@@ -14,8 +14,8 @@ account after creating the live $19 one-time Payment Link. The verifier expects:
 - `line_items.data` contains exactly the one-time USD 1900-cent price with
   `quantity: 1`
 
-Keep API keys, customer data, session data, request/response logs, and order
-data out of this file.
+Keep API keys, authorization headers, cookies, customer data, session data,
+request/response logs, and order data out of this file.
 
 ## `installer-download.json`
 
@@ -28,8 +28,8 @@ and verifying the hosted bytes. The verifier expects:
 - `signature.status` is `Valid`
 - `signature.signer` or `signature.subject` contains `Passive Print Labs LLC`
 
-Keep certificate private keys, signing credentials, request logs, and customer
-data out of this file.
+Keep certificate private keys, signing credentials, authorization headers,
+cookies, request logs, and customer data out of this file.
 
 ## `first-paid-order.json`
 
@@ -46,12 +46,14 @@ the first real paid checkout. The verifier expects:
 - `payment_link.url` equals `CHECKOUT_URL` in `site/app/config.ts`
 - `refunds.data` is empty
 
-Keep customer email, customer name, payment method details, receipts, and API
-keys out of this file.
+Keep customer email, customer name, payment method details, receipts,
+authorization headers, cookies, and API keys out of this file.
 
 The verifier rejects any proof artifact that includes sensitive fields such as
 `customer`, `customer_email`, `customer_details`, `payment_intent`,
 `payment_method`, `payment_method_details`, `receipt_email`, `client_secret`,
 `api_key`, `request`, `response`, `request_headers`, `response_headers`,
-`private_key`, `certificate_private_key`, `signing_key`, `pfx`, `p12`, or
-`password`.
+`private_key`, `certificate_private_key`, `signing_key`, `stripe_secret_key`,
+`secret_key`, `apiKey`, `x-api-key`, `authorization`, `cookie`, `set-cookie`,
+`pfx`, `p12`, or `password`. Key matching is normalized for common case,
+hyphen, whitespace, and camel-case variants.

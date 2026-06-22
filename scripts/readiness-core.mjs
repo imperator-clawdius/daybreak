@@ -34,8 +34,11 @@ export const GITHUB_PAGES_IPV6 = [
 const GITHUB_PAGES_ADDRESSES = [...GITHUB_PAGES_IPV4, ...GITHUB_PAGES_IPV6];
 const DISALLOWED_PAID_ORDER_PROOF_KEYS = new Set([
   "api_key",
+  "apikey",
+  "authorization",
   "certificate_private_key",
   "client_secret",
+  "cookie",
   "customer",
   "customer_details",
   "customer_email",
@@ -51,17 +54,28 @@ const DISALLOWED_PAID_ORDER_PROOF_KEYS = new Set([
   "request_headers",
   "response",
   "response_headers",
+  "secret_key",
+  "set_cookie",
   "signing_key",
+  "stripe_secret_key",
+  "x_api_key",
 ]);
 const DISALLOWED_EXTERNAL_PROOF_KEYS = new Set([
   ...DISALLOWED_PAID_ORDER_PROOF_KEYS,
 ]);
 
+function normalizeProofKey(key) {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
+
 function containsDisallowedPaidOrderProofData(value) {
   if (!value || typeof value !== "object") return false;
   return Object.entries(value).some(
     ([key, nested]) =>
-      DISALLOWED_PAID_ORDER_PROOF_KEYS.has(key) ||
+      DISALLOWED_PAID_ORDER_PROOF_KEYS.has(normalizeProofKey(key)) ||
       containsDisallowedPaidOrderProofData(nested),
   );
 }
@@ -70,7 +84,7 @@ function containsDisallowedExternalProofData(value) {
   if (!value || typeof value !== "object") return false;
   return Object.entries(value).some(
     ([key, nested]) =>
-      DISALLOWED_EXTERNAL_PROOF_KEYS.has(key) ||
+      DISALLOWED_EXTERNAL_PROOF_KEYS.has(normalizeProofKey(key)) ||
       containsDisallowedExternalProofData(nested),
   );
 }

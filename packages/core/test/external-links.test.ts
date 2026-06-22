@@ -215,6 +215,70 @@ describe("external launch links", () => {
     });
   });
 
+  it("rejects checkout proof with auth header or camel-case secret key variants", () => {
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+          headers: {
+            Authorization: "Bearer sk_live_secret",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+          apiKey: "sk_live_secret",
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
+  });
+
   it("keeps installer download inactive until both URL and checksum are real", () => {
     expect(
       getInstallerLinkState({
@@ -287,6 +351,50 @@ describe("external launch links", () => {
           signing: {
             certificate_private_key: "-----BEGIN PRIVATE KEY-----",
           },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
+  });
+
+  it("rejects installer proof with auth header or secret key variants", () => {
+    const url = "https://downloads.example.com/daybreak.exe";
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url,
+        sha256,
+        proof: {
+          download: { url, sha256 },
+          signature: {
+            status: "Valid",
+            signer: "CN=Passive Print Labs LLC",
+          },
+          response_headers: {
+            "Set-Cookie": "session=secret",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url,
+        sha256,
+        proof: {
+          download: { url, sha256 },
+          signature: {
+            status: "Valid",
+            signer: "CN=Passive Print Labs LLC",
+          },
+          stripe_secret_key: "sk_live_secret",
         },
       }),
     ).toMatchObject({
