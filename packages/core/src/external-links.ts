@@ -177,7 +177,9 @@ export function getCheckoutProofState({
         !("price" in item) ||
         !item.price ||
         typeof item.price !== "object" ||
-        Array.isArray(item.price),
+        Array.isArray(item.price) ||
+        typeof item.price.unit_amount !== "number" ||
+        typeof item.price.currency !== "string",
     )
   ) {
     return { ready: false, reason: "checkout_line_items_invalid" };

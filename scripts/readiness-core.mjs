@@ -232,7 +232,9 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
         !("price" in item) ||
         !item.price ||
         typeof item.price !== "object" ||
-        Array.isArray(item.price),
+        Array.isArray(item.price) ||
+        typeof item.price.unit_amount !== "number" ||
+        typeof item.price.currency !== "string",
     )
   ) {
     return {
