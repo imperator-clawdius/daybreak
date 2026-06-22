@@ -12,6 +12,7 @@ import {
   canDismiss,
   isAllowedDesktopNavigation,
   phaseForHour,
+  planStartupRegistration,
   resolveLogForPhase,
   validateLogUpdate,
   type DayLog,
@@ -113,6 +114,20 @@ function createWindow(): void {
   }
 }
 
+function configureStartupRegistration(): void {
+  const plan = planStartupRegistration({
+    platform: process.platform,
+    smoke: SMOKE,
+    packaged: app.isPackaged,
+  });
+  if (!plan.shouldRegister) return;
+
+  app.setLoginItemSettings({
+    openAtLogin: plan.openAtLogin,
+    path: process.execPath,
+  });
+}
+
 ipcMain.handle("daybreak:load", () => {
   const now = new Date();
   dismissAllowed = false;
@@ -178,6 +193,7 @@ ipcMain.handle("daybreak:dismiss", (_evt, payload: { log: DayLog; phase: Phase }
 });
 
 app.whenReady().then(() => {
+  configureStartupRegistration();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

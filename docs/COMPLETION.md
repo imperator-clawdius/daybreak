@@ -8,10 +8,11 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **69 tests, 11 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, IPC log-update validation, desktop shell policy, persistence recovery, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| Core mechanic works and is tested | `vitest run` -> **73 tests, 12 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, IPC log-update validation, desktop shell policy, startup policy, persistence recovery, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
 | App actually launches | `DAYBREAK_SMOKE=1 electron .` -> `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true`, exit 0 |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
 | Desktop shell is contained | BrowserWindow uses context isolation, no node integration, `sandbox: true`, denied new windows, and a core-tested file-navigation allowlist |
+| Packaged Windows app registers for first-login startup | `desktop/src/main/main.ts` calls `app.setLoginItemSettings({ openAtLogin: true })` only for packaged Windows production builds; smoke and dev runs are excluded by core-tested policy |
 | Local persistence is crash-tolerant | Desktop `Store` writes via `.tmp`, preserves `.bak`, and recovers from corrupt primary JSON in automated tests |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
