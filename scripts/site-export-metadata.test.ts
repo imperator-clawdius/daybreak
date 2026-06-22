@@ -64,6 +64,18 @@ describe("site static export metadata", () => {
       expect(termsHtml).toContain(
         'property="og:title" content="Terms - Daybreak"',
       );
+      expect(privacyHtml).toContain(
+        'name="twitter:title" content="Privacy - Daybreak"',
+      );
+      expect(privacyHtml).toContain(
+        'name="twitter:description" content="Daybreak privacy policy: local-only Windows commitment data, no account, no cloud sync, no telemetry."',
+      );
+      expect(termsHtml).toContain(
+        'name="twitter:title" content="Terms - Daybreak"',
+      );
+      expect(termsHtml).toContain(
+        'name="twitter:description" content="Daybreak terms for the Windows commitment app, one-time purchase, refunds, local-only app scope, and launch status."',
+      );
       expect(indexHtml).toContain(
         `property="og:image" content="${SITE_URL}/daybreak-app.png"`,
       );

@@ -26,6 +26,12 @@ export const metadata = {
       },
     ],
   },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: [SITE_IMAGE],
+  },
 };
 
 export default function PrivacyPage() {
