@@ -45,6 +45,7 @@ the first real paid checkout. The verifier expects:
 - `checkout_session.payment_link` equals `payment_link.id`
 - `payment_link.url` equals `CHECKOUT_URL` in `site/app/config.ts`
 - `refunds.data` is empty
+- `refunds.has_more` is `false`
 
 Keep customer email, customer name, payment method details, receipts,
 authorization headers, cookies, and API keys out of this file.

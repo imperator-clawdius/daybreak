@@ -10,6 +10,7 @@ export type PaidOrderProofReason =
   | "paid_order_amount_mismatch"
   | "paid_order_proof_contains_customer_data"
   | "paid_order_refund_proof_missing"
+  | "paid_order_refund_proof_incomplete"
   | "paid_order_refunded";
 
 export interface PaidOrderProofState {
@@ -42,6 +43,7 @@ interface PaidOrderProof {
   };
   refunds?: {
     data?: unknown[];
+    has_more?: unknown;
   };
 }
 
@@ -122,6 +124,7 @@ export function getPaidOrderProofState({
   const paymentLink = orderProof.payment_link;
   const refundProof = orderProof.refunds;
   const refundData = orderProof.refunds?.data;
+  const refundHasMore = orderProof.refunds?.has_more;
   const refunds = Array.isArray(refundData) ? refundData.length : 0;
 
   if (
@@ -258,6 +261,15 @@ export function getPaidOrderProofState({
     return {
       ready: false,
       reason: "paid_order_refund_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
+
+  if (refundHasMore !== false) {
+    return {
+      ready: false,
+      reason: "paid_order_refund_proof_incomplete",
       paidOrders: 0,
       refunds: 0,
     };

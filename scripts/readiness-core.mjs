@@ -690,6 +690,7 @@ export function evaluateMarketSignal({
   const paymentLink = proof.payment_link;
   const refundProof = proof.refunds;
   const refundData = proof.refunds?.data;
+  const refundHasMore = proof.refunds?.has_more;
   const refunds = Array.isArray(refundData) ? refundData.length : 0;
 
   if (
@@ -804,6 +805,9 @@ export function evaluateMarketSignal({
   }
   if (!Array.isArray(refundData)) {
     return pending("paid_order_refund_proof_missing");
+  }
+  if (refundHasMore !== false) {
+    return pending("paid_order_refund_proof_incomplete");
   }
   if (refunds > 0) {
     return pending("paid_order_refunded", 1);

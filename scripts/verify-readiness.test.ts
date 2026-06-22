@@ -91,7 +91,7 @@ function paidOrderProof(overrides = {}) {
       id: "plink_live_123",
       url: "https://buy.stripe.com/live_123",
     },
-    refunds: { data: [] },
+    refunds: { data: [], has_more: false },
     ...overrides,
   };
 }
@@ -197,7 +197,9 @@ describe("readiness external-link proof", () => {
       evaluateMarketSignal({
         checkoutUrl: "https://buy.stripe.com/live_123",
         expectedPriceUsd: 19,
-        proof: paidOrderProof({ refunds: { data: [{ id: "re_live_123" }] } }),
+        proof: paidOrderProof({
+          refunds: { data: [{ id: "re_live_123" }], has_more: false },
+        }),
       }),
     ).toMatchObject({
       pass: false,
@@ -232,6 +234,34 @@ describe("readiness external-link proof", () => {
     ).toMatchObject({
       pass: false,
       reason: "paid_order_refund_proof_missing",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
+  it("keeps market signal pending until refund pagination proof is complete", () => {
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({ refunds: { data: [] } }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_refund_proof_incomplete",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({ refunds: { data: [], has_more: true } }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_refund_proof_incomplete",
       paidOrders: 0,
       refunds: 0,
     });
