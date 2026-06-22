@@ -688,12 +688,25 @@ export function evaluateMarketSignal({
 
   const session = proof.checkout_session;
   const paymentLink = proof.payment_link;
+  const refundProof = proof.refunds;
   const refundData = proof.refunds?.data;
   const refunds = Array.isArray(refundData) ? refundData.length : 0;
 
   if (
     paymentLink !== undefined &&
     (!paymentLink || typeof paymentLink !== "object" || Array.isArray(paymentLink))
+  ) {
+    return {
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
+    };
+  }
+  if (
+    refundProof !== undefined &&
+    (!refundProof || typeof refundProof !== "object" || Array.isArray(refundProof))
   ) {
     return {
       pass: false,

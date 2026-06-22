@@ -120,12 +120,24 @@ export function getPaidOrderProofState({
 
   const session = orderProof.checkout_session;
   const paymentLink = orderProof.payment_link;
+  const refundProof = orderProof.refunds;
   const refundData = orderProof.refunds?.data;
   const refunds = Array.isArray(refundData) ? refundData.length : 0;
 
   if (
     paymentLink !== undefined &&
     (!paymentLink || typeof paymentLink !== "object" || Array.isArray(paymentLink))
+  ) {
+    return {
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
+  if (
+    refundProof !== undefined &&
+    (!refundProof || typeof refundProof !== "object" || Array.isArray(refundProof))
   ) {
     return {
       ready: false,
