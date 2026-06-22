@@ -45,14 +45,24 @@ interface PaidOrderProof {
 
 const DISALLOWED_PROOF_KEYS = new Set([
   "api_key",
+  "certificate_private_key",
   "client_secret",
   "customer",
   "customer_details",
   "customer_email",
+  "password",
+  "p12",
+  "pfx",
   "payment_intent",
   "payment_method",
   "payment_method_details",
+  "private_key",
   "receipt_email",
+  "request",
+  "request_headers",
+  "response",
+  "response_headers",
+  "signing_key",
 ]);
 
 function containsDisallowedCustomerData(value: unknown): boolean {

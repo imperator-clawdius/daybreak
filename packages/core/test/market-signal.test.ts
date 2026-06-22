@@ -157,4 +157,42 @@ describe("paid order proof", () => {
       reason: "paid_order_proof_contains_customer_data",
     });
   });
+
+  it("rejects first-order proof that includes request logs or private material", () => {
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          audit: {
+            request: {
+              headers: {
+                authorization: "Bearer sk_live_secret",
+              },
+            },
+          },
+        }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          signing: {
+            private_key: "-----BEGIN PRIVATE KEY-----",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
+  });
 });

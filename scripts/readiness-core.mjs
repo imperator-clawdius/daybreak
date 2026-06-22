@@ -34,27 +34,27 @@ export const GITHUB_PAGES_IPV6 = [
 const GITHUB_PAGES_ADDRESSES = [...GITHUB_PAGES_IPV4, ...GITHUB_PAGES_IPV6];
 const DISALLOWED_PAID_ORDER_PROOF_KEYS = new Set([
   "api_key",
+  "certificate_private_key",
   "client_secret",
   "customer",
   "customer_details",
   "customer_email",
-  "payment_intent",
-  "payment_method",
-  "payment_method_details",
-  "receipt_email",
-]);
-const DISALLOWED_EXTERNAL_PROOF_KEYS = new Set([
-  ...DISALLOWED_PAID_ORDER_PROOF_KEYS,
-  "certificate_private_key",
   "password",
   "p12",
   "pfx",
+  "payment_intent",
+  "payment_method",
+  "payment_method_details",
   "private_key",
+  "receipt_email",
   "request",
   "request_headers",
   "response",
   "response_headers",
   "signing_key",
+]);
+const DISALLOWED_EXTERNAL_PROOF_KEYS = new Set([
+  ...DISALLOWED_PAID_ORDER_PROOF_KEYS,
 ]);
 
 function containsDisallowedPaidOrderProofData(value) {
