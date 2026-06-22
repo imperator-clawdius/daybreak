@@ -315,7 +315,7 @@ export function getInstallerProofState({
 
   const installerProof = proof as InstallerDownloadProof;
   const proofSigner =
-    installerProof.signature?.signer ?? installerProof.signature?.subject ?? "";
+    installerProof.signature?.signer ?? installerProof.signature?.subject;
   if (
     typeof installerProof.download?.url !== "string" ||
     typeof installerProof.download.sha256 !== "string" ||

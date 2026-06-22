@@ -349,7 +349,7 @@ function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) 
     };
   }
 
-  const proofSigner = proof.signature?.signer ?? proof.signature?.subject ?? "";
+  const proofSigner = proof.signature?.signer ?? proof.signature?.subject;
   if (
     typeof proof.download?.url !== "string" ||
     typeof proof.download.sha256 !== "string" ||

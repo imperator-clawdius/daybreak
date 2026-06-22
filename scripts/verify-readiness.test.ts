@@ -1291,6 +1291,10 @@ describe("readiness external-link proof", () => {
       installerProof({ sha256: 123 }),
       installerProof({ status: true }),
       installerProof({ signer: 123 }),
+      {
+        ...installerProof(),
+        signature: { status: "Valid" },
+      },
     ]) {
       await expect(
         evaluateExternalLink({

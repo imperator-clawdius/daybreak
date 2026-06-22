@@ -949,6 +949,10 @@ describe("external launch links", () => {
         ...baseProof,
         signature: { ...baseProof.signature, signer: 123 },
       },
+      {
+        ...baseProof,
+        signature: { status: "Valid" },
+      },
     ]) {
       expect(
         getVerifiedInstallerLinkState({
