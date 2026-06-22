@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **108 tests, 17 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, core package importability, static site metadata export) |
+| Core mechanic works and is tested | `vitest run` -> **110 tests, 17 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke, core package importability, static site metadata export) |
 | App actually launches and completes the wipe flows | `DAYBREAK_SMOKE=1 electron .` -> `scenario=morning swipe_flow=true`, exit 0; `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_SCENARIO=evening electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
@@ -22,6 +22,7 @@ fabricated proof**.
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
 | Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `icon_status=configured`, `signature_status=NotSigned`, exit 1 until a real cert signs it |
+| Packaged Windows app runtime is smoke-tested | `npm run verify:release` launches `desktop/release/win-unpacked/Daybreak.exe` with `DAYBREAK_SMOKE=1` and requires the packaged app to load the renderer, complete IPC, and finish the wipe flow before reporting `packaged_smoke=pass` |
 | Windows release metadata configured | `npm run verify:release` checks app id, product name, author, NSIS x64 target, and installer mode before a release can be considered ready |
 | Windows signer ownership is verified | `npm run verify:release` rejects even a valid Authenticode signature unless the signer subject includes `Passive Print Labs LLC` |
 | Hosted installer readiness verifies signing | `npm run verify:readiness` downloads the configured installer bytes, checks SHA-256, and rejects unsigned or wrong-publisher Authenticode signatures |

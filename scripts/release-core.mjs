@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -14,6 +14,21 @@ export function expectedInstallerPath(root) {
   const productName = desktopPackage.build?.productName || "Daybreak";
   const version = desktopPackage.version;
   return join(root, "desktop", "release", `${productName} Setup ${version}.exe`);
+}
+
+export function expectedPackagedAppPath(
+  root,
+  packagePath = "desktop/package.json",
+) {
+  const fullPackagePath = join(root, packagePath);
+  const desktopPackage = readJson(root, packagePath);
+  const productName = desktopPackage.build?.productName || "Daybreak";
+  return join(
+    dirname(fullPackagePath),
+    "release",
+    "win-unpacked",
+    `${productName}.exe`,
+  );
 }
 
 export function sha256File(path) {
@@ -189,21 +204,105 @@ export function evaluateReleaseMetadata({
   };
 }
 
+export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
+  if (!existsSync(executablePath)) {
+    return {
+      pass: false,
+      executableExists: false,
+      reason: "packaged_app_missing",
+      executablePath,
+      detail: `missing ${executablePath}`,
+    };
+  }
+
+  if (!runnerResult) {
+    return {
+      pass: false,
+      executableExists: true,
+      reason: "packaged_smoke_not_run",
+      executablePath,
+      detail: "packaged app smoke did not run",
+    };
+  }
+
+  const stdout = runnerResult.stdout || "";
+  const stderr = runnerResult.stderr || "";
+  const pass =
+    runnerResult.status === 0 &&
+    stdout.includes("DAYBREAK_SMOKE=pass") &&
+    stdout.includes("renderer_loaded=true") &&
+    stdout.includes("ipc_roundtrip=true") &&
+    stdout.includes("swipe_flow=true");
+
+  return {
+    pass,
+    executableExists: true,
+    reason: pass ? "packaged_smoke_passed" : "packaged_smoke_failed",
+    executablePath,
+    status: runnerResult.status,
+    signal: runnerResult.signal || "",
+    stdout,
+    stderr,
+    detail: pass
+      ? "packaged Daybreak.exe smoke passed"
+      : `status=${runnerResult.status ?? "null"} signal=${
+          runnerResult.signal || ""
+        } stdout=${JSON.stringify(stdout.slice(0, 300))} stderr=${JSON.stringify(
+          stderr.slice(0, 300),
+        )}`,
+  };
+}
+
+export function runPackagedSmoke(executablePath, { scenario = "morning" } = {}) {
+  if (!existsSync(executablePath)) {
+    return evaluatePackagedSmoke({ executablePath, runnerResult: null });
+  }
+
+  const child = spawnSync(executablePath, [], {
+    cwd: dirname(executablePath),
+    encoding: "utf8",
+    timeout: 60_000,
+    env: {
+      ...process.env,
+      DAYBREAK_SMOKE: "1",
+      DAYBREAK_SMOKE_SCENARIO: scenario,
+    },
+  });
+
+  return evaluatePackagedSmoke({
+    executablePath,
+    runnerResult: {
+      status: child.status,
+      signal: child.signal,
+      stdout: child.stdout || "",
+      stderr: child.stderr || child.error?.message || "",
+    },
+  });
+}
+
 export function evaluateReleasePreflight({
   root,
   installerPath,
   signature,
+  packagedSmoke,
   packagePath = "desktop/package.json",
 }) {
   const installer = evaluateInstallerArtifact({ installerPath, signature });
   const icon = evaluateBuildIcon({ root, packagePath });
   const metadata = evaluateReleaseMetadata({ root, packagePath });
+  const smoke =
+    packagedSmoke ??
+    evaluatePackagedSmoke({
+      executablePath: expectedPackagedAppPath(root, packagePath),
+      runnerResult: null,
+    });
 
   return {
     ...installer,
-    pass: installer.pass && icon.pass && metadata.pass,
+    pass: installer.pass && icon.pass && metadata.pass && smoke.pass,
     icon,
     metadata,
+    packagedSmoke: smoke,
   };
 }
 
@@ -240,6 +339,15 @@ export function renderReleaseReport(result) {
       lines.push(`metadata_message=${result.metadata.detail}`);
     }
   }
+  if (result.packagedSmoke) {
+    lines.push(
+      `packaged_smoke=${result.packagedSmoke.pass ? "pass" : "pending"}`,
+    );
+    lines.push(`packaged_app_path=${result.packagedSmoke.executablePath}`);
+    if (!result.packagedSmoke.pass) {
+      lines.push(`packaged_smoke_message=${result.packagedSmoke.detail}`);
+    }
+  }
 
   if (!result.pass) {
     const blockers = [];
@@ -260,6 +368,11 @@ export function renderReleaseReport(result) {
     if (result.metadata && !result.metadata.pass) {
       blockers.push(
         "- Configure Windows release metadata before shipping the installer.",
+      );
+    }
+    if (result.packagedSmoke && !result.packagedSmoke.pass) {
+      blockers.push(
+        "- Run a passing smoke test against desktop/release/win-unpacked/Daybreak.exe before shipping the installer.",
       );
     }
     lines.push("", "## Remaining release blocker", "", ...blockers);

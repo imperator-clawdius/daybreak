@@ -6,6 +6,7 @@ import {
   buildAuthenticodeCommand,
   evaluateBuildIcon,
   evaluateInstallerArtifact,
+  evaluatePackagedSmoke,
   evaluateReleaseMetadata,
   evaluateReleasePreflight,
   renderReleaseReport,
@@ -202,6 +203,50 @@ describe("release preflight", () => {
       ).toMatchObject({
         pass: true,
         reason: "metadata_configured",
+      });
+    }));
+
+  it("passes packaged smoke only when the packaged app exits cleanly with the smoke marker", () =>
+    withTempDir((dir) => {
+      const executablePath = join(dir, "Daybreak.exe");
+      writeFileSync(executablePath, "exe", "utf8");
+
+      const result = evaluatePackagedSmoke({
+        executablePath,
+        runnerResult: {
+          status: 0,
+          signal: null,
+          stdout:
+            "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+          stderr: "",
+        },
+      });
+
+      expect(result).toMatchObject({
+        pass: true,
+        reason: "packaged_smoke_passed",
+        executableExists: true,
+      });
+    }));
+
+  it("keeps release pending when packaged smoke does not prove the app runtime", () =>
+    withTempDir((dir) => {
+      const executablePath = join(dir, "Daybreak.exe");
+      writeFileSync(executablePath, "exe", "utf8");
+
+      expect(
+        evaluatePackagedSmoke({
+          executablePath,
+          runnerResult: {
+            status: 1,
+            signal: null,
+            stdout: "",
+            stderr: "crashed before renderer loaded",
+          },
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "packaged_smoke_failed",
       });
     }));
 

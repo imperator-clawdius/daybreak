@@ -3,15 +3,23 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   evaluateReleasePreflight,
+  expectedPackagedAppPath,
   expectedInstallerPath,
   readAuthenticodeSignature,
   renderReleaseReport,
+  runPackagedSmoke,
 } from "./release-core.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const installerPath = expectedInstallerPath(root);
 const signature = readAuthenticodeSignature(installerPath);
-const result = evaluateReleasePreflight({ root, installerPath, signature });
+const packagedSmoke = runPackagedSmoke(expectedPackagedAppPath(root));
+const result = evaluateReleasePreflight({
+  root,
+  installerPath,
+  signature,
+  packagedSmoke,
+});
 
 console.log(renderReleaseReport(result));
 process.exitCode = result.pass ? 0 : 1;
