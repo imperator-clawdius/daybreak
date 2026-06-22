@@ -25,7 +25,7 @@ describe("session building", () => {
     ];
     const carried = carryForward(history);
     expect(carried.map((i) => i.text).sort()).toEqual(["pushed", "still open"]);
-    expect(carried.every((i) => i.state === "open")).toBe(true);
+    expect(carried.every((i) => i.state === "pending")).toBe(true);
     expect(carried.every((i) => i.carryCount === 1)).toBe(true);
   });
 
@@ -61,7 +61,7 @@ describe("session building", () => {
       id: "same-id",
       text: "same promise",
       carryCount: 2,
-      state: "open",
+      state: "pending",
     });
   });
 
@@ -75,6 +75,51 @@ describe("session building", () => {
     ];
 
     expect(carryForward(history)).toEqual([]);
+  });
+
+  it("reuses today's saved morning board without incrementing carry count", () => {
+    const todayItem = {
+      ...makeItem("same-day commitment", "2026-06-19"),
+      state: "pending" as const,
+      carryCount: 2,
+    };
+    const history: DayLog[] = [logFor("2026-06-19", [todayItem])];
+
+    const session = buildMorningSession(
+      new Date(2026, 5, 19, 8, 0, 0),
+      history,
+    );
+
+    expect(session.items).toHaveLength(1);
+    expect(session.items[0]).toMatchObject({
+      text: "same-day commitment",
+      state: "pending",
+      carryCount: 2,
+      day: "2026-06-19",
+    });
+  });
+
+  it("treats unresolved same-day open items as still pending", () => {
+    const oldShapeItem = {
+      ...makeItem("pre-migration item", "2026-06-19"),
+      state: "open" as const,
+    };
+    const history: DayLog[] = [
+      {
+        ...logFor("2026-06-19", [oldShapeItem]),
+        morningResolved: false,
+      },
+    ];
+
+    const session = buildMorningSession(
+      new Date(2026, 5, 19, 8, 0, 0),
+      history,
+    );
+
+    expect(session.items[0]).toMatchObject({
+      text: "pre-migration item",
+      state: "pending",
+    });
   });
 
   it("evening session deep-copies today's items", () => {

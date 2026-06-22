@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **53 tests, 8 files passed** (wipe machine, carry-over, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
+| Core mechanic works and is tested | `vitest run` -> **55 tests, 8 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, streak, commit validation, external-link policy, readiness URL proof, launch verifier, release preflight) |
 | App actually launches | `DAYBREAK_SMOKE=1 electron .` -> `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true`, exit 0 |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `canDismiss()` re-validated in main |
 | Whole repo builds clean | `npm run check` -> lint plus test plus build (core, desktop, site), exit 0 |

@@ -21,7 +21,7 @@ export function makeItem(
     id: idFactory(),
     text: text.trim(),
     day,
-    state: "open",
+    state: "pending",
     createdDay: day,
     carryCount: 0,
   };
@@ -41,10 +41,15 @@ export function carryForward(history: DayLog[]): Item[] {
   }
 
   return [...latestById.values()]
-    .filter((item) => item.state === "open" || item.state === "deferred")
+    .filter(
+      (item) =>
+        item.state === "pending" ||
+        item.state === "open" ||
+        item.state === "deferred",
+    )
     .map((item) => ({
       ...item,
-      state: "open",
+      state: "pending",
       carryCount: item.carryCount + 1,
     }));
 }
@@ -55,6 +60,20 @@ export function carryForward(history: DayLog[]): Item[] {
  */
 export function buildMorningSession(now: Date, history: DayLog[]): DayLog {
   const day = dayKey(now);
+  const existing = history.find((log) => log.day === day);
+  if (existing) {
+    return {
+      ...existing,
+      items: existing.items.map((i) => ({
+        ...i,
+        state:
+          !existing.morningResolved && i.state === "open"
+            ? "pending"
+            : i.state,
+      })),
+    };
+  }
+
   const carried = carryForward(history).sort(
     (a, b) => b.carryCount - a.carryCount,
   );

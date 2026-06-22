@@ -4,7 +4,7 @@
 
 import { Item, ItemState, WipeAction, Phase, MAX_DAILY_COMMITS } from "./model";
 
-/** States that count as "resolved" — i.e. the item no longer blocks dismissal. */
+/** States that count as "resolved" outside the morning decision gate. */
 const RESOLVED: ReadonlySet<ItemState> = new Set<ItemState>([
   "done",
   "deferred",
@@ -41,18 +41,19 @@ export function applyWipe(item: Item, action: WipeAction, phase: Phase): Item {
 }
 
 /**
- * Morning is resolved only when no item is still "open".
+ * Morning is resolved only when every surfaced item has been wiped into a
+ * decision: keep it open for the day, defer it, or kill it.
  * An empty list is NOT resolved — the user must commit to at least one thing
  * (or explicitly kill the prompt) before Daybreak will let go.
  */
 export function isMorningResolved(items: Item[]): boolean {
   if (items.length === 0) return false;
-  return items.every((i) => i.state !== "open");
+  return items.every((i) => i.state !== "pending");
 }
 
 /** Evening is resolved when nothing committed today is still hanging "open". */
 export function isEveningResolved(items: Item[]): boolean {
-  return items.every((i) => i.state !== "open");
+  return items.every((i) => i.state !== "open" && i.state !== "pending");
 }
 
 /**
@@ -68,7 +69,7 @@ export function canDismiss(items: Item[], phase: Phase): boolean {
 
 /** How many items the user has actively committed to keep for today. */
 export function committedCount(items: Item[]): number {
-  return items.filter((i) => i.state === "open").length;
+  return items.filter((i) => i.state === "pending" || i.state === "open").length;
 }
 
 /** True if the user is trying to over-commit beyond the locked daily cap. */

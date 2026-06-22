@@ -9,7 +9,7 @@ export interface Item {
   text: string;
   /** Day this item belongs to, as a day-key (YYYY-MM-DD, local). */
   day: string;
-  /** Lifecycle state. New morning commits start as "open". */
+  /** Lifecycle state. New morning commits start as "pending". */
   state: ItemState;
   /** Day-key the item was first created on. Survives carry-over. */
   createdDay: string;
@@ -18,6 +18,7 @@ export interface Item {
 }
 
 export type ItemState =
+  | "pending" // surfaced in the morning, not yet wiped into a decision
   | "open" // committed, not yet acted on
   | "done" // finished (evening review)
   | "deferred" // pushed to a future day (morning or evening)

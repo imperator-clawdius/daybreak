@@ -17,6 +17,7 @@ function open(text: string): Item {
 
 describe("wipe state machine", () => {
   it("maps each gesture to the right state", () => {
+    expect(open("fresh").state).toBe("pending");
     expect(stateAfter("commit", "morning")).toBe("open");
     expect(stateAfter("done", "evening")).toBe("done");
     expect(stateAfter("defer", "morning")).toBe("deferred");
@@ -26,7 +27,7 @@ describe("wipe state machine", () => {
   it("applyWipe never mutates the input item", () => {
     const item = open("ship daybreak");
     const wiped = applyWipe(item, "done", "evening");
-    expect(item.state).toBe("open");
+    expect(item.state).toBe("pending");
     expect(wiped.state).toBe("done");
     expect(wiped).not.toBe(item);
   });
@@ -38,24 +39,19 @@ describe("wipe state machine", () => {
     expect(isResolved(open("a"))).toBe(false);
   });
 
-  it("blocks dismissal while any item is still open in the morning", () => {
+  it("blocks dismissal while any item is still pending in the morning", () => {
     const items = [open("a"), applyWipe(open("b"), "defer", "morning")];
     expect(isMorningResolved(items)).toBe(false);
     expect(canDismiss(items, "morning")).toBe(false);
   });
 
-  it("allows dismissal once every item is wiped", () => {
+  it("allows morning dismissal once every item has a commit/defer/kill decision", () => {
     const items = [
       applyWipe(open("a"), "commit", "morning"),
       applyWipe(open("b"), "kill", "morning"),
     ];
-    // "commit" leaves an item open, so morning is NOT yet resolved.
-    expect(isMorningResolved(items)).toBe(false);
-    const allWiped = items.map((i) =>
-      i.state === "open" ? applyWipe(i, "defer", "morning") : i,
-    );
-    expect(isMorningResolved(allWiped)).toBe(true);
-    expect(canDismiss(allWiped, "morning")).toBe(true);
+    expect(isMorningResolved(items)).toBe(true);
+    expect(canDismiss(items, "morning")).toBe(true);
   });
 
   it("never lets an empty morning be dismissed", () => {
@@ -63,7 +59,7 @@ describe("wipe state machine", () => {
     expect(canDismiss([], "morning")).toBe(false);
   });
 
-  it("counts commitments and flags over-commitment past the cap of 3", () => {
+  it("counts pending and kept commitments against the cap of 3", () => {
     const four = [open("a"), open("b"), open("c"), open("d")];
     expect(committedCount(four)).toBe(4);
     expect(isOverCommitted(four)).toBe(true);
