@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "./site";
+import { SITE_DESCRIPTION, SITE_ICON, SITE_TITLE, SITE_URL } from "./site";
 
 export const dynamic = "force-static";
 
@@ -16,8 +16,8 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#0b1020",
     icons: [
       {
-        src: `${SITE_URL}/daybreak-app.png`,
-        sizes: "1252x878",
+        src: SITE_ICON,
+        sizes: "256x256",
         type: "image/png",
         purpose: "any",
       },

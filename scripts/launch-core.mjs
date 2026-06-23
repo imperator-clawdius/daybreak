@@ -125,7 +125,8 @@ function routePass(routeResult) {
         Array.isArray(manifest?.icons) &&
         manifest.icons.some(
           (icon) =>
-            icon?.src === `${PRODUCTION_URL}daybreak-app.png` &&
+            icon?.src === `${PRODUCTION_URL}icon.png` &&
+            icon?.sizes === "256x256" &&
             icon?.type === "image/png",
         )
       );

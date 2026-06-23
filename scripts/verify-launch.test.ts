@@ -104,8 +104,8 @@ function validManifest() {
     theme_color: "#0b1020",
     icons: [
       {
-        src: "https://daybreak.rest/daybreak-app.png",
-        sizes: "1252x878",
+        src: "https://daybreak.rest/icon.png",
+        sizes: "256x256",
         type: "image/png",
         purpose: "any",
       },

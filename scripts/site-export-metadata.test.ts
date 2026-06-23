@@ -105,8 +105,8 @@ describe("site static export metadata", () => {
       );
       expect(manifest.icons).toEqual([
         {
-          src: `${SITE_URL}/daybreak-app.png`,
-          sizes: "1252x878",
+          src: `${SITE_URL}/icon.png`,
+          sizes: "256x256",
           type: "image/png",
           purpose: "any",
         },
