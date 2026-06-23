@@ -29,10 +29,34 @@ function imageDimensions(path: string): { width: number; height: number } {
 
 function pngDimensions(path: string): { width: number; height: number } {
   const bytes = readFileSync(path);
+  expect(bytes[0]).toBe(0x89);
+  expect(bytes.toString("ascii", 1, 4)).toBe("PNG");
   return {
     width: bytes.readUInt32BE(16),
     height: bytes.readUInt32BE(20),
   };
+}
+
+function icoPngEntries(path: string): Array<{ width: number; height: number }> {
+  const bytes = readFileSync(path);
+  expect(bytes.readUInt16LE(0)).toBe(0);
+  expect(bytes.readUInt16LE(2)).toBe(1);
+  const count = bytes.readUInt16LE(4);
+  const entries: Array<{ width: number; height: number }> = [];
+
+  for (let index = 0; index < count; index += 1) {
+    const offset = 6 + index * 16;
+    const width = bytes[offset] || 256;
+    const height = bytes[offset + 1] || 256;
+    const size = bytes.readUInt32LE(offset + 8);
+    const imageOffset = bytes.readUInt32LE(offset + 12);
+    const image = bytes.subarray(imageOffset, imageOffset + size);
+    expect(image[0]).toBe(0x89);
+    expect(image.toString("ascii", 1, 4)).toBe("PNG");
+    entries.push({ width, height });
+  }
+
+  return entries;
 }
 
 describe("product image dimensions", () => {
@@ -71,5 +95,31 @@ describe("product image dimensions", () => {
     expect(layout).toContain("openGraph");
     expect(layout).toContain("twitter");
     expect(layout).not.toContain("daybreak-hero-bg");
+  });
+
+  it("keeps browser and Windows app icons synchronized", () => {
+    const siteIcon = readFileSync("site/app/icon.png");
+    const appleIcon = readFileSync("site/app/apple-icon.png");
+    const desktopIcon = readFileSync("desktop/assets/icon.png");
+
+    expect(pngDimensions("site/app/icon.png")).toEqual({ width: 256, height: 256 });
+    expect(pngDimensions("site/app/apple-icon.png")).toEqual({
+      width: 256,
+      height: 256,
+    });
+    expect(pngDimensions("desktop/assets/icon.png")).toEqual({
+      width: 256,
+      height: 256,
+    });
+    expect(appleIcon.equals(siteIcon)).toBe(true);
+    expect(desktopIcon.equals(siteIcon)).toBe(true);
+    expect(icoPngEntries("desktop/assets/icon.ico")).toEqual([
+      { width: 256, height: 256 },
+      { width: 128, height: 128 },
+      { width: 64, height: 64 },
+      { width: 48, height: 48 },
+      { width: 32, height: 32 },
+      { width: 16, height: 16 },
+    ]);
   });
 });
