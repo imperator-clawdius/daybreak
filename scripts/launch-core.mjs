@@ -226,7 +226,8 @@ function formatRouteReport(label, routeResults) {
     .map((routeResult) => {
       const res = routeResult.res;
       const state = routePass(routeResult) ? "pass" : "pending";
-      return `${routeName(routeResult.route)}=${state}(${res.status})`;
+      const issue = res.surfaceIssue ? `:${res.surfaceIssue}` : "";
+      return `${routeName(routeResult.route)}=${state}(${res.status}${issue})`;
     })
     .join(" ");
   return `${label}=${allPass ? "pass" : "pending"} ${routes}`;

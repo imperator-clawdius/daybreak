@@ -436,7 +436,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "APEX_ROUTES=pending privacy=pending(200) terms=pass(200)",
+      "APEX_ROUTES=pending privacy=pending(200:unexpected_host:cdn.example.com) terms=pass(200)",
     );
   });
 
