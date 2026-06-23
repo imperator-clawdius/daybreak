@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
 export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
@@ -313,6 +313,42 @@ export function evaluatePackagedDependencyAllowlist({
       detail: String(e.message || e),
     };
   }
+}
+
+export function evaluateReleaseSidecarExclusion({ releaseDir }) {
+  const sidecarPaths = listFiles(dirname(releaseDir), basename(releaseDir))
+    .filter(
+      (path) =>
+        path.endsWith("builder-debug.yml") ||
+        path.endsWith("builder-debug.yaml") ||
+        path.endsWith(".blockmap"),
+    )
+    .map((path) => join(dirname(releaseDir), path))
+    .sort();
+
+  return {
+    pass: sidecarPaths.length === 0,
+    reason:
+      sidecarPaths.length === 0
+        ? "release_sidecars_absent"
+        : "release_sidecars_present",
+    sidecarPaths,
+    detail:
+      sidecarPaths.length === 0
+        ? "release directory contains no debug or update sidecars"
+        : `release directory contains debug/update sidecars: ${sidecarPaths.join(", ")}`,
+  };
+}
+
+export function cleanReleaseSidecars({ releaseDir }) {
+  const result = evaluateReleaseSidecarExclusion({ releaseDir });
+  for (const sidecarPath of result.sidecarPaths) {
+    rmSync(sidecarPath, { force: true });
+  }
+
+  return {
+    removedPaths: result.sidecarPaths,
+  };
 }
 
 export function sha256File(path) {
@@ -723,6 +759,9 @@ export function evaluateReleasePreflight({
   const packagedDependencies = evaluatePackagedDependencyAllowlist({
     packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
   });
+  const sidecars = evaluateReleaseSidecarExclusion({
+    releaseDir: dirname(installerPath),
+  });
   const smoke =
     packagedSmoke ??
     evaluatePackagedSmoke({
@@ -745,6 +784,7 @@ export function evaluateReleasePreflight({
       packagedSourceMaps.pass &&
       packagedSource.pass &&
       packagedDependencies.pass &&
+      sidecars.pass &&
       smoke.pass &&
       freshness.pass,
     icon,
@@ -753,6 +793,7 @@ export function evaluateReleasePreflight({
     packagedSourceMaps,
     packagedSource,
     packagedDependencies,
+    sidecars,
     packagedSmoke: smoke,
     freshness,
   };
@@ -828,6 +869,12 @@ export function renderReleaseReport(result) {
       );
     }
   }
+  if (result.sidecars) {
+    lines.push(`release_sidecars=${result.sidecars.pass ? "absent" : "present"}`);
+    if (!result.sidecars.pass) {
+      lines.push(`release_sidecars_message=${result.sidecars.detail}`);
+    }
+  }
   if (result.packagedSmoke) {
     lines.push(
       `packaged_smoke=${result.packagedSmoke.pass ? "pass" : "pending"}`,
@@ -891,6 +938,11 @@ export function renderReleaseReport(result) {
     if (result.packagedDependencies && !result.packagedDependencies.pass) {
       blockers.push(
         "- Remove unexpected runtime dependencies from app.asar before signing or hosting the installer.",
+      );
+    }
+    if (result.sidecars && !result.sidecars.pass) {
+      blockers.push(
+        "- Remove debug and update sidecar files from desktop/release before signing or hosting the installer.",
       );
     }
     if (result.packagedSmoke && !result.packagedSmoke.pass) {

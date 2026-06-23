@@ -10,7 +10,7 @@
     "bundle": "npm run build -w @daybreak/core && node build.mjs",
     "build": "npm run bundle",
     "dev": "npm run bundle && electron .",
-    "package": "npm run bundle && electron-builder --win --publish never"
+    "package": "npm run bundle && electron-builder --win --publish never && node ../scripts/clean-release-sidecars.mjs"
   },
   "dependencies": {
     "@daybreak/core": "*"

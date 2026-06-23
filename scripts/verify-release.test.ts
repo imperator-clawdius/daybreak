@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -18,6 +18,8 @@ import {
   evaluatePackagedSourceMapExclusion,
   evaluatePackagedSourceExclusion,
   evaluatePackagedDependencyAllowlist,
+  evaluateReleaseSidecarExclusion,
+  cleanReleaseSidecars,
   readJson,
   renderReleaseReport,
 } from "./release-core.mjs";
@@ -38,6 +40,14 @@ describe("release preflight", () => {
     expect(rootPackage.devDependencies).toMatchObject({
       "@electron/asar": expect.any(String),
     });
+  });
+
+  it("cleans release sidecars after desktop packaging", () => {
+    const desktopPackage = readJson(process.cwd(), "desktop/package.json");
+
+    expect(desktopPackage.scripts.package).toContain(
+      "clean-release-sidecars.mjs",
+    );
   });
 
   it("runs the local asar CLI through node for packaged artifact inspection", () => {
@@ -621,6 +631,43 @@ describe("release preflight", () => {
         dependencies: ["@analytics/sdk", "@daybreak/core", "lodash"],
         unexpectedDependencies: ["@analytics/sdk", "lodash"],
       });
+    }));
+
+  it("keeps release pending when debug or update sidecars remain in the release directory", () =>
+    withTempDir((dir) => {
+      const releaseDir = join(dir, "release");
+      mkdirSync(releaseDir, { recursive: true });
+      writeFileSync(join(releaseDir, "Daybreak Setup 0.1.0.exe"), "installer", "utf8");
+      writeFileSync(join(releaseDir, "builder-debug.yml"), "local paths", "utf8");
+      writeFileSync(join(releaseDir, "Daybreak Setup 0.1.0.exe.blockmap"), "blockmap", "utf8");
+
+      expect(evaluateReleaseSidecarExclusion({ releaseDir })).toMatchObject({
+        pass: false,
+        reason: "release_sidecars_present",
+        sidecarPaths: [
+          join(releaseDir, "Daybreak Setup 0.1.0.exe.blockmap"),
+          join(releaseDir, "builder-debug.yml"),
+        ],
+      });
+    }));
+
+  it("removes debug and update sidecars without deleting the installer", () =>
+    withTempDir((dir) => {
+      const releaseDir = join(dir, "release");
+      const installerPath = join(releaseDir, "Daybreak Setup 0.1.0.exe");
+      const debugPath = join(releaseDir, "builder-debug.yml");
+      const blockmapPath = join(releaseDir, "Daybreak Setup 0.1.0.exe.blockmap");
+      mkdirSync(releaseDir, { recursive: true });
+      writeFileSync(installerPath, "installer", "utf8");
+      writeFileSync(debugPath, "local paths", "utf8");
+      writeFileSync(blockmapPath, "blockmap", "utf8");
+
+      const result = cleanReleaseSidecars({ releaseDir });
+
+      expect(result.removedPaths).toEqual([blockmapPath, debugPath]);
+      expect(existsSync(installerPath)).toBe(true);
+      expect(existsSync(debugPath)).toBe(false);
+      expect(existsSync(blockmapPath)).toBe(false);
     }));
 
   it("keeps the release pending if signing passes but icon proof is missing", () =>
