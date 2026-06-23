@@ -154,6 +154,7 @@ async function runSmokeFlow(): Promise<void> {
   let ok = !smokeFailed && data.version === 1 && swipeFlow;
   if (ok && SMOKE_SCREENSHOT && win) {
     try {
+      await stabilizeSmokeScreenshot();
       const image = await win.webContents.capturePage();
       await writeFile(SMOKE_SCREENSHOT, image.toPNG());
       screenshotCaptured = true;
@@ -171,6 +172,26 @@ async function runSmokeFlow(): Promise<void> {
   );
   dismissAllowed = true;
   app.exit(ok ? 0 : 1);
+}
+
+async function stabilizeSmokeScreenshot(): Promise<void> {
+  if (!win) return;
+  await win.webContents.executeJavaScript(`
+    (() => {
+      for (const row of document.querySelectorAll(".item")) {
+        if (!(row instanceof HTMLElement)) continue;
+        row.style.transform = "";
+        row.classList.remove(
+          "dragging",
+          "swipe-preview-commit",
+          "swipe-preview-done",
+          "swipe-preview-defer",
+          "swipe-preview-kill",
+        );
+      }
+    })()
+  `);
+  await delay(50);
 }
 
 async function exerciseMorningSwipeFlow(): Promise<boolean> {
