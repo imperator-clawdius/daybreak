@@ -1,5 +1,6 @@
 import { PRICE_USD } from "../config";
 import { getPublicCheckoutState } from "../checkout-state";
+import { SupportEmail } from "../contact";
 import { purchaseTermsCopy, refundTermsCopy } from "../legal-copy";
 import { SITE_IMAGE, SITE_URL } from "../site";
 
@@ -83,7 +84,9 @@ export default function TermsPage() {
 
       <section>
         <h2>Contact</h2>
-        <p>Email founder@daybreak.rest for support or terms questions.</p>
+        <p>
+          Email <SupportEmail /> for support or terms questions.
+        </p>
       </section>
     </main>
   );

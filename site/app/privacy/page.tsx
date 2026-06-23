@@ -1,4 +1,5 @@
 import { getPublicCheckoutState } from "../checkout-state";
+import { SupportEmail } from "../contact";
 import { SITE_IMAGE, SITE_URL } from "../site";
 
 const title = "Privacy - Daybreak";
@@ -81,7 +82,9 @@ export default function PrivacyPage() {
 
       <section>
         <h2>Contact</h2>
-        <p>Email founder@daybreak.rest with privacy questions.</p>
+        <p>
+          Email <SupportEmail /> with privacy questions.
+        </p>
       </section>
     </main>
   );

@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import { getPublicCheckoutState, getPublicDownloadState } from "./checkout-state";
+import { SupportEmail } from "./contact";
 import { CHECKOUT_URL, DOWNLOAD_URL, PRICE_USD } from "./config";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -208,7 +209,7 @@ export default function Home() {
           </dd>
           <dt>What&apos;s the refund policy?</dt>
           <dd>
-            14-day no-questions refund. Email founder@daybreak.rest.
+            14-day no-questions refund. Email <SupportEmail />.
           </dd>
           <dt>Is it shipping yet?</dt>
           <dd>
@@ -220,7 +221,9 @@ export default function Home() {
       </section>
 
       <footer className="foot">
-        <p>Daybreak - Passive Print Labs LLC - founder@daybreak.rest</p>
+        <p>
+          Daybreak - Passive Print Labs LLC - <SupportEmail />
+        </p>
         <p>
           <a href="privacy/">Privacy</a> - <a href="terms/">Terms</a>
         </p>
