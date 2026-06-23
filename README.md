@@ -32,6 +32,24 @@ npm run verify:pages-health # GitHub Pages DNS/cert health
 npm run verify:release   # installer checksum + signing/timestamp preflight
 ```
 
+## Launch locally
+
+For development, run from the repo root:
+
+```powershell
+npm start
+```
+
+For the packaged Windows build, run the packaged app directly after
+`npm run package -w @daybreak/desktop`:
+
+```powershell
+& "desktop\release\win-unpacked\Daybreak.exe"
+```
+
+Do not rely on a global `electron` command; Electron is installed as a workspace
+dev dependency and is launched through npm scripts or the packaged executable.
+
 ## Status
 
 See [`docs/COMPLETION.md`](docs/COMPLETION.md) for the honest completion ledger
