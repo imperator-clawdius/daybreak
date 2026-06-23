@@ -144,7 +144,7 @@ export default function Home() {
           <p className="kicker">One-time purchase</p>
           <p className="price">
             <span className="amount">${PRICE_USD}</span>
-            <span className="per">once - lifetime updates</span>
+            <span className="per">once - v1 maintenance updates</span>
           </p>
           <ul className="price-points">
             <li>Windows 10 &amp; 11</li>

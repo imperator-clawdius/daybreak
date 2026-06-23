@@ -178,6 +178,10 @@ describe("site static export metadata", () => {
       expect(indexHtml).not.toContain("GitHub Pages provisions HTTPS");
       expect(indexHtml).not.toContain("GitHub Pages HTTPS is pending");
       expect(indexHtml).not.toContain("GitHub Pages preview is online");
+      expect(indexHtml.toLowerCase()).not.toContain("lifetime updates");
+      expect(termsHtml.toLowerCase()).not.toContain("lifetime updates");
+      expect(indexHtml).toContain("v1 maintenance updates");
+      expect(termsHtml).toContain("included v1 maintenance updates");
 
       const inspectedFiles = listStaticFiles(outFile("")).filter((path) =>
         /\.(?:css|html|js|json|txt|webmanifest|xml)$/i.test(path),

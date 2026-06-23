@@ -21,4 +21,11 @@ describe("README launch contract", () => {
     expect(readme).not.toContain("GitHub Pages HTTPS certificate pending");
     expect(readme).not.toContain("GitHub Pages HTTPS certificate, Stripe link");
   });
+
+  it("does not promise lifetime updates before an update channel exists", () => {
+    const readme = readFileSync("README.md", "utf8");
+
+    expect(readme).toContain("v1 maintenance updates");
+    expect(readme.toLowerCase()).not.toContain("lifetime updates");
+  });
 });

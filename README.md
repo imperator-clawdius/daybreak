@@ -5,7 +5,7 @@ screen at first login, surfaces yesterday's unfinished business, asks for
 today's three commitments, and will not get out of your way until you have
 physically wiped every item: **commit, defer, or kill.**
 
-- Windows desktop - **$19 one-time**, lifetime updates, no subscription
+- Windows desktop - **$19 one-time**, v1 maintenance updates, no subscription
 - Local-only: no account, no cloud, no telemetry
 - Ship-or-die cycle 2 - built in public
 

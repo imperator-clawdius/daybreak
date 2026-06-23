@@ -19,4 +19,14 @@ describe("legal checkout copy", () => {
     expect(terms).not.toContain("The planned launch price is");
     expect(terms).not.toContain("once checkout is live");
   });
+
+  it("scopes update promises to the v1 maintenance surface", () => {
+    const copy = source("site/app/legal-copy.ts");
+    const page = source("site/app/page.tsx");
+
+    expect(copy).toContain("included v1 maintenance updates");
+    expect(page).toContain("v1 maintenance updates");
+    expect(copy.toLowerCase()).not.toContain("lifetime updates");
+    expect(page.toLowerCase()).not.toContain("lifetime updates");
+  });
 });
