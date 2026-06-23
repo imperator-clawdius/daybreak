@@ -6,6 +6,7 @@ import {
   shouldBlockDesktopShortcut,
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
+  shouldEnforceDesktopSingleInstance,
 } from "../src/desktop-shell";
 
 describe("desktop shell policy", () => {
@@ -67,6 +68,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to disable Chromium DevTools", () => {
     expect(shouldDisableDesktopDevTools()).toBe(true);
+  });
+
+  it("requires the desktop shell to enforce a single running instance", () => {
+    expect(shouldEnforceDesktopSingleInstance()).toBe(true);
   });
 
   it("defines strict BrowserWindow web preference policy", () => {

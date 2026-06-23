@@ -19,6 +19,7 @@ import {
   shouldBlockDesktopShortcut,
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
+  shouldEnforceDesktopSingleInstance,
   validateLogUpdate,
   type DayLog,
   type Phase,
@@ -51,6 +52,7 @@ let applicationMenuDisabled = false;
 let devToolsDisabled = false;
 let webPreferencesApplied = false;
 let desktopShortcutsBlocked = false;
+let singleInstanceLocked = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -79,6 +81,25 @@ if (SMOKE && SMOKE_SCENARIO === "evening") {
       },
     ],
   });
+}
+
+function configureSingleInstanceLock(): boolean {
+  if (!shouldEnforceDesktopSingleInstance()) return true;
+  const locked = app.requestSingleInstanceLock();
+  singleInstanceLocked = locked;
+  if (!locked) {
+    app.quit();
+    return false;
+  }
+
+  app.on("second-instance", () => {
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.focus();
+    win.webContents.send("daybreak:nudge");
+  });
+
+  return true;
 }
 
 function nowForSession(): Date {
@@ -218,6 +239,10 @@ async function runSmokeFlow(): Promise<void> {
           desktopShortcutsBlocked
             ? " shortcuts_blocked=true"
             : " shortcuts_blocked=false"
+        }${
+          singleInstanceLocked
+            ? " single_instance_lock=true"
+            : " single_instance_lock=false"
         }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
@@ -520,7 +545,7 @@ ipcMain.handle("daybreak:dismiss", (_evt, payload: { log: DayLog; phase: Phase }
   return { closed: ok };
 });
 
-app.whenReady().then(() => {
+if (configureSingleInstanceLock()) app.whenReady().then(() => {
   configureApplicationMenu();
   configureStartupRegistration();
   createWindow();

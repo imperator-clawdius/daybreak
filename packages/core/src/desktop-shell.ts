@@ -24,6 +24,10 @@ export function shouldDisableDesktopDevTools(): boolean {
   return true;
 }
 
+export function shouldEnforceDesktopSingleInstance(): boolean {
+  return true;
+}
+
 export function getDesktopWebPreferencesPolicy() {
   return {
     allowRunningInsecureContent: false,
