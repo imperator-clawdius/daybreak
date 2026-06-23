@@ -59,6 +59,13 @@ export default function PrivacyPage() {
           used only to restore your board, carry unresolved items forward, and
           calculate streaks.
         </p>
+        <p>
+          On Windows installs, the main file is normally{" "}
+          <code>%APPDATA%\Daybreak\daybreak.json</code>, with{" "}
+          <code>daybreak.json.bak</code> kept beside it as the last known-good
+          backup. To remove local commitment history, quit Daybreak and delete
+          those files directly.
+        </p>
       </section>
 
       <section>

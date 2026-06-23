@@ -57,6 +57,8 @@ and [`docs/PREMORTEM.md`](docs/PREMORTEM.md) for the launch-hardening premortem:
 what is real and verified vs. what is still blocked (Stripe link, signed and
 timestamped hosted installer, first real sale). No
 fabricated proof appears anywhere in this project by policy (`AGENTS.md`).
+For the exact local files Daybreak writes and the manual delete/backup path, see
+[`docs/LOCAL_DATA.md`](docs/LOCAL_DATA.md).
 
 Domain: **daybreak.rest** (purchased on Namecheap; apex and `www` DNS resolve to
 GitHub Pages, the Pages custom domain is attached, and HTTPS is live).

@@ -15,6 +15,11 @@ or provide Daybreak as a hosted service.
 Daybreak stores commitment data locally on your device. The application does not
 include an account system, cloud sync, or telemetry in this version. You are
 responsible for backing up or deleting local data according to your own needs.
+On Windows installs, the main store is normally
+%APPDATA%\Daybreak\daybreak.json, with daybreak.json.bak kept beside it as the
+last known-good backup. Uninstalling the app does not prove those user-data files
+were removed; quit Daybreak and delete those files directly when you want the
+local commitment history gone.
 
 3. No Reverse Engineering
 You may not reverse engineer, decompile, disassemble, modify, or create
