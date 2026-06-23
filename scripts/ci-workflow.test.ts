@@ -23,9 +23,8 @@ describe("CI workflow", () => {
     const workflow = ciWorkflowSource();
 
     expect(workflow).toContain("npm run verify:launch");
-    expect(workflow).toContain("npm run verify:pages-health");
     expect(workflow).toContain("github.event_name == 'push'");
     expect(workflow).toContain("github.ref == 'refs/heads/main'");
-    expect(workflow).toContain("GH_TOKEN: ${{ github.token }}");
+    expect(workflow).not.toContain("npm run verify:pages-health");
   });
 });

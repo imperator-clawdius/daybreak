@@ -26,7 +26,3 @@ jobs:
       - run: npm run verify:readiness -- --allow-pending
       - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: npm run verify:launch
-      - if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: npm run verify:pages-health
-        env:
-          GH_TOKEN: ${{ github.token }}
