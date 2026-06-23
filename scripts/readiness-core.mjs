@@ -361,7 +361,8 @@ function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) 
     typeof proof.download?.url !== "string" ||
     typeof proof.download.sha256 !== "string" ||
     typeof proof.signature?.status !== "string" ||
-    typeof proofSigner !== "string"
+    typeof proofSigner !== "string" ||
+    typeof proof.signature.timestamped !== "boolean"
   ) {
     return {
       pass: false,
@@ -388,6 +389,13 @@ function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) 
       pass: false,
       reason: "installer_signature_not_valid",
       detail: "installer proof does not show a valid signature",
+    };
+  }
+  if (proof.signature.timestamped !== true) {
+    return {
+      pass: false,
+      reason: "installer_signature_not_valid",
+      detail: "installer proof does not show a timestamped signature",
     };
   }
 

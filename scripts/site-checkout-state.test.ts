@@ -49,6 +49,7 @@ const matchingInstallerProof = {
   signature: {
     status: "Valid",
     signer: "CN=Passive Print Labs LLC",
+    timestamped: true,
   },
 };
 

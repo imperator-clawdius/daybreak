@@ -941,6 +941,7 @@ describe("external launch links", () => {
           signature: {
             status: "Valid",
             signer: "CN=Passive Print Labs LLC",
+            timestamped: true,
           },
         },
       }),
@@ -956,6 +957,7 @@ describe("external launch links", () => {
       signature: {
         status: "Valid",
         signer: "CN=Passive Print Labs LLC",
+        timestamped: true,
       },
     };
 
@@ -975,6 +977,10 @@ describe("external launch links", () => {
         ...baseProof,
         signature: { status: "Valid" },
       },
+      {
+        ...baseProof,
+        signature: { ...baseProof.signature, timestamped: "true" },
+      },
     ]) {
       expect(
         getVerifiedInstallerLinkState({
@@ -987,6 +993,20 @@ describe("external launch links", () => {
         reason: "installer_proof_malformed",
       });
     }
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url,
+        sha256,
+        proof: {
+          ...baseProof,
+          signature: { ...baseProof.signature, timestamped: false },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "installer_signature_not_valid",
+    });
   });
 
   it("rejects installer proof that contains signing secrets or request logs", () => {
@@ -1003,6 +1023,7 @@ describe("external launch links", () => {
           signature: {
             status: "Valid",
             signer: "CN=Passive Print Labs LLC",
+            timestamped: true,
           },
           signing: {
             certificate_private_key: "-----BEGIN PRIVATE KEY-----",
@@ -1029,6 +1050,7 @@ describe("external launch links", () => {
           signature: {
             status: "Valid",
             signer: "CN=Passive Print Labs LLC",
+            timestamped: true,
           },
           response_headers: {
             "Set-Cookie": "session=secret",
@@ -1049,6 +1071,7 @@ describe("external launch links", () => {
           signature: {
             status: "Valid",
             signer: "CN=Passive Print Labs LLC",
+            timestamped: true,
           },
           stripe_secret_key: "sk_live_secret",
         },

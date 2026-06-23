@@ -43,10 +43,12 @@ export function buildAuthenticodeCommand(installerPath) {
   return [
     `$sig = Get-AuthenticodeSignature -LiteralPath ${psString(installerPath)}`,
     "$subject = if ($sig.SignerCertificate) { [string]$sig.SignerCertificate.Subject } else { '' }",
+    "$timestamped = $null -ne $sig.TimeStamperCertificate",
     "[pscustomobject]@{",
     "Status = [string]$sig.Status;",
     "StatusMessage = [string]$sig.StatusMessage;",
-    "Subject = $subject",
+    "Subject = $subject;",
+    "Timestamped = [bool]$timestamped",
     "} | ConvertTo-Json -Compress",
   ].join("\n");
 }
@@ -57,6 +59,7 @@ export function readAuthenticodeSignature(installerPath) {
       status: "Unknown",
       statusMessage: "Authenticode signature check is only available on Windows.",
       subject: "",
+      timestamped: false,
     };
   }
 
@@ -78,12 +81,14 @@ export function readAuthenticodeSignature(installerPath) {
       status: parsed.Status || "Unknown",
       statusMessage: parsed.StatusMessage || "",
       subject: parsed.Subject || "",
+      timestamped: parsed.Timestamped === true,
     };
   } catch (e) {
     return {
       status: "Unknown",
       statusMessage: String(e.message || e),
       subject: "",
+      timestamped: false,
     };
   }
 }
@@ -103,13 +108,16 @@ export function evaluateInstallerArtifact({ installerPath, signature }) {
   const signatureStatus = signature.status || "Unknown";
   const signer = signature.subject || "";
   const signerMatches = signer.includes(EXPECTED_SIGNER_SUBJECT);
+  const timestamped = signature.timestamped === true;
   const signatureMessage =
     signatureStatus === "NotSigned"
       ? "The installer is not digitally signed."
       : signatureStatus === "Valid" && !signerMatches
         ? `Expected signer subject to include ${EXPECTED_SIGNER_SUBJECT}.`
+      : signatureStatus === "Valid" && !timestamped
+        ? "The installer signature is valid but is not timestamped."
       : signature.statusMessage || "";
-  const valid = signatureStatus === "Valid" && signerMatches;
+  const valid = signatureStatus === "Valid" && signerMatches && timestamped;
 
   return {
     pass: valid,
@@ -117,6 +125,8 @@ export function evaluateInstallerArtifact({ installerPath, signature }) {
     reason:
       signatureStatus === "Valid" && !signerMatches
         ? "signer_mismatch"
+        : signatureStatus === "Valid" && signerMatches && !timestamped
+          ? "signature_not_timestamped"
         : valid
           ? "signed"
           : "not_signed",
@@ -125,8 +135,9 @@ export function evaluateInstallerArtifact({ installerPath, signature }) {
     signatureStatus,
     signatureMessage,
     signer,
+    timestamped,
     detail: valid
-      ? `signed${signer ? ` by ${signer}` : ""}; sha256=${sha256}`
+      ? `signed${signer ? ` by ${signer}` : ""}; timestamped=true; sha256=${sha256}`
       : `signature_status=${signatureStatus}; sha256=${sha256}`,
   };
 }
@@ -395,6 +406,7 @@ export function renderReleaseReport(result) {
     lines.push(`installer_sha256=${result.sha256}`);
     lines.push(`signature_status=${result.signatureStatus}`);
     if (result.signer) lines.push(`signer=${result.signer}`);
+    if (result.signer) lines.push(`signature_timestamped=${result.timestamped ? "true" : "false"}`);
     if (result.signatureMessage) {
       lines.push(`signature_message=${result.signatureMessage}`);
     }
@@ -435,10 +447,11 @@ export function renderReleaseReport(result) {
     if (
       !result.signatureStatus ||
       result.signatureStatus !== "Valid" ||
-      result.reason === "signer_mismatch"
+      result.reason === "signer_mismatch" ||
+      result.reason === "signature_not_timestamped"
     ) {
       blockers.push(
-        "- Sign the Windows installer with a real Passive Print Labs code-signing certificate before hosting it.",
+        "- Sign and timestamp the Windows installer with a real Passive Print Labs code-signing certificate before hosting it.",
       );
     }
     if (result.icon && !result.icon.pass) {

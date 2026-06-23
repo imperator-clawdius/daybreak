@@ -48,7 +48,7 @@ function fetchBody(status: number, body: string) {
 }
 
 function signature(status: string, subject = "") {
-  return async () => ({ status, statusMessage: "", subject });
+  return async () => ({ status, statusMessage: "", subject, timestamped: true });
 }
 
 function stripeProof({
@@ -103,10 +103,11 @@ function installerProof({
   sha256 = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
   status = "Valid",
   signer = "CN=Passive Print Labs LLC",
+  timestamped = true,
 } = {}) {
   return {
     download: { url, sha256 },
-    signature: { status, signer },
+    signature: { status, signer, timestamped },
   };
 }
 
@@ -1339,6 +1340,7 @@ describe("readiness external-link proof", () => {
         ...installerProof(),
         signature: { status: "Valid" },
       },
+      installerProof({ timestamped: "true" }),
     ]) {
       await expect(
         evaluateExternalLink({
@@ -1355,6 +1357,21 @@ describe("readiness external-link proof", () => {
         reason: "installer_proof_malformed",
       });
     }
+
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+        installerProof: installerProof({ timestamped: false }),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "installer_signature_not_valid",
+    });
   });
 
   it("rejects installer proof that contains signing secrets or request logs", async () => {

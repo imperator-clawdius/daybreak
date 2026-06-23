@@ -24,18 +24,18 @@ fabricated proof**.
 | CI runs repo gates | `.github/workflows/check.yml` runs on pushes and pull requests with Node 24, `npm ci`, `npm audit --omit=dev --audit-level=moderate`, `npm run check`, and `npm run verify:local-only`; `scripts/ci-workflow.test.ts` proves the workflow contains those gates |
 | Site exports as static HTML | `next build` -> `/`, `/privacy`, `/terms`, and 404 static pages exported to `site/out/` |
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; signing skipped because no cert is configured |
-| Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `icon_status=configured`, `signature_status=NotSigned`, exit 1 until a real cert signs it |
+| Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `icon_status=configured`, `signature_status=NotSigned`, exit 1 until a real cert signs and timestamps it |
 | Packaged Windows app runtime is smoke-tested | `npm run verify:release` launches `desktop/release/win-unpacked/Daybreak.exe` with `DAYBREAK_SMOKE=1` for morning and evening scenarios and requires the packaged app to load the renderer, complete IPC, finish the wipe flow, and render the evening streak summary before reporting `packaged_smoke=pass` |
 | Windows release metadata configured | `npm run verify:release` checks app id, product name, author, NSIS x64 target, and installer mode before a release can be considered ready |
 | Windows signer ownership is verified | `npm run verify:release` rejects even a valid Authenticode signature unless the signer subject includes `Passive Print Labs LLC` |
-| Hosted installer readiness verifies signing | `npm run verify:readiness` downloads the configured installer bytes, checks SHA-256, rejects unsigned or wrong-publisher Authenticode signatures, and requires `proof/installer-download.json` to match the hosted signed installer |
+| Hosted installer readiness verifies signing | `npm run verify:readiness` downloads the configured installer bytes, checks SHA-256, rejects unsigned, untimestamped, or wrong-publisher Authenticode signatures, and requires `proof/installer-download.json` to match the hosted signed installer |
 | Checkout readiness requires Stripe price proof | `npm run verify:readiness` requires `proof/stripe-payment-link.json` to prove the configured Stripe Payment Link is active, live-mode, one-time, and USD 1900 cents |
 | Checkout readiness rejects missing or extra Stripe line items | Core proof state and `npm run verify:readiness` require exactly one Stripe line item, so an empty proof, added fee, upsell, or second product cannot hide behind one matching $19 item |
 | Checkout readiness fails closed on malformed or incomplete Stripe proof | Core proof state and `npm run verify:readiness` reject malformed Payment Link object/URL/ID/state fields, blank Payment Link IDs, malformed `line_items` containers, malformed or incomplete line-item pagination, empty or non-array `line_items.data`, non-object line item entries, malformed or fractional quantity fields, missing price objects, malformed recurring fields, and malformed or fractional-cent price fields instead of throwing or misclassifying malformed proof |
 | Public checkout CTA requires Stripe proof | The landing page uses core's proof-backed checkout state and reads `proof/stripe-payment-link.json` during static export, so a syntactically valid Stripe URL still renders as "Checkout opening soon" until the proof matches |
 | Legal checkout copy follows Stripe proof state | Terms and privacy pages read the proof-backed public checkout state, and `scripts/legal-checkout-copy.test.ts` prevents stale hard-coded checkout-closed copy from shipping after Stripe proof is connected |
-| Public download CTA requires signed-installer proof | The landing page reads `proof/installer-download.json` during static export, so a syntactically valid HTTPS download URL plus SHA-256 still renders as "Installer in final packaging" until the proof matches a valid Passive Print Labs signature |
-| Installer proof fails closed on malformed fields | Core proof state and `npm run verify:readiness` reject malformed installer proof URL, SHA-256, signature status, missing signer identity, or malformed signer fields before treating the proof as a normal checksum/signature/signer mismatch |
+| Public download CTA requires signed-installer proof | The landing page reads `proof/installer-download.json` during static export, so a syntactically valid HTTPS download URL plus SHA-256 still renders as "Installer in final packaging" until the proof matches a valid timestamped Passive Print Labs signature |
+| Installer proof fails closed on malformed fields | Core proof state and `npm run verify:readiness` reject malformed installer proof URL, SHA-256, signature status, missing signer identity, malformed signer fields, or malformed timestamp fields before treating the proof as a normal checksum/signature/signer mismatch |
 | Checkout, installer, and paid-order proof reject sensitive data | Core proof state and `npm run verify:readiness` recursively reject proof artifacts containing keys, key-name variants, auth/session headers, customer data, payment identifiers, request/response logs, or certificate private material before other proof-shape mismatches can hide the leak |
 | Proof and dependency changes redeploy the site | `.github/workflows/pages.yml` watches `proof/stripe-payment-link.json`, `proof/installer-download.json`, `package.json`, and `package-lock.json`, with `scripts/pages-workflow.test.ts` proving corrected proof or root dependency changes will trigger a Pages rebuild |
 | First-order readiness requires redacted Stripe paid-order proof | `npm run verify:readiness` keeps market signal pending until `proof/first-paid-order.json` proves a live, complete, paid, unrefunded USD 1900 Checkout Session for the configured Payment Link, and rejects proof that includes customer data, payment-detail fields, auth/session headers, request/response logs, or private-key material |
@@ -67,12 +67,12 @@ These require the owner; none are faked to look done.
    from Stripe so the readiness gate can prove the link is active, live-mode,
    one-time, and USD 1900 cents. Until then the page shows an honest
    "checkout opening soon" state - not a fake button.
-3. **Produce a signed Windows installer.** Unsigned NSIS packaging works, but a
+3. **Produce a signed and timestamped Windows installer.** Unsigned NSIS packaging works, but a
    real release needs a code-signing cert so SmartScreen does not flag it; then
    host it, set `DOWNLOAD_URL` and `DOWNLOAD_SHA256`, add
    `proof/installer-download.json`, and let the readiness gate verify HTTP 2xx,
    the downloaded file hash, the proof file, and the Passive Print Labs
-   Authenticode signer.
+   timestamped Passive Print Labs Authenticode signer.
 4. **Earn the first real $19 order.** Market signal is `0` and stays `0` in the
    readiness gate until redacted `proof/first-paid-order.json` proves a genuine
    live, paid, unrefunded Stripe Checkout Session for USD 1900.
@@ -106,4 +106,4 @@ $env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w
 `npm run verify:readiness` must keep exiting 1 until the real domain, Stripe
 Payment Link, signed hosted installer, and first paid order exist.
 `npm run verify:release` must keep exiting 1 until the installer is actually
-signed.
+signed and timestamped.

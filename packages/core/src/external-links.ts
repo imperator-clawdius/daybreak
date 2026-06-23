@@ -293,6 +293,7 @@ interface InstallerDownloadProof {
     status?: unknown;
     signer?: unknown;
     subject?: unknown;
+    timestamped?: unknown;
   };
 }
 
@@ -324,7 +325,8 @@ export function getInstallerProofState({
     typeof installerProof.download?.url !== "string" ||
     typeof installerProof.download.sha256 !== "string" ||
     typeof installerProof.signature?.status !== "string" ||
-    typeof proofSigner !== "string"
+    typeof proofSigner !== "string" ||
+    typeof installerProof.signature.timestamped !== "boolean"
   ) {
     return { ready: false, reason: "installer_proof_malformed" };
   }
@@ -335,6 +337,9 @@ export function getInstallerProofState({
     return { ready: false, reason: "installer_checksum_mismatch" };
   }
   if (installerProof.signature?.status !== "Valid") {
+    return { ready: false, reason: "installer_signature_not_valid" };
+  }
+  if (installerProof.signature.timestamped !== true) {
     return { ready: false, reason: "installer_signature_not_valid" };
   }
 

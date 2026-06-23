@@ -83,6 +83,7 @@ describe("release preflight", () => {
           status: "Valid",
           statusMessage: "",
           subject: "CN=Passive Print Labs LLC",
+          timestamped: true,
         },
       });
 
@@ -90,6 +91,29 @@ describe("release preflight", () => {
         pass: true,
         installerExists: true,
         reason: "signed",
+        signatureStatus: "Valid",
+        signer: "CN=Passive Print Labs LLC",
+      });
+    }));
+
+  it("keeps release pending when a valid signature is not timestamped", () =>
+    withTempDir((dir) => {
+      const installerPath = join(dir, "Daybreak Setup 0.1.0.exe");
+      writeFileSync(installerPath, "hello", "utf8");
+
+      const result = evaluateInstallerArtifact({
+        installerPath,
+        signature: {
+          status: "Valid",
+          statusMessage: "",
+          subject: "CN=Passive Print Labs LLC",
+          timestamped: false,
+        },
+      });
+
+      expect(result).toMatchObject({
+        pass: false,
+        reason: "signature_not_timestamped",
         signatureStatus: "Valid",
         signer: "CN=Passive Print Labs LLC",
       });
@@ -106,6 +130,7 @@ describe("release preflight", () => {
           status: "Valid",
           statusMessage: "",
           subject: "CN=Unrelated Publisher LLC",
+          timestamped: true,
         },
       });
 
@@ -116,7 +141,7 @@ describe("release preflight", () => {
         signer: "CN=Unrelated Publisher LLC",
       });
       expect(renderReleaseReport(result)).toContain(
-        "Sign the Windows installer with a real Passive Print Labs code-signing certificate before hosting it.",
+        "Sign and timestamp the Windows installer with a real Passive Print Labs code-signing certificate before hosting it.",
       );
     }));
 
@@ -419,7 +444,12 @@ describe("release preflight", () => {
         root: dir,
         installerPath,
         packagePath: "desktop-package.json",
-        signature: { status: "Valid", statusMessage: "", subject: "CN=Test" },
+        signature: {
+          status: "Valid",
+          statusMessage: "",
+          subject: "CN=Test",
+          timestamped: true,
+        },
       });
 
       expect(result).toMatchObject({

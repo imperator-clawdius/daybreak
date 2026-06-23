@@ -29,6 +29,7 @@ and verifying the hosted bytes. The verifier expects:
 - `download.sha256` equals `DOWNLOAD_SHA256` in `site/app/config.ts`
 - `signature.status` is `Valid`
 - `signature.signer` or `signature.subject` contains `Passive Print Labs LLC`
+- `signature.timestamped` is `true`
 
 Keep certificate private keys, signing credentials, authorization headers,
 cookies, request logs, and customer data out of this file.
