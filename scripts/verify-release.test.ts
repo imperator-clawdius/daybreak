@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -48,6 +56,16 @@ describe("release preflight", () => {
     expect(desktopPackage.scripts.package).toContain(
       "clean-release-sidecars.mjs",
     );
+  });
+
+  it("publishes support and terms contact details in the installer license", () => {
+    const license = readFileSync(
+      join(process.cwd(), "desktop", "assets", "installer-license.txt"),
+      "utf8",
+    );
+
+    expect(license).toContain("founder@daybreak.rest");
+    expect(license).toContain("https://daybreak.rest/terms/");
   });
 
   it("runs the local asar CLI through node for packaged artifact inspection", () => {

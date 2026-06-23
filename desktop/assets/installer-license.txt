@@ -22,7 +22,8 @@ derivative works from Daybreak except where applicable law expressly allows it.
 
 4. Payment and Refunds
 Daybreak is offered as a one-time purchase. Refund handling follows the terms
-published on the Daybreak website at the time of purchase.
+published on the Daybreak website at the time of purchase:
+https://daybreak.rest/terms/
 
 5. No Warranty
 Daybreak is provided "as is" without warranties of any kind, express or implied,
@@ -39,5 +40,5 @@ This v1 installer does not include automatic updates. Future versions may be
 distributed separately with updated terms.
 
 8. Contact
-Questions about these terms should be sent through the support channel published
-on the Daybreak website.
+Questions about these terms or support requests should be sent to
+founder@daybreak.rest.
