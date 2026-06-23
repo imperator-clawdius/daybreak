@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getDesktopWebPreferencesPolicy,
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
   shouldDisableDesktopApplicationMenu,
@@ -65,5 +66,18 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to disable Chromium DevTools", () => {
     expect(shouldDisableDesktopDevTools()).toBe(true);
+  });
+
+  it("defines strict BrowserWindow web preference policy", () => {
+    expect(getDesktopWebPreferencesPolicy()).toEqual({
+      allowRunningInsecureContent: false,
+      contextIsolation: true,
+      devTools: false,
+      nodeIntegration: false,
+      sandbox: true,
+      spellcheck: false,
+      webSecurity: true,
+      webviewTag: false,
+    });
   });
 });

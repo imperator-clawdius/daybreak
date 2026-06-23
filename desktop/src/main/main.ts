@@ -11,6 +11,7 @@ import { pathToFileURL } from "node:url";
 import {
   buildDaySession,
   canDismiss,
+  getDesktopWebPreferencesPolicy,
   isAllowedDesktopNavigation,
   makeItem,
   planStartupRegistration,
@@ -47,6 +48,7 @@ let dismissAllowed = false;
 let smokeFailed = false;
 let applicationMenuDisabled = false;
 let devToolsDisabled = false;
+let webPreferencesApplied = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -94,6 +96,7 @@ function createWindow(): void {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   const entryFile = join(__dirname, "index.html");
   const entryUrl = pathToFileURL(entryFile).toString();
+  const webPreferencesPolicy = getDesktopWebPreferencesPolicy();
 
   win = new BrowserWindow({
     // Smoke mode: small, hidden, non-intrusive so CI / verification never
@@ -108,14 +111,20 @@ function createWindow(): void {
     skipTaskbar: false,
     webPreferences: {
       preload: join(__dirname, "preload.js"),
-      contextIsolation: true,
-      devTools: !shouldDisableDesktopDevTools(),
-      nodeIntegration: false,
-      sandbox: true,
+      ...webPreferencesPolicy,
     },
   });
   devToolsDisabled =
     shouldDisableDesktopDevTools() && !win.webContents.isDevToolsOpened();
+  webPreferencesApplied =
+    webPreferencesPolicy.allowRunningInsecureContent === false &&
+    webPreferencesPolicy.contextIsolation &&
+    webPreferencesPolicy.devTools === false &&
+    webPreferencesPolicy.nodeIntegration === false &&
+    webPreferencesPolicy.sandbox &&
+    webPreferencesPolicy.spellcheck === false &&
+    webPreferencesPolicy.webSecurity &&
+    webPreferencesPolicy.webviewTag === false;
 
   // Surface any renderer-side failure as a smoke failure.
   win.webContents.on("console-message", (_e, level, message) => {
@@ -180,7 +189,7 @@ async function runSmokeFlow(): Promise<void> {
           SMOKE_SCENARIO === "evening" ? " streak_summary=true" : ""
         } app_menu_disabled=${applicationMenuDisabled ? "true" : "false"}${
           devToolsDisabled ? " devtools_disabled=true" : " devtools_disabled=false"
-        }${
+        }${webPreferencesApplied ? " web_preferences=strict" : " web_preferences=loose"}${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
           screenshotCaptured ? " screenshot=true" : ""

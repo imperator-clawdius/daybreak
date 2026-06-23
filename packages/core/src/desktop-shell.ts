@@ -24,6 +24,19 @@ export function shouldDisableDesktopDevTools(): boolean {
   return true;
 }
 
+export function getDesktopWebPreferencesPolicy() {
+  return {
+    allowRunningInsecureContent: false,
+    contextIsolation: true,
+    devTools: false,
+    nodeIntegration: false,
+    sandbox: true,
+    spellcheck: false,
+    webSecurity: true,
+    webviewTag: false,
+  } as const;
+}
+
 export function isAllowedDesktopNavigation(
   appEntrypointUrl: string,
   targetUrl: string,

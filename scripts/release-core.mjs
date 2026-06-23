@@ -629,6 +629,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("ipc_roundtrip=true") &&
     stdout.includes("app_menu_disabled=true") &&
     stdout.includes("devtools_disabled=true") &&
+    stdout.includes("web_preferences=strict") &&
     stdout.includes("close_probe=true") &&
     stdout.includes("swipe_flow=true");
 
