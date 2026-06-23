@@ -509,6 +509,30 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects first-order proof with generic personal-data fields", () => {
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          billing_details: {
+            email: "buyer@example.com",
+            name: "Buyer",
+            phone: "+15555550123",
+            address: {
+              line1: "1 Main St",
+            },
+          },
+        }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("rejects sensitive first-order proof before other proof mismatches", () => {
     expect(
       getPaidOrderProofState({
