@@ -37,6 +37,10 @@ export function shouldGuardDesktopFrameNavigation(): boolean {
   return true;
 }
 
+export function shouldPreventDesktopDragDropNavigation(): boolean {
+  return true;
+}
+
 export function shouldDenyDesktopPermission(_permission: string): boolean {
   return true;
 }

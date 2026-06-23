@@ -7,6 +7,7 @@ import {
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
   shouldBlockDesktopShortcut,
+  shouldPreventDesktopDragDropNavigation,
   shouldGuardDesktopFrameNavigation,
   shouldGuardDesktopRedirects,
   shouldDisableDesktopApplicationMenu,
@@ -86,6 +87,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to guard frame navigation", () => {
     expect(shouldGuardDesktopFrameNavigation()).toBe(true);
+  });
+
+  it("requires the desktop shell to prevent drag/drop navigation", () => {
+    expect(shouldPreventDesktopDragDropNavigation()).toBe(true);
   });
 
   it("defines strict BrowserWindow web preference policy", () => {

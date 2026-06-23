@@ -7,6 +7,7 @@ import {
   makeItem,
   MAX_DAILY_COMMITS,
   resolveLogForPhase,
+  shouldPreventDesktopDragDropNavigation,
   summarizeStreak,
   validateNewCommit,
   type DayLog,
@@ -250,7 +251,17 @@ async function tryClose() {
   await api.dismiss({ log, phase });
 }
 
+function installDragDropNavigationGuard() {
+  if (!shouldPreventDesktopDragDropNavigation()) return;
+  for (const eventName of ["dragover", "drop"]) {
+    window.addEventListener(eventName, (event) => {
+      event.preventDefault();
+    });
+  }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+  installDragDropNavigationGuard();
   ($("add-form") as HTMLFormElement).addEventListener("submit", (e) => {
     e.preventDefault();
     const input = $("add-input") as HTMLInputElement;

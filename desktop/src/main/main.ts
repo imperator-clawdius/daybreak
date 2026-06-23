@@ -63,6 +63,7 @@ let permissionsDenied = false;
 let certificateErrorsRejected = false;
 let redirectsGuarded = false;
 let frameNavigationGuarded = false;
+let dragDropNavigationGuarded = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -285,13 +286,19 @@ async function runSmokeFlow(): Promise<void> {
   // Give the renderer's boot() (load + first save round-trip) time to run.
   await delay(500);
   const closeProbe = SMOKE_CLOSE_PROBE ? await exerciseCloseProbe() : true;
+  dragDropNavigationGuarded = await exerciseDragDropNavigationGuard();
   const swipeFlow =
     SMOKE_SCENARIO === "evening"
       ? await exerciseEveningSwipeFlow()
       : await exerciseMorningSwipeFlow();
   const data = store.read();
   let screenshotCaptured = false;
-  let ok = !smokeFailed && data.version === 1 && closeProbe && swipeFlow;
+  let ok =
+    !smokeFailed &&
+    data.version === 1 &&
+    closeProbe &&
+    dragDropNavigationGuarded &&
+    swipeFlow;
   if (ok && SMOKE_SCREENSHOT && win) {
     try {
       await stabilizeSmokeScreenshot();
@@ -334,6 +341,10 @@ async function runSmokeFlow(): Promise<void> {
             ? " frame_navigation_guarded=true"
             : " frame_navigation_guarded=false"
         }${
+          dragDropNavigationGuarded
+            ? " drag_drop_guarded=true"
+            : " drag_drop_guarded=false"
+        }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
           screenshotCaptured ? " screenshot=true" : ""
@@ -353,6 +364,26 @@ async function exerciseCloseProbe(): Promise<boolean> {
     console.error("smoke close probe failed: unresolved window closed");
   }
   return stillOpen;
+}
+
+async function exerciseDragDropNavigationGuard(): Promise<boolean> {
+  if (!win) return false;
+  const result = (await win.webContents.executeJavaScript(`
+    (() => {
+      const dragover = new Event("dragover", { cancelable: true });
+      const drop = new Event("drop", { cancelable: true });
+      window.dispatchEvent(dragover);
+      window.dispatchEvent(drop);
+      return {
+        dragoverPrevented: dragover.defaultPrevented,
+        dropPrevented: drop.defaultPrevented,
+      };
+    })()
+  `)) as { dragoverPrevented: boolean; dropPrevented: boolean };
+  if (!result.dragoverPrevented || !result.dropPrevented) {
+    console.error("smoke drag/drop guard failed:", result);
+  }
+  return result.dragoverPrevented && result.dropPrevented;
 }
 
 async function stabilizeSmokeScreenshot(): Promise<void> {
