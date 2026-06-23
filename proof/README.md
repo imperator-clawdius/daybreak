@@ -22,8 +22,8 @@ request/response logs, and order data out of this file.
 ## `installer-download.json`
 
 Required before the public download CTA can go live and before the installer
-gate can pass. Generate it only after hosting the real signed Windows installer
-and verifying the hosted bytes. The verifier expects:
+gate can pass. Generate it only after hosting the real signed and timestamped
+Windows installer and verifying the hosted bytes. The verifier expects:
 
 - `download.url` equals `DOWNLOAD_URL` in `site/app/config.ts`
 - `download.sha256` equals `DOWNLOAD_SHA256` in `site/app/config.ts`

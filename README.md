@@ -29,7 +29,7 @@ npm run dev:site         # run the landing page locally
 npm run verify:readiness # honest launch-blocker report
 npm run verify:local-only # desktop no-telemetry guard
 npm run verify:pages-health # GitHub Pages DNS/cert health
-npm run verify:release   # installer checksum + signing preflight
+npm run verify:release   # installer checksum + signing/timestamp preflight
 ```
 
 ## Status
