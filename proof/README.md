@@ -63,3 +63,7 @@ The verifier rejects any proof artifact that includes sensitive fields such as
 `secret_key`, `apiKey`, `x-api-key`, `authorization`, `cookie`, `set-cookie`,
 `pfx`, `p12`, or `password`. Key matching is normalized for common case,
 hyphen, whitespace, underscore, and camel-case variants.
+
+`first-paid-order.json` intentionally requires `checkout_session`, but extra
+generic session or order snapshots still fail closed. Keep that file to the
+minimal redacted fields listed above.

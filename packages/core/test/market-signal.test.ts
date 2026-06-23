@@ -601,4 +601,25 @@ describe("paid order proof", () => {
       paidOrders: 0,
     });
   });
+
+  it("rejects first-order proof with extra order or session proof data", () => {
+    const base = paidOrderProof();
+
+    for (const proof of [
+      paidOrderProof({ order_count: 1 }),
+      paidOrderProof({ audit: { sessionData: { id: base.checkout_session.id } } }),
+    ]) {
+      expect(
+        getPaidOrderProofState({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof,
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "paid_order_proof_contains_customer_data",
+        paidOrders: 0,
+      });
+    }
+  });
 });

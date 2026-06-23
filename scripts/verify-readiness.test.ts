@@ -669,6 +669,27 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending when paid-order proof contains extra order or session data", () => {
+    const base = paidOrderProof();
+
+    for (const proof of [
+      paidOrderProof({ orderCount: 1 }),
+      paidOrderProof({ audit: { sessionData: { id: base.checkout_session.id } } }),
+    ]) {
+      expect(
+        evaluateMarketSignal({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof,
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "paid_order_proof_contains_customer_data",
+        paidOrders: 0,
+      });
+    }
+  });
+
   it("keeps checkout pending until Stripe proof shows the configured $19 live one-time link", async () => {
     await expect(
       evaluateExternalLink({
