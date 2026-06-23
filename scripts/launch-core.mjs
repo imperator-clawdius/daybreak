@@ -10,6 +10,27 @@ export const WWW_HTTP_URL = `http://${WWW_HOST}/`;
 export const SUPPORT_MAILTO = "mailto:founder@daybreak.rest";
 export const LEGAL_EFFECTIVE_DATE_PATTERN =
   /Effective\s*(?:<!-- -->)?\s*June 23, 2026/;
+export const ALLOWED_LIVE_HOSTS = new Set([PRODUCTION_HOST, WWW_HOST]);
+export const ALLOWED_HTTP_URLS = new Set([
+  "http://www.sitemaps.org/schemas/sitemap/0.9",
+  "http://www.w3.org/1998/Math/MathML",
+  "http://www.w3.org/1999/xlink",
+  "http://www.w3.org/2000/svg",
+  "http://www.w3.org/XML/1998/namespace",
+]);
+export const FORBIDDEN_TRACKING_MARKERS = [
+  "facebook.com/tr",
+  "google-analytics.com",
+  "googletagmanager",
+  "gtag(",
+  "hotjar",
+  "intercom",
+  "mixpanel",
+  "plausible",
+  "api.segment.io",
+  "cdn.segment.com",
+  "sentry",
+];
 export const REQUIRED_ROUTES = [
   "privacy/",
   "terms/",
@@ -23,6 +44,30 @@ export const REQUIRED_ROUTES = [
 
 export function getPrimaryUrl(argv = []) {
   return argv[2] || PRODUCTION_URL;
+}
+
+export function liveSurfaceIssue(body = "") {
+  const lower = body.toLowerCase();
+  for (const marker of FORBIDDEN_TRACKING_MARKERS) {
+    if (lower.includes(marker)) {
+      return `tracking_marker:${marker}`;
+    }
+  }
+
+  for (const [url] of body.matchAll(/http:\/\/(?:[a-z0-9-]+\.)+[a-z]{2,}[^"'<>\\\s)]*/gi)) {
+    if (!ALLOWED_HTTP_URLS.has(url)) {
+      return `insecure_url:${url}`;
+    }
+  }
+
+  for (const [url] of body.matchAll(/https:\/\/(?:[a-z0-9-]+\.)+[a-z]{2,}[^"'<>\\\s)]*/gi)) {
+    const parsed = new URL(url);
+    if (!ALLOWED_LIVE_HOSTS.has(parsed.hostname)) {
+      return `unexpected_host:${parsed.hostname}`;
+    }
+  }
+
+  return null;
 }
 
 function formatFetchError(error) {
@@ -64,6 +109,7 @@ export async function fetchSite(
       status: res.status,
       hasApp: /Daybreak/.test(body),
       hasSupportContact: body.includes(`href="${SUPPORT_MAILTO}"`),
+      surfaceIssue: liveSurfaceIssue(body),
       body,
       bytes,
     };
@@ -152,7 +198,8 @@ function routePass(routeResult) {
     return (
       routeResult.res.status === 404 &&
       routeResult.res.hasApp &&
-      routeResult.res.hasSupportContact
+      routeResult.res.hasSupportContact &&
+      !routeResult.res.surfaceIssue
     );
   }
 
@@ -161,11 +208,12 @@ function routePass(routeResult) {
       routeResult.res.ok &&
       routeResult.res.hasApp &&
       routeResult.res.hasSupportContact &&
+      !routeResult.res.surfaceIssue &&
       LEGAL_EFFECTIVE_DATE_PATTERN.test(body)
     );
   }
 
-  return routeResult.res.ok && routeResult.res.hasApp;
+  return routeResult.res.ok && routeResult.res.hasApp && !routeResult.res.surfaceIssue;
 }
 
 function routesPass(routeResults) {
@@ -221,7 +269,9 @@ export function renderLaunchReport({
   const lines = [];
   lines.push(`PRIMARY ${primary}`);
   lines.push(
-    `LIVE_SITE=${primaryRes.ok ? "pass" : "FAIL"} status=${primaryRes.status} contains_daybreak=${primaryRes.hasApp ?? false} support_contact=${primaryRes.hasSupportContact ?? false}${
+    `LIVE_SITE=${primaryRes.ok ? "pass" : "FAIL"} status=${primaryRes.status} contains_daybreak=${primaryRes.hasApp ?? false} support_contact=${primaryRes.hasSupportContact ?? false} surface_clean=${!primaryRes.surfaceIssue}${
+      primaryRes.surfaceIssue ? ` surface_issue=${primaryRes.surfaceIssue}` : ""
+    }${
       primaryRes.error ? ` error=${primaryRes.error}` : ""
     }`,
   );
@@ -318,9 +368,15 @@ export async function verifyLaunch({
   const primaryOk =
     primaryRes.ok &&
     primaryRes.hasSupportContact &&
+    !primaryRes.surfaceIssue &&
     primaryRoutesOk;
   const wwwOk =
-    wwwLive ? wwwLive.ok && wwwLive.hasApp && wwwLive.hasSupportContact : false;
+    wwwLive
+      ? wwwLive.ok &&
+        wwwLive.hasApp &&
+        wwwLive.hasSupportContact &&
+        !wwwLive.surfaceIssue
+      : false;
 
   return {
     ok: primaryOk && (primary === PRODUCTION_URL ? wwwOk : true),

@@ -404,6 +404,42 @@ describe("launch verifier", () => {
     );
   });
 
+  it("keeps launch pending when the live homepage contains a tracker marker", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: {
+          status: 200,
+          body: `${validPage()} <script src="https://www.googletagmanager.com/gtm.js"></script>`,
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true surface_clean=false surface_issue=tracking_marker:googletagmanager",
+    );
+  });
+
+  it("keeps launch pending when a live legal page links an unexpected external host", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        "https://daybreak.rest/privacy/": {
+          status: 200,
+          body: `${validPage("Privacy - Daybreak")} <a href="https://cdn.example.com/pixel.js">asset</a>`,
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "APEX_ROUTES=pending privacy=pending(200) terms=pass(200)",
+    );
+  });
+
   it("keeps launch pending when the branded 404 page is not served", async () => {
     const report = await verifyLaunch({
       argv: ["node", "scripts/verify-launch.mjs"],
