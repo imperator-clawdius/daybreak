@@ -150,11 +150,13 @@ function isStripePaymentLink(url) {
 }
 
 function isStripePaymentLinkId(value) {
-  return value.trim().startsWith("plink_");
+  const trimmed = value.trim();
+  return trimmed.startsWith("plink_") && trimmed.length > "plink_".length;
 }
 
-function isStripeCheckoutSessionId(value) {
-  return value.trim().startsWith("cs_");
+function isLiveStripeCheckoutSessionId(value) {
+  const trimmed = value.trim();
+  return trimmed.startsWith("cs_live_") && trimmed.length > "cs_live_".length;
 }
 
 function isSha256(value) {
@@ -355,7 +357,7 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
     return {
       pass: false,
       reason: "checkout_proof_malformed",
-      detail: "Stripe Payment Link proof payment_link.id must start with plink_",
+      detail: "Stripe Payment Link proof payment_link.id must start with plink_ and include an id suffix",
     };
   }
 
@@ -872,7 +874,7 @@ export function evaluateMarketSignal({
     typeof paymentLink.id !== "string" ||
     !isStripePaymentLinkId(paymentLink.id) ||
     typeof session.id !== "string" ||
-    !isStripeCheckoutSessionId(session.id) ||
+    !isLiveStripeCheckoutSessionId(session.id) ||
     typeof session.payment_link !== "string" ||
     !isStripePaymentLinkId(session.payment_link)
   ) {
