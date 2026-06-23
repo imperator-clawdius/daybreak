@@ -63,8 +63,8 @@ export default function Home() {
         <figure className="product-shot">
           <Image
             src={`${basePath}/daybreak-app.png`}
-            width={1002}
-            height={753}
+            width={1252}
+            height={878}
             alt="Daybreak Windows app showing a morning commitment ready to be wiped"
             priority
           />

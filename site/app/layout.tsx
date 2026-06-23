@@ -28,8 +28,8 @@ export const metadata: Metadata = {
     images: [
       {
         url: SITE_IMAGE,
-        width: 1002,
-        height: 753,
+        width: 1252,
+        height: 878,
         alt: "Daybreak Windows app showing a morning commitment ready to be wiped",
       },
     ],

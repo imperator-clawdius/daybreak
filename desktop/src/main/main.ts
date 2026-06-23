@@ -25,6 +25,8 @@ const SMOKE = process.env.DAYBREAK_SMOKE === "1";
 const SMOKE_SCENARIO =
   process.env.DAYBREAK_SMOKE_SCENARIO === "evening" ? "evening" : "morning";
 const SMOKE_SCREENSHOT = process.env.DAYBREAK_SMOKE_SCREENSHOT;
+const SMOKE_SCREENSHOT_WIDTH = 1000;
+const SMOKE_SCREENSHOT_HEIGHT = 700;
 const SMOKE_DAY = "2026-06-22";
 const SMOKE_MORNING_NOW = `${SMOKE_DAY}T09:00:00`;
 const SMOKE_EVENING_NOW = `${SMOKE_DAY}T18:00:00`;
@@ -91,8 +93,8 @@ function createWindow(): void {
   win = new BrowserWindow({
     // Smoke mode: small, hidden, non-intrusive so CI / verification never
     // hijacks the screen. Production: full-screen kiosk that owns the morning.
-    width: SMOKE ? 800 : width,
-    height: SMOKE ? 600 : height,
+    width: SMOKE ? (SMOKE_SCREENSHOT ? SMOKE_SCREENSHOT_WIDTH : 800) : width,
+    height: SMOKE ? (SMOKE_SCREENSHOT ? SMOKE_SCREENSHOT_HEIGHT : 600) : height,
     show: !SMOKE,
     fullscreen: !SMOKE,
     frame: false,
