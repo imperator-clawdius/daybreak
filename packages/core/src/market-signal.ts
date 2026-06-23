@@ -100,7 +100,11 @@ function isStripePaymentLink(url: string): boolean {
     return (
       parsed.protocol === "https:" &&
       parsed.hostname === "buy.stripe.com" &&
-      parsed.pathname.length > 1
+      parsed.pathname.length > 1 &&
+      parsed.username === "" &&
+      parsed.password === "" &&
+      parsed.search === "" &&
+      parsed.hash === ""
     );
   } catch {
     return false;
