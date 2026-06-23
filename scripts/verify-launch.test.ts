@@ -9,6 +9,7 @@ import {
 import { PRODUCTION_URL } from "./readiness-core.mjs";
 
 type FetchBody = string | Buffer;
+const SUPPORT_LINK = 'href="mailto:founder@daybreak.rest"';
 
 function bodyToArrayBuffer(body: FetchBody): ArrayBuffer {
   const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
@@ -60,7 +61,7 @@ function defaultRouteResponse(url: string) {
           ? validManifest()
           : url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")
             ? validPng()
-          : "Daybreak",
+          : validPage(),
   };
 }
 
@@ -119,6 +120,10 @@ function validPng() {
   ]);
 }
 
+function validPage(title = "Daybreak") {
+  return `${title} <a ${SUPPORT_LINK}>founder@daybreak.rest</a>`;
+}
+
 describe("launch verifier", () => {
   it("uses the production apex as the default primary URL", () => {
     expect(getPrimaryUrl(["node", "scripts/verify-launch.mjs"])).toBe(
@@ -149,7 +154,7 @@ describe("launch verifier", () => {
         if (url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")) {
           return await fetchPage(200, validPng())();
         }
-        return { ok: true, status: 200, text: async () => "Daybreak" };
+        return { ok: true, status: 200, text: async () => validPage() };
       },
     });
 
@@ -195,8 +200,8 @@ describe("launch verifier", () => {
       lookupImpl: async () => ["185.199.108.153"],
       fetchImpl: fetchByUrl({
         [PRODUCTION_URL]: { status: 495, body: "certificate pending" },
-        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
-        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: validPage("Daybreak over HTTP") },
+        [PREVIEW_URL]: { status: 200, body: validPage("Daybreak preview") },
       }),
     });
 
@@ -220,7 +225,7 @@ describe("launch verifier", () => {
           return { ok: false, status: 301, text: async () => "Moved" };
         }
         if (isPreview) {
-          return { ok: true, status: 200, text: async () => "Daybreak apex" };
+          return { ok: true, status: 200, text: async () => validPage("Daybreak apex") };
         }
         if (url.endsWith("/robots.txt")) {
           return { ok: true, status: 200, text: async () => validRobots() };
@@ -234,7 +239,7 @@ describe("launch verifier", () => {
         if (url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")) {
           return await fetchPage(200, validPng())();
         }
-        return { ok: true, status: 200, text: async () => "Daybreak" };
+        return { ok: true, status: 200, text: async () => validPage() };
       },
     });
 
@@ -248,29 +253,29 @@ describe("launch verifier", () => {
       argv: ["node", "scripts/verify-launch.mjs"],
       lookupImpl: async () => ["185.199.108.153"],
       fetchImpl: fetchByUrl({
-        [PRODUCTION_URL]: { status: 200, body: "Daybreak" },
+        [PRODUCTION_URL]: { status: 200, body: validPage() },
         "https://daybreak.rest/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
         "https://daybreak.rest/terms/": { status: 404, body: "Not found" },
-        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: validPage("Daybreak over HTTP") },
         "http://daybreak.rest/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
         "http://daybreak.rest/terms/": {
           status: 200,
-          body: "Terms - Daybreak",
+          body: validPage("Terms - Daybreak"),
         },
-        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+        [PREVIEW_URL]: { status: 200, body: validPage("Daybreak preview") },
         "https://imperator-clawdius.github.io/daybreak/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
         "https://imperator-clawdius.github.io/daybreak/terms/": {
           status: 200,
-          body: "Terms - Daybreak",
+          body: validPage("Terms - Daybreak"),
         },
       }),
     });
@@ -286,23 +291,23 @@ describe("launch verifier", () => {
       argv: ["node", "scripts/verify-launch.mjs"],
       lookupImpl: async () => ["185.199.108.153"],
       fetchImpl: fetchByUrl({
-        [PRODUCTION_URL]: { status: 200, body: "Daybreak" },
+        [PRODUCTION_URL]: { status: 200, body: validPage() },
         "https://daybreak.rest/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
-        "https://daybreak.rest/terms/": { status: 200, body: "Terms - Daybreak" },
+        "https://daybreak.rest/terms/": { status: 200, body: validPage("Terms - Daybreak") },
         "https://daybreak.rest/robots.txt": {
           status: 200,
           body: validRobots(),
         },
         "https://daybreak.rest/sitemap.xml": { status: 404, body: "Not found" },
-        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: validPage("Daybreak over HTTP") },
         "http://daybreak.rest/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
-        "http://daybreak.rest/terms/": { status: 200, body: "Terms - Daybreak" },
+        "http://daybreak.rest/terms/": { status: 200, body: validPage("Terms - Daybreak") },
         "http://daybreak.rest/robots.txt": {
           status: 200,
           body: validRobots(),
@@ -311,14 +316,14 @@ describe("launch verifier", () => {
           status: 200,
           body: validSitemap(),
         },
-        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+        [PREVIEW_URL]: { status: 200, body: validPage("Daybreak preview") },
         "https://imperator-clawdius.github.io/daybreak/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
         "https://imperator-clawdius.github.io/daybreak/terms/": {
           status: 200,
-          body: "Terms - Daybreak",
+          body: validPage("Terms - Daybreak"),
         },
         "https://imperator-clawdius.github.io/daybreak/robots.txt": {
           status: 200,
@@ -355,6 +360,25 @@ describe("launch verifier", () => {
     );
   });
 
+  it("keeps launch pending when the public support contact link is missing", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        "https://daybreak.rest/privacy/": {
+          status: 200,
+          body: "Privacy - Daybreak without support link",
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain("LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true");
+    expect(report.text).toContain(
+      "APEX_ROUTES=pending privacy=pending(200) terms=pass(200)",
+    );
+  });
+
   it("keeps launch pending when the production browser icon is not a PNG", async () => {
     const report = await verifyLaunch({
       argv: ["node", "scripts/verify-launch.mjs"],
@@ -378,12 +402,12 @@ describe("launch verifier", () => {
       argv: ["node", "scripts/verify-launch.mjs"],
       lookupImpl: async () => ["185.199.108.153"],
       fetchImpl: fetchByUrl({
-        [PRODUCTION_URL]: { status: 200, body: "Daybreak" },
+        [PRODUCTION_URL]: { status: 200, body: validPage() },
         "https://daybreak.rest/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
-        "https://daybreak.rest/terms/": { status: 200, body: "Terms - Daybreak" },
+        "https://daybreak.rest/terms/": { status: 200, body: validPage("Terms - Daybreak") },
         "https://daybreak.rest/robots.txt": {
           status: 200,
           body: validRobots(),
@@ -396,8 +420,8 @@ describe("launch verifier", () => {
           status: 495,
           body: "certificate pending",
         },
-        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
-        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: validPage("Daybreak over HTTP") },
+        [PREVIEW_URL]: { status: 200, body: validPage("Daybreak preview") },
       }),
     });
 
@@ -418,12 +442,12 @@ describe("launch verifier", () => {
       argv: ["node", "scripts/verify-launch.mjs"],
       lookupImpl: async () => ["185.199.108.153"],
       fetchImpl: fetchByUrl({
-        [PRODUCTION_URL]: { status: 200, body: "Daybreak" },
+        [PRODUCTION_URL]: { status: 200, body: validPage() },
         "https://daybreak.rest/privacy/": {
           status: 200,
-          body: "Privacy - Daybreak",
+          body: validPage("Privacy - Daybreak"),
         },
-        "https://daybreak.rest/terms/": { status: 200, body: "Terms - Daybreak" },
+        "https://daybreak.rest/terms/": { status: 200, body: validPage("Terms - Daybreak") },
         "https://daybreak.rest/robots.txt": {
           status: 200,
           body: validRobots(),
@@ -452,8 +476,8 @@ describe("launch verifier", () => {
           status: 495,
           body: "certificate pending",
         },
-        [PRODUCTION_HTTP_URL]: { status: 200, body: "Daybreak over HTTP" },
-        [PREVIEW_URL]: { status: 200, body: "Daybreak preview" },
+        [PRODUCTION_HTTP_URL]: { status: 200, body: validPage("Daybreak over HTTP") },
+        [PREVIEW_URL]: { status: 200, body: validPage("Daybreak preview") },
       }),
     });
 

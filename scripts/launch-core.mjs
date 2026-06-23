@@ -7,6 +7,7 @@ export const PRODUCTION_HTTP_URL = `http://${PRODUCTION_HOST}/`;
 export const WWW_HOST = `www.${PRODUCTION_HOST}`;
 export const WWW_URL = `https://${WWW_HOST}/`;
 export const WWW_HTTP_URL = `http://${WWW_HOST}/`;
+export const SUPPORT_MAILTO = "mailto:founder@daybreak.rest";
 export const REQUIRED_ROUTES = [
   "privacy/",
   "terms/",
@@ -59,6 +60,7 @@ export async function fetchSite(
       ok: res.ok,
       status: res.status,
       hasApp: /Daybreak/.test(body),
+      hasSupportContact: body.includes(`href="${SUPPORT_MAILTO}"`),
       body,
       bytes,
     };
@@ -142,6 +144,14 @@ function routePass(routeResult) {
     );
   }
 
+  if (routeResult.route === "privacy/" || routeResult.route === "terms/") {
+    return (
+      routeResult.res.ok &&
+      routeResult.res.hasApp &&
+      routeResult.res.hasSupportContact
+    );
+  }
+
   return routeResult.res.ok && routeResult.res.hasApp;
 }
 
@@ -198,18 +208,18 @@ export function renderLaunchReport({
   const lines = [];
   lines.push(`PRIMARY ${primary}`);
   lines.push(
-    `LIVE_SITE=${primaryRes.ok ? "pass" : "FAIL"} status=${primaryRes.status} contains_daybreak=${primaryRes.hasApp ?? false}${
+    `LIVE_SITE=${primaryRes.ok ? "pass" : "FAIL"} status=${primaryRes.status} contains_daybreak=${primaryRes.hasApp ?? false} support_contact=${primaryRes.hasSupportContact ?? false}${
       primaryRes.error ? ` error=${primaryRes.error}` : ""
     }`,
   );
   lines.push(
-    `PREVIEW_SITE=${previewRes.ok ? "pass" : "pending"} status=${previewRes.status} contains_daybreak=${previewRes.hasApp ?? false}${
+    `PREVIEW_SITE=${previewRes.ok ? "pass" : "pending"} status=${previewRes.status} contains_daybreak=${previewRes.hasApp ?? false} support_contact=${previewRes.hasSupportContact ?? false}${
       previewRes.error ? ` error=${previewRes.error}` : ""
     }`,
   );
   lines.push(formatRouteReport("PREVIEW_ROUTES", previewRoutes));
   lines.push(
-    `APEX_HTTP_SITE=${apexHttpRes.ok ? "pass" : "pending"} status=${apexHttpRes.status} contains_daybreak=${apexHttpRes.hasApp ?? false}${
+    `APEX_HTTP_SITE=${apexHttpRes.ok ? "pass" : "pending"} status=${apexHttpRes.status} contains_daybreak=${apexHttpRes.hasApp ?? false} support_contact=${apexHttpRes.hasSupportContact ?? false}${
       apexHttpRes.error ? ` error=${apexHttpRes.error}` : ""
     }`,
   );
@@ -236,7 +246,7 @@ export function renderLaunchReport({
   lines.push(`WWW_DNS host=${wwwHost} resolves=${wwwDns}`);
   if (wwwLive) {
     lines.push(
-      `WWW_SITE=${wwwLive.ok ? "pass" : "pending"} status=${wwwLive.status} contains_daybreak=${wwwLive.hasApp ?? false}${
+      `WWW_SITE=${wwwLive.ok ? "pass" : "pending"} status=${wwwLive.status} contains_daybreak=${wwwLive.hasApp ?? false} support_contact=${wwwLive.hasSupportContact ?? false}${
         wwwLive.error ? ` error=${wwwLive.error}` : ""
       }`,
     );
@@ -292,13 +302,15 @@ export async function verifyLaunch({
         ? previewRoutes
         : await fetchRequiredRoutes(primary, fetchImpl);
   const primaryRoutesOk = primaryRoutes ? routesPass(primaryRoutes) : false;
-  const wwwOk = wwwLive ? wwwLive.ok && wwwLive.hasApp : false;
+  const primaryOk =
+    primaryRes.ok &&
+    primaryRes.hasSupportContact &&
+    primaryRoutesOk;
+  const wwwOk =
+    wwwLive ? wwwLive.ok && wwwLive.hasApp && wwwLive.hasSupportContact : false;
 
   return {
-    ok:
-      primaryRes.ok &&
-      primaryRoutesOk &&
-      (primary === PRODUCTION_URL ? wwwOk : true),
+    ok: primaryOk && (primary === PRODUCTION_URL ? wwwOk : true),
     text: renderLaunchReport({
       primary,
       primaryRes,
