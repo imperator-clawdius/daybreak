@@ -427,7 +427,27 @@ describe("paid order proof", () => {
   it("rejects malformed first-order status proof", () => {
     const base = paidOrderProof();
 
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            id: "",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
     for (const checkout_session of [
+      { ...base.checkout_session, id: 123 },
       { ...base.checkout_session, livemode: "true" },
       { ...base.checkout_session, mode: 123 },
       { ...base.checkout_session, status: true },

@@ -43,6 +43,7 @@ the first real paid checkout. The verifier expects:
 - `checkout_session.payment_status` is `paid`
 - `checkout_session.amount_total` is `1900`
 - `checkout_session.currency` is `usd`
+- `checkout_session.id` is a non-empty Checkout Session ID
 - `checkout_session.payment_link` equals `payment_link.id`
 - `payment_link.url` equals `CHECKOUT_URL` in `site/app/config.ts`
 - `refunds.data` is empty
