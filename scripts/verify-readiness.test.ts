@@ -180,6 +180,48 @@ describe("readiness external-link proof", () => {
     ).resolves.toMatchObject({ pass: false, reason: "not_stripe_payment_link" });
   });
 
+  it("keeps checkout pending for Stripe URLs with query parameters or fragments", async () => {
+    for (const url of [
+      "https://buy.stripe.com/live_123?prefilled_email=buyer@example.com",
+      "https://buy.stripe.com/live_123#receipt",
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "checkout",
+          url,
+          expectedPriceUsd: 19,
+          checkoutProof: stripeProof({ url }),
+          fetchImpl: fetchStatus(200),
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "not_stripe_payment_link",
+      });
+    }
+  });
+
+  it("keeps installer download pending for credentialed or tokenized URLs", async () => {
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    for (const url of [
+      "https://user:pass@downloads.example.com/daybreak.exe",
+      "https://downloads.example.com/daybreak.exe?token=secret",
+      "https://downloads.example.com/daybreak.exe#download",
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "download",
+          url,
+          expectedSha256: sha256,
+          installerProof: installerProof({ url, sha256 }),
+          fetchImpl: fetchBody(200, "hello"),
+          signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+        }),
+      ).resolves.toMatchObject({ pass: false, reason: "not_configured" });
+    }
+  });
+
   it("keeps market signal pending without real paid-order proof", () => {
     expect(
       evaluateMarketSignal({

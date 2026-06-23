@@ -37,13 +37,36 @@ export function isHttpsUrl(url: string): boolean {
   }
 }
 
+function isPublicUrl(parsed: URL): boolean {
+  return (
+    parsed.username === "" &&
+    parsed.password === "" &&
+    parsed.search === "" &&
+    parsed.hash === ""
+  );
+}
+
+function isPublicHttpsUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname.length > 0 &&
+      isPublicUrl(parsed)
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function isStripePaymentLink(url: string): boolean {
   try {
     const parsed = new URL(url);
     return (
       parsed.protocol === "https:" &&
       parsed.hostname === "buy.stripe.com" &&
-      parsed.pathname.length > 1
+      parsed.pathname.length > 1 &&
+      isPublicUrl(parsed)
     );
   } catch {
     return false;
@@ -305,7 +328,7 @@ export function getInstallerLinkState({
   url: string;
   sha256: string;
 }): ExternalLinkState {
-  if (!isHttpsUrl(url)) {
+  if (!isPublicHttpsUrl(url)) {
     return { ready: false, reason: "url_not_configured" };
   }
 

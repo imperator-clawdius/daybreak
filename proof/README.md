@@ -16,6 +16,8 @@ account after creating the live $19 one-time Payment Link. The verifier expects:
   `quantity: 1`
 - `line_items.has_more` is absent or boolean `false`
 
+The configured Payment Link URL must be the canonical public
+`https://buy.stripe.com/...` URL with no query string or fragment.
 Keep API keys, authorization headers, cookies, customer data, card or network
 metadata, session data, request/response logs, and order data out of this file.
 
@@ -32,6 +34,9 @@ Windows installer and verifying the hosted bytes. The verifier expects:
 - `signature.signer` or `signature.subject` contains `Passive Print Labs LLC`
 - `signature.timestamped` is `true`
 
+The configured download URL must be public HTTPS with no embedded credentials,
+query string, or fragment. Do not use signed, expiring, or tokenized URLs for
+the public installer CTA.
 Keep certificate private keys, signing credentials, authorization headers,
 cookies, request logs, customer data, and card or network metadata out of this
 file.

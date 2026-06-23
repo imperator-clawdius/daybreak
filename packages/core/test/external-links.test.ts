@@ -52,6 +52,19 @@ describe("external launch links", () => {
     ).toMatchObject({ ready: false, reason: "not_stripe_payment_link" });
   });
 
+  it("rejects Stripe checkout URLs with query parameters or fragments", () => {
+    for (const checkoutUrl of [
+      "https://buy.stripe.com/live_123?prefilled_email=buyer@example.com",
+      "https://buy.stripe.com/live_123#receipt",
+    ]) {
+      expect(isLiveCheckoutUrl(checkoutUrl)).toBe(false);
+      expect(getCheckoutLinkState(checkoutUrl)).toMatchObject({
+        ready: false,
+        reason: "not_stripe_payment_link",
+      });
+    }
+  });
+
   it("explains why checkout is not live", () => {
     expect(getCheckoutLinkState("PENDING_STRIPE_PAYMENT_LINK")).toMatchObject({
       ready: false,
@@ -1122,6 +1135,36 @@ describe("external launch links", () => {
         },
       }),
     ).toMatchObject({ ready: false, reason: "url_not_configured" });
+  });
+
+  it("keeps credentialed or tokenized installer URLs inactive", () => {
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    for (const url of [
+      "https://user:pass@downloads.example.com/daybreak.exe",
+      "https://downloads.example.com/daybreak.exe?token=secret",
+      "https://downloads.example.com/daybreak.exe#download",
+    ]) {
+      expect(getInstallerLinkState({ url, sha256 })).toMatchObject({
+        ready: false,
+        reason: "url_not_configured",
+      });
+      expect(
+        getVerifiedInstallerLinkState({
+          url,
+          sha256,
+          proof: {
+            download: { url, sha256 },
+            signature: {
+              status: "Valid",
+              signer: "CN=Passive Print Labs LLC",
+              timestamped: true,
+            },
+          },
+        }),
+      ).toMatchObject({ ready: false, reason: "url_not_configured" });
+    }
   });
 
   it("keeps the public download CTA inactive until signed installer proof matches", () => {

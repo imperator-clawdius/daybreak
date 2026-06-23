@@ -137,7 +137,34 @@ export function readJsonProof(root, relativePath) {
 }
 
 function isHttpsUrl(url) {
-  return /^https:\/\//.test(url);
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function isPublicUrl(parsed) {
+  return (
+    parsed.username === "" &&
+    parsed.password === "" &&
+    parsed.search === "" &&
+    parsed.hash === ""
+  );
+}
+
+function isPublicHttpsUrl(url) {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname.length > 0 &&
+      isPublicUrl(parsed)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function isStripePaymentLink(url) {
@@ -146,7 +173,8 @@ function isStripePaymentLink(url) {
     return (
       parsed.protocol === "https:" &&
       parsed.hostname === "buy.stripe.com" &&
-      parsed.pathname.length > 1
+      parsed.pathname.length > 1 &&
+      isPublicUrl(parsed)
     );
   } catch {
     return false;
@@ -658,6 +686,14 @@ export async function evaluateExternalLink({
   }
 
   if (kind === "download") {
+    if (!isPublicHttpsUrl(url)) {
+      return {
+        pass: false,
+        reason: "not_configured",
+        detail: "download URL is not a public HTTPS URL",
+      };
+    }
+
     if (!isSha256(expectedSha256)) {
       return {
         pass: false,
