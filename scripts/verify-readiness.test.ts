@@ -1229,6 +1229,26 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("rejects checkout proof with order or session proof data", async () => {
+    for (const checkoutProof of [
+      { ...stripeProof(), order_count: 1 },
+      { ...stripeProof(), audit: { sessionData: { id: "cs_live_123" } } },
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "checkout",
+          url: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          checkoutProof,
+          fetchImpl: fetchStatus(200),
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "checkout_proof_contains_sensitive_data",
+      });
+    }
+  });
+
   it("passes checkout only when a Stripe Payment Link returns 2xx and proof matches the $19 link", async () => {
     await expect(
       evaluateExternalLink({
@@ -1474,6 +1494,28 @@ describe("readiness external-link proof", () => {
       pass: false,
       reason: "installer_proof_contains_sensitive_data",
     });
+  });
+
+  it("rejects installer proof with order or session proof data", async () => {
+    for (const installerProofData of [
+      { ...installerProof(), orderCount: 1 },
+      { ...installerProof(), audit: { sessionData: { id: "cs_live_123" } } },
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "download",
+          url: "https://downloads.example.com/daybreak.exe",
+          expectedSha256:
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+          fetchImpl: fetchBody(200, "hello"),
+          signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+          installerProof: installerProofData,
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "installer_proof_contains_sensitive_data",
+      });
+    }
   });
 
   it("passes installer download only when the fetched bytes match and the signer is Passive Print Labs", async () => {

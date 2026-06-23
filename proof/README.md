@@ -58,7 +58,8 @@ The verifier rejects any proof artifact that includes sensitive fields such as
 `customer`, `customer_email`, `customer_details`, `payment_intent`,
 `payment_method`, `payment_method_details`, `receipt_email`, `client_secret`,
 `api_key`, `request`, `response`, `request_headers`, `response_headers`,
+`order`, `order_count`, `orders`, `session`, `session_data`, `sessions`,
 `private_key`, `certificate_private_key`, `signing_key`, `stripe_secret_key`,
 `secret_key`, `apiKey`, `x-api-key`, `authorization`, `cookie`, `set-cookie`,
 `pfx`, `p12`, or `password`. Key matching is normalized for common case,
-hyphen, whitespace, and camel-case variants.
+hyphen, whitespace, underscore, and camel-case variants.

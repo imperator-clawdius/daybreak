@@ -893,6 +893,44 @@ describe("external launch links", () => {
     });
   });
 
+  it("rejects checkout proof with order or session proof data", () => {
+    const baseProof = {
+      payment_link: {
+        url: "https://buy.stripe.com/live_123",
+        active: true,
+        livemode: true,
+      },
+      line_items: {
+        data: [
+          {
+            quantity: 1,
+            price: {
+              unit_amount: 1900,
+              currency: "usd",
+              recurring: null,
+            },
+          },
+        ],
+      },
+    };
+
+    for (const proof of [
+      { ...baseProof, order_count: 1 },
+      { ...baseProof, audit: { sessionData: { id: "cs_live_123" } } },
+    ]) {
+      expect(
+        getCheckoutProofState({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof,
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "checkout_proof_contains_sensitive_data",
+      });
+    }
+  });
+
   it("keeps installer download inactive until both URL and checksum are real", () => {
     expect(
       getInstallerLinkState({
@@ -1080,5 +1118,35 @@ describe("external launch links", () => {
       ready: false,
       reason: "installer_proof_contains_sensitive_data",
     });
+  });
+
+  it("rejects installer proof with order or session proof data", () => {
+    const url = "https://downloads.example.com/daybreak.exe";
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+    const baseProof = {
+      download: { url, sha256 },
+      signature: {
+        status: "Valid",
+        signer: "CN=Passive Print Labs LLC",
+        timestamped: true,
+      },
+    };
+
+    for (const proof of [
+      { ...baseProof, orderCount: 1 },
+      { ...baseProof, audit: { sessionData: { id: "cs_live_123" } } },
+    ]) {
+      expect(
+        getVerifiedInstallerLinkState({
+          url,
+          sha256,
+          proof,
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "installer_proof_contains_sensitive_data",
+      });
+    }
   });
 });
