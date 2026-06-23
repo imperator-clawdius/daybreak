@@ -32,6 +32,8 @@ describe("release preflight", () => {
         "package-lock.json",
         "desktop/assets/icon.ico",
         "desktop/assets/icon.png",
+        "desktop/tsconfig.json",
+        "packages/core/tsconfig.json",
       ]),
     );
   });
