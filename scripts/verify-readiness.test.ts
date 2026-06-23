@@ -47,8 +47,8 @@ function fetchBody(status: number, body: string) {
   });
 }
 
-function signature(status: string, subject = "") {
-  return async () => ({ status, statusMessage: "", subject, timestamped: true });
+function signature(status: string, subject = "", timestamped = true) {
+  return async () => ({ status, statusMessage: "", subject, timestamped });
 }
 
 function stripeProof({
@@ -1310,6 +1310,24 @@ describe("readiness external-link proof", () => {
     ).resolves.toMatchObject({
       pass: false,
       reason: "signer_mismatch",
+    });
+  });
+
+  it("keeps installer download pending when matching bytes are not timestamped", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC", false),
+        installerProof: installerProof(),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "signature_not_valid",
+      signatureTimestamped: false,
     });
   });
 

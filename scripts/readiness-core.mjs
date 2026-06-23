@@ -649,6 +649,7 @@ export async function evaluateExternalLink({
     const signature = await signatureImpl(proof.bytes);
     const signatureStatus = signature.status || "Unknown";
     const signer = signature.subject || "";
+    const signatureTimestamped = signature.timestamped === true;
     if (signatureStatus !== "Valid") {
       return {
         pass: false,
@@ -656,6 +657,7 @@ export async function evaluateExternalLink({
         status: proof.status,
         sha256: proof.sha256,
         signatureStatus,
+        signatureTimestamped,
         detail: `signature_status=${signatureStatus}${
           signature.statusMessage ? ` ${signature.statusMessage}` : ""
         }`,
@@ -668,8 +670,21 @@ export async function evaluateExternalLink({
         status: proof.status,
         sha256: proof.sha256,
         signatureStatus,
+        signatureTimestamped,
         signer,
         detail: `signer=${signer || "missing"} expected=${EXPECTED_SIGNER_SUBJECT}`,
+      };
+    }
+    if (!signatureTimestamped) {
+      return {
+        pass: false,
+        reason: "signature_not_valid",
+        status: proof.status,
+        sha256: proof.sha256,
+        signatureStatus,
+        signatureTimestamped,
+        signer,
+        detail: "signature_status=Valid timestamped=false",
       };
     }
 
@@ -685,6 +700,7 @@ export async function evaluateExternalLink({
         status: proof.status,
         sha256: proof.sha256,
         signatureStatus,
+        signatureTimestamped,
         signer,
       };
     }
@@ -694,8 +710,9 @@ export async function evaluateExternalLink({
       status: proof.status,
       sha256: proof.sha256,
       signatureStatus,
+      signatureTimestamped,
       signer,
-      detail: `HTTP ${proof.status} sha256=${proof.sha256} signature_status=${signatureStatus} signer=${signer}`,
+      detail: `HTTP ${proof.status} sha256=${proof.sha256} signature_status=${signatureStatus} timestamped=${signatureTimestamped} signer=${signer}`,
     };
   }
 
