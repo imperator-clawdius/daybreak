@@ -54,8 +54,9 @@ dev dependency and is launched through npm scripts or the packaged executable.
 
 See [`docs/COMPLETION.md`](docs/COMPLETION.md) for the honest completion ledger
 and [`docs/PREMORTEM.md`](docs/PREMORTEM.md) for the launch-hardening premortem:
-what is real and verified vs. what is still blocked (GitHub Pages HTTPS
-certificate, Stripe link, signed and timestamped hosted installer, first real sale). No
+what is real and verified vs. what is still blocked (Stripe link, signed and
+timestamped hosted installer, first real sale). No
 fabricated proof appears anywhere in this project by policy (`AGENTS.md`).
 
-Domain: **daybreak.rest** (purchased on Namecheap; apex DNS and Pages custom domain set; GitHub Pages HTTPS certificate pending).
+Domain: **daybreak.rest** (purchased on Namecheap; apex and `www` DNS resolve to
+GitHub Pages, the Pages custom domain is attached, and HTTPS is live).

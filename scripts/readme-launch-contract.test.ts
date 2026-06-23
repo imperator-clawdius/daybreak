@@ -12,4 +12,13 @@ describe("README launch contract", () => {
     );
     expect(readme).toContain("Do not rely on a global `electron` command");
   });
+
+  it("does not describe the verified production domain as certificate-pending", () => {
+    const readme = readFileSync("README.md", "utf8");
+
+    expect(readme).toContain("Domain: **daybreak.rest**");
+    expect(readme).toContain("HTTPS is live");
+    expect(readme).not.toContain("GitHub Pages HTTPS certificate pending");
+    expect(readme).not.toContain("GitHub Pages HTTPS certificate, Stripe link");
+  });
 });
