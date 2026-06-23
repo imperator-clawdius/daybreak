@@ -456,7 +456,7 @@ describe("release preflight", () => {
           status: 0,
           signal: null,
           stdout:
-            "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+            "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
           stderr: "",
         },
       });
@@ -465,6 +465,28 @@ describe("release preflight", () => {
         pass: true,
         reason: "packaged_smoke_passed",
         executableExists: true,
+      });
+    }));
+
+  it("keeps release pending when packaged smoke does not prove close prevention", () =>
+    withTempDir((dir) => {
+      const executablePath = join(dir, "Daybreak.exe");
+      writeFileSync(executablePath, "exe", "utf8");
+
+      expect(
+        evaluatePackagedSmoke({
+          executablePath,
+          runnerResult: {
+            status: 0,
+            signal: null,
+            stdout:
+              "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+            stderr: "",
+          },
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "packaged_smoke_failed",
       });
     }));
 
@@ -505,7 +527,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -518,7 +540,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening swipe_flow=true streak_summary=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening close_probe=true swipe_flow=true streak_summary=true",
                 stderr: "",
               },
             }),
@@ -549,7 +571,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -592,7 +614,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -605,7 +627,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),

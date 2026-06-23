@@ -24,6 +24,7 @@ import { Store } from "./store";
 const SMOKE = process.env.DAYBREAK_SMOKE === "1";
 const SMOKE_SCENARIO =
   process.env.DAYBREAK_SMOKE_SCENARIO === "evening" ? "evening" : "morning";
+const SMOKE_CLOSE_PROBE = process.env.DAYBREAK_SMOKE_CLOSE_PROBE === "1";
 const SMOKE_SCREENSHOT = process.env.DAYBREAK_SMOKE_SCREENSHOT;
 const SMOKE_SCREENSHOT_WIDTH = 1000;
 const SMOKE_SCREENSHOT_HEIGHT = 700;
@@ -129,7 +130,7 @@ function createWindow(): void {
 
   // The gate: refuse close until a wiped board has been committed.
   win.on("close", (e) => {
-    if (!dismissAllowed && !SMOKE) {
+    if (!dismissAllowed && (!SMOKE || SMOKE_CLOSE_PROBE)) {
       e.preventDefault();
       win?.webContents.send("daybreak:nudge");
     }
@@ -147,13 +148,14 @@ function createWindow(): void {
 async function runSmokeFlow(): Promise<void> {
   // Give the renderer's boot() (load + first save round-trip) time to run.
   await delay(500);
+  const closeProbe = SMOKE_CLOSE_PROBE ? await exerciseCloseProbe() : true;
   const swipeFlow =
     SMOKE_SCENARIO === "evening"
       ? await exerciseEveningSwipeFlow()
       : await exerciseMorningSwipeFlow();
   const data = store.read();
   let screenshotCaptured = false;
-  let ok = !smokeFailed && data.version === 1 && swipeFlow;
+  let ok = !smokeFailed && data.version === 1 && closeProbe && swipeFlow;
   if (ok && SMOKE_SCREENSHOT && win) {
     try {
       await stabilizeSmokeScreenshot();
@@ -169,11 +171,24 @@ async function runSmokeFlow(): Promise<void> {
     ok
       ? `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=${SMOKE_SCENARIO} swipe_flow=true${
           SMOKE_SCENARIO === "evening" ? " streak_summary=true" : ""
-        }${screenshotCaptured ? " screenshot=true" : ""}`
+        }${SMOKE_CLOSE_PROBE ? " close_probe=true" : ""}${
+          screenshotCaptured ? " screenshot=true" : ""
+        }`
       : "DAYBREAK_SMOKE=fail",
   );
   dismissAllowed = true;
   app.exit(ok ? 0 : 1);
+}
+
+async function exerciseCloseProbe(): Promise<boolean> {
+  if (!win) return false;
+  win.close();
+  await delay(150);
+  const stillOpen = !win.isDestroyed();
+  if (!stillOpen) {
+    console.error("smoke close probe failed: unresolved window closed");
+  }
+  return stillOpen;
 }
 
 async function stabilizeSmokeScreenshot(): Promise<void> {

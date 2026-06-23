@@ -615,6 +615,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("DAYBREAK_SMOKE=pass") &&
     stdout.includes("renderer_loaded=true") &&
     stdout.includes("ipc_roundtrip=true") &&
+    stdout.includes("close_probe=true") &&
     stdout.includes("swipe_flow=true");
 
   return {
@@ -708,6 +709,7 @@ export function runPackagedSmoke(executablePath, { scenario = "morning" } = {}) 
     env: {
       ...process.env,
       DAYBREAK_SMOKE: "1",
+      DAYBREAK_SMOKE_CLOSE_PROBE: "1",
       DAYBREAK_SMOKE_SCENARIO: scenario,
     },
   });
