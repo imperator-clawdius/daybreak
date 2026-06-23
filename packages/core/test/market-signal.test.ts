@@ -824,6 +824,27 @@ describe("paid order proof", () => {
       paidOrders: 0,
       refunds: 0,
     });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          audit: {
+            card: {
+              last4: "4242",
+              fingerprint: "fp_live_123",
+            },
+            ip_address: "203.0.113.10",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+      refunds: 0,
+    });
   });
 
   it("rejects sensitive first-order proof before other proof mismatches", () => {

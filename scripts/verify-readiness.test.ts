@@ -909,6 +909,26 @@ describe("readiness external-link proof", () => {
       reason: "paid_order_proof_contains_customer_data",
       paidOrders: 0,
     });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          audit: {
+            card: {
+              last4: "4242",
+              fingerprint: "fp_live_123",
+            },
+            ipAddress: "203.0.113.10",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
   });
 
   it("keeps market signal pending for sensitive proof before other proof mismatches", () => {
@@ -1614,6 +1634,28 @@ describe("readiness external-link proof", () => {
       pass: false,
       reason: "checkout_proof_contains_sensitive_data",
     });
+
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          ...stripeProof(),
+          audit: {
+            card: {
+              last4: "4242",
+              fingerprint: "fp_live_123",
+            },
+            ip_address: "203.0.113.10",
+          },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
   });
 
   it("rejects checkout proof with order or session proof data", async () => {
@@ -1910,6 +1952,30 @@ describe("readiness external-link proof", () => {
             address: {
               line1: "1 Main St",
             },
+          },
+        },
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
+
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+        installerProof: {
+          ...installerProof(),
+          audit: {
+            card: {
+              last4: "4242",
+              fingerprint: "fp_live_123",
+            },
+            ipAddress: "203.0.113.10",
           },
         },
       }),

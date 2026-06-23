@@ -995,6 +995,42 @@ describe("external launch links", () => {
       ready: false,
       reason: "checkout_proof_contains_sensitive_data",
     });
+
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+          audit: {
+            card: {
+              last4: "4242",
+              fingerprint: "fp_live_123",
+            },
+            ip_address: "203.0.113.10",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
   });
 
   it("rejects checkout proof with order or session proof data", () => {
@@ -1251,6 +1287,37 @@ describe("external launch links", () => {
             timestamped: true,
           },
           stripe_secret_key: "sk_live_secret",
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
+  });
+
+  it("rejects installer proof with card or IP metadata", () => {
+    const url = "https://downloads.example.com/daybreak.exe";
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url,
+        sha256,
+        proof: {
+          download: { url, sha256 },
+          signature: {
+            status: "Valid",
+            signer: "CN=Passive Print Labs LLC",
+            timestamped: true,
+          },
+          audit: {
+            card: {
+              last4: "4242",
+              fingerprint: "fp_live_123",
+            },
+            ipAddress: "203.0.113.10",
+          },
         },
       }),
     ).toMatchObject({
