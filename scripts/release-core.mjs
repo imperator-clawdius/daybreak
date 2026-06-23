@@ -630,6 +630,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("app_menu_disabled=true") &&
     stdout.includes("devtools_disabled=true") &&
     stdout.includes("web_preferences=strict") &&
+    stdout.includes("shortcuts_blocked=true") &&
     stdout.includes("close_probe=true") &&
     stdout.includes("swipe_flow=true");
 

@@ -37,6 +37,35 @@ export function getDesktopWebPreferencesPolicy() {
   } as const;
 }
 
+export type DesktopShortcutInput = {
+  key?: string;
+  control?: boolean;
+  meta?: boolean;
+  alt?: boolean;
+  shift?: boolean;
+};
+
+export function shouldBlockDesktopShortcut(input: DesktopShortcutInput): boolean {
+  const key = input.key?.toLowerCase();
+  const command = Boolean(input.control || input.meta);
+  if (!key) return false;
+
+  if (key === "f5" || key === "f11" || key === "f12") return true;
+  if (input.alt && (key === "arrowleft" || key === "arrowright")) return true;
+  if (command && (key === "r" || key === "n")) return true;
+  if (command && (key === "=" || key === "+" || key === "-" || key === "0")) {
+    return true;
+  }
+  if (command && input.shift && (key === "i" || key === "j" || key === "c")) {
+    return true;
+  }
+  if (input.meta && input.alt && (key === "i" || key === "j" || key === "c")) {
+    return true;
+  }
+
+  return false;
+}
+
 export function isAllowedDesktopNavigation(
   appEntrypointUrl: string,
   targetUrl: string,

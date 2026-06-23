@@ -3,6 +3,7 @@ import {
   getDesktopWebPreferencesPolicy,
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
+  shouldBlockDesktopShortcut,
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
 } from "../src/desktop-shell";
@@ -79,5 +80,31 @@ describe("desktop shell policy", () => {
       webSecurity: true,
       webviewTag: false,
     });
+  });
+
+  it("blocks browser shell shortcuts while allowing ordinary text entry", () => {
+    expect(shouldBlockDesktopShortcut({ key: "r", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "R", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "r", meta: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "F5" })).toBe(true);
+    expect(
+      shouldBlockDesktopShortcut({ key: "I", control: true, shift: true }),
+    ).toBe(true);
+    expect(
+      shouldBlockDesktopShortcut({ key: "J", meta: true, alt: true }),
+    ).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "F12" })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "n", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "F11" })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "ArrowLeft", alt: true })).toBe(
+      true,
+    );
+    expect(shouldBlockDesktopShortcut({ key: "=", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "-", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "0", control: true })).toBe(true);
+
+    expect(shouldBlockDesktopShortcut({ key: "Type a commitment" })).toBe(false);
+    expect(shouldBlockDesktopShortcut({ key: "r" })).toBe(false);
+    expect(shouldBlockDesktopShortcut({ key: "ArrowLeft" })).toBe(false);
   });
 });

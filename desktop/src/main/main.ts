@@ -16,6 +16,7 @@ import {
   makeItem,
   planStartupRegistration,
   resolveLogForPhase,
+  shouldBlockDesktopShortcut,
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
   validateLogUpdate,
@@ -49,6 +50,7 @@ let smokeFailed = false;
 let applicationMenuDisabled = false;
 let devToolsDisabled = false;
 let webPreferencesApplied = false;
+let desktopShortcutsBlocked = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -143,6 +145,29 @@ function createWindow(): void {
       event.preventDefault();
     }
   });
+  win.webContents.on("before-input-event", (event, input) => {
+    if (
+      shouldBlockDesktopShortcut({
+        key: input.key,
+        control: input.control,
+        meta: input.meta,
+        alt: input.alt,
+        shift: input.shift,
+      })
+    ) {
+      event.preventDefault();
+    }
+  });
+  desktopShortcutsBlocked = [
+    { key: "r", control: true },
+    { key: "F5" },
+    { key: "I", control: true, shift: true },
+    { key: "F12" },
+    { key: "n", control: true },
+    { key: "F11" },
+    { key: "ArrowLeft", alt: true },
+    { key: "=", control: true },
+  ].every(shouldBlockDesktopShortcut);
 
   // The gate: refuse close until a wiped board has been committed.
   win.on("close", (e) => {
@@ -190,6 +215,10 @@ async function runSmokeFlow(): Promise<void> {
         } app_menu_disabled=${applicationMenuDisabled ? "true" : "false"}${
           devToolsDisabled ? " devtools_disabled=true" : " devtools_disabled=false"
         }${webPreferencesApplied ? " web_preferences=strict" : " web_preferences=loose"}${
+          desktopShortcutsBlocked
+            ? " shortcuts_blocked=true"
+            : " shortcuts_blocked=false"
+        }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
           screenshotCaptured ? " screenshot=true" : ""
