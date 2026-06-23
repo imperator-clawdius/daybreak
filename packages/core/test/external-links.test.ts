@@ -37,6 +37,7 @@ describe("external launch links", () => {
         expectedPriceUsd: 19,
         proof: {
           payment_link: {
+            id: "plink_live_123",
             url: "https://buy.stripe.com/live_123",
             active: true,
             livemode: true,
@@ -75,6 +76,7 @@ describe("external launch links", () => {
         expectedPriceUsd: 19,
         proof: {
           payment_link: {
+            id: "plink_live_123",
             url: checkoutUrl,
             active: true,
             livemode: true,
@@ -99,6 +101,7 @@ describe("external launch links", () => {
   it("rejects checkout proof that does not prove the configured $19 live one-time link", () => {
     const baseProof = {
       payment_link: {
+        id: "plink_live_123",
         url: "https://buy.stripe.com/live_123",
         active: true,
         livemode: true,
@@ -402,6 +405,25 @@ describe("external launch links", () => {
       ready: false,
       reason: "checkout_proof_malformed",
     });
+
+    for (const payment_link of [
+      { ...baseProof.payment_link, id: "" },
+      { ...baseProof.payment_link, id: 123 },
+    ]) {
+      expect(
+        getCheckoutProofState({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof: {
+            ...baseProof,
+            payment_link,
+          },
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "checkout_proof_malformed",
+      });
+    }
 
     for (const payment_link of [
       { ...baseProof.payment_link, active: "true" },

@@ -53,6 +53,7 @@ function signature(status: string, subject = "") {
 
 function stripeProof({
   url = "https://buy.stripe.com/live_123",
+  id = "plink_live_123",
   unitAmount = 1900,
   recurring = null,
   livemode = true,
@@ -60,7 +61,7 @@ function stripeProof({
   quantity = 1,
 } = {}) {
   return {
-    payment_link: { url, active, livemode },
+    payment_link: { id, url, active, livemode },
     line_items: {
       data: [
         {
@@ -878,6 +879,8 @@ describe("readiness external-link proof", () => {
     });
 
     for (const payment_link of [
+      { ...stripeProof().payment_link, id: "" },
+      { ...stripeProof().payment_link, id: 123 },
       { url: "https://buy.stripe.com/live_123", active: "true", livemode: true },
       { url: "https://buy.stripe.com/live_123", active: true, livemode: "true" },
     ]) {

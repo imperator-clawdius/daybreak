@@ -8,6 +8,7 @@ fabricated proof.
 Required before the checkout gate can pass. Generate it from the real Stripe
 account after creating the live $19 one-time Payment Link. The verifier expects:
 
+- `payment_link.id` is a non-empty Stripe Payment Link ID
 - `payment_link.url` equals `CHECKOUT_URL` in `site/app/config.ts`
 - `payment_link.active` is `true`
 - `payment_link.livemode` is `true`

@@ -22,6 +22,7 @@ function withTempDir<T>(fn: (dir: string) => T): T {
 const checkoutUrl = "https://buy.stripe.com/live_123";
 const matchingProof = {
   payment_link: {
+    id: "plink_live_123",
     url: checkoutUrl,
     active: true,
     livemode: true,

@@ -109,6 +109,7 @@ export function getCheckoutLinkState(url: string): ExternalLinkState {
 
 interface StripeCheckoutProof {
   payment_link?: {
+    id?: unknown;
     url?: unknown;
     active?: unknown;
     livemode?: unknown;
@@ -242,6 +243,9 @@ export function getCheckoutProofState({
       ready: false,
       reason: hasRecurring ? "checkout_not_one_time" : "checkout_price_mismatch",
     };
+  }
+  if (typeof paymentLink.id !== "string" || paymentLink.id.trim() === "") {
+    return { ready: false, reason: "checkout_proof_malformed" };
   }
 
   return { ready: true, reason: "ready" };

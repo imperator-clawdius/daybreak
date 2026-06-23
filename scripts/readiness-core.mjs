@@ -324,6 +324,13 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
       detail: `proof must contain one non-recurring USD ${expectedCents} cent line item`,
     };
   }
+  if (typeof paymentLink.id !== "string" || paymentLink.id.trim() === "") {
+    return {
+      pass: false,
+      reason: "checkout_proof_malformed",
+      detail: "Stripe Payment Link proof payment_link.id must be a non-empty string",
+    };
+  }
 
   return {
     pass: true,
