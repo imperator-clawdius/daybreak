@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **220 tests, 29 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, desktop renderer CSP policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, stale release artifact detection, core package importability, static site metadata export, proof-backed public checkout/download state, legal checkout copy state, sensitive proof-data rejection, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage, root desktop launch contract, README launch handoff contract, smoke screenshot stabilization contract, product image dimension contract, GitHub Pages health verifier, local-only telemetry guard, signed-installer timestamp proof) |
+| Core mechanic works and is tested | `vitest run` -> **221 tests, 29 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, desktop renderer CSP policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, stale release artifact detection, release input coverage, core package importability, static site metadata export, proof-backed public checkout/download state, legal checkout copy state, sensitive proof-data rejection, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage, root desktop launch contract, README launch handoff contract, smoke screenshot stabilization contract, product image dimension contract, GitHub Pages health verifier, local-only telemetry guard, signed-installer timestamp proof) |
 | App actually launches and completes the wipe flows | From repo root in PowerShell, `$env:DAYBREAK_SMOKE = "1"; npx electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm start` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | README distinguishes dev launch from packaged launch | `scripts/readme-launch-contract.test.ts` requires the README to document root `npm start`, direct `desktop\release\win-unpacked\Daybreak.exe` launch after packaging, and the fact that a global `electron` command is not the supported packaged-app path |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup, the smoke harness stabilizes transient swipe transforms before capture, and `scripts/product-image-dimensions.test.ts` verifies the capture is wide enough for the wipe controls while matching site metadata |
@@ -27,6 +27,7 @@ fabricated proof**.
 | Unsigned installer packages | `npm run package -w @daybreak/desktop` -> `desktop/release/Daybreak Setup 0.1.0.exe`; current unsigned SHA-256 is `b755b5491876917379709198786adf8567991ef346645fcae349f749b8a79a58`; signing skipped because no cert is configured |
 | Release preflight is honest | `npm run verify:release` -> installer exists, SHA-256 is reported, `icon_status=configured`, `packaged_smoke=pass`, `release_freshness=current`, `signature_status=NotSigned`, exit 1 until a real cert signs and timestamps it |
 | Packaged Windows app runtime is smoke-tested | `npm run verify:release` launches `desktop/release/win-unpacked/Daybreak.exe` with `DAYBREAK_SMOKE=1` for morning and evening scenarios and requires the packaged app to load the renderer, complete IPC, finish the wipe flow, and render the evening streak summary before reporting `packaged_smoke=pass` |
+| Release freshness covers package inputs | `scripts/verify-release.test.ts` requires root dependency manifests and desktop icon assets to be included in `RELEASE_SOURCE_PATHS`, so package or icon changes make the installer stale until packaging is rerun |
 | Windows release metadata configured | `npm run verify:release` checks app id, product name, author, NSIS x64 target, and installer mode before a release can be considered ready |
 | Windows signer ownership is verified | `npm run verify:release` rejects even a valid Authenticode signature unless the signer subject includes `Passive Print Labs LLC` |
 | Hosted installer readiness verifies signing and timestamping | `npm run verify:readiness` downloads the configured installer bytes, checks SHA-256, rejects unsigned, untimestamped, or wrong-publisher Authenticode signatures from the fetched file, and requires `proof/installer-download.json` to match the hosted signed and timestamped installer |
@@ -43,38 +44,33 @@ fabricated proof**.
 | First-order readiness fails closed on malformed paid-order proof | Core proof state and `npm run verify:readiness` reject malformed top-level proof shapes, paid-order Payment Link objects/URLs/IDs, blank Payment Link IDs, blank Checkout Session IDs, live-mode/status fields, malformed or fractional-cent amount fields, currency fields, refund containers, refund entries, or refund pagination fields before comparing Stripe state or price, so malformed Stripe exports cannot pass or be misclassified as an ordinary mismatch |
 | First-order readiness requires explicit refund proof | Core and `npm run verify:readiness` reject paid-order proof unless `refunds.data` exists as an array and `refunds.has_more` is `false`, so omitting refund data or providing an incomplete refund page cannot be treated as proof of zero refunds |
 | Windows app icon configured | `desktop/package.json` sets `build.win.icon` to `desktop/assets/icon.ico`; `npm run package -w @daybreak/desktop` no longer emits the default Electron icon warning |
-| Domain is attached over HTTP | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages and the repo Pages custom domain is set to `daybreak.rest`; HTTPS certificate issuance is still pending |
-| GitHub Pages health is repeatable | `npm run verify:pages-health` polls GitHub's Pages health endpoint and reports both `daybreak.rest` and `www.daybreak.rest` as DNS-valid, served by Pages, and HTTPS-eligible, while keeping `PAGES_HEALTH=pending` until the certificate exists and HTTPS is enforced |
+| Production domain is live over HTTPS | Owner confirmed `daybreak.rest` was purchased on Namecheap; apex `A` records resolve to GitHub Pages, `www.daybreak.rest` resolves through GitHub Pages, the repo Pages custom domain is set to `daybreak.rest`, the certificate is approved for both hosts, HTTPS is enforced in Pages config, and `npm run verify:launch` passes for `https://daybreak.rest/` plus `https://www.daybreak.rest/` |
+| GitHub Pages health is repeatable | `npm run verify:pages-health` polls GitHub's Pages health endpoint and reports both `daybreak.rest` and `www.daybreak.rest` as DNS-valid, served by Pages, HTTPS-eligible, and covered by an approved certificate; it remains the stricter propagation monitor while GitHub's health object reports `enforces_https=false` on cached HTTP redirects |
 | HTTPS domain blocker is visible | `npm run verify:launch` and `npm run verify:readiness` surface the apex and `www` HTTPS/certificate fetch errors, including underlying TLS cause details when Node exposes them, instead of hiding them behind a generic HTTP status |
 | WWW domain status is visible | `npm run verify:launch` reports `WWW_DNS`, `WWW_HTTP_SITE`, `WWW_HTTP_ROUTES`, `WWW_SITE`, and `WWW_ROUTES`, so `www.daybreak.rest` cannot silently be broken while the apex is being checked |
 | Preview redirect is not overclaimed | `npm run verify:launch` fetches the GitHub Pages project URL with manual redirect handling, so a custom-domain redirect reports `PREVIEW_SITE=pending status=301` instead of borrowing the apex response |
 | HTTP apex status is separated from HTTPS readiness | `npm run verify:launch` reports `APEX_HTTP_SITE` so an HTTP 200 cannot be mistaken for production HTTPS readiness |
-| Public launch status copy matches HTTP/HTTPS reality | The homepage status section says `daybreak.rest` serves over HTTP while GitHub Pages provisions HTTPS; `scripts/site-export-metadata.test.ts` rejects the older "GitHub Pages preview is online" overclaim |
+| Public launch status copy matches HTTPS reality | The homepage status section says `daybreak.rest` serves over HTTPS on the apex and `www` hosts; `scripts/site-export-metadata.test.ts` rejects the older "GitHub Pages preview is online" and HTTPS-pending overclaims |
 | Required legal routes are checked live | `npm run verify:launch` checks `/privacy/` and `/terms/` on the preview, HTTP apex, and HTTPS apex instead of trusting the homepage alone |
 | Production crawler/social metadata is exported | `scripts/site-export-metadata.test.ts` builds the site and checks `robots.txt`, `sitemap.xml`, homepage canonical URL, legal page self-canonical URLs, legal page Open Graph and Twitter title/URL identity, and Open Graph/Twitter image metadata for `https://daybreak.rest`; `npm run verify:launch` checks crawler routes alongside legal routes live |
 | Actionable dependency advisories closed | Electron/electron-builder/esbuild/Vitest upgraded; Next's pinned PostCSS copy is overridden/deduped to `postcss@8.5.15`; `scripts/dependency-security.test.ts` rejects locked PostCSS packages below `8.5.10`; `npm audit --omit=dev --audit-level=moderate` -> `found 0 vulnerabilities` |
 
-## Honestly pending (real blockers - readiness gate = 3/7)
+## Honestly pending (real blockers - readiness gate = 4/7)
 
 These require the owner; none are faked to look done.
 
-1. **Finish `daybreak.rest` HTTPS production.** Keep apex `A` records pointed at
-   GitHub Pages (185.199.108-111.153), keep `www` as a GitHub Pages CNAME, let
-   the Pages workflow publish `deploy/CNAME`, wait for GitHub's Pages
-   certificate, then enforce HTTPS and verify both `https://daybreak.rest/` and
-   `https://www.daybreak.rest/`.
-2. **Create the real Stripe Payment Link** ($19 one-time) and set
+1. **Create the real Stripe Payment Link** ($19 one-time) and set
    `CHECKOUT_URL` in `site/app/config.ts`. Add `proof/stripe-payment-link.json`
    from Stripe so the readiness gate can prove the link is active, live-mode,
    one-time, and USD 1900 cents. Until then the page shows an honest
    "checkout opening soon" state - not a fake button.
-3. **Produce a signed and timestamped Windows installer.** Unsigned NSIS packaging works, but a
+2. **Produce a signed and timestamped Windows installer.** Unsigned NSIS packaging works, but a
    real release needs a code-signing cert so SmartScreen does not flag it; then
    host it, set `DOWNLOAD_URL` and `DOWNLOAD_SHA256`, add
    `proof/installer-download.json`, and let the readiness gate verify HTTP 2xx,
    the downloaded file hash, the proof file, and the timestamped Passive Print
    Labs Authenticode signer.
-4. **Earn the first real $19 order.** Market signal is `0` and stays `0` in the
+3. **Earn the first real $19 order.** Market signal is `0` and stays `0` in the
    readiness gate until redacted `proof/first-paid-order.json` proves a genuine
    live, paid, unrefunded Stripe Checkout Session for USD 1900.
 

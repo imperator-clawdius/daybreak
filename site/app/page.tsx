@@ -148,10 +148,10 @@ export default function Home() {
         <h2>Launch status</h2>
         <ul className="status-list" aria-label="Current launch status">
           <li>
-            <strong>HTTP domain</strong>
+            <strong>HTTPS domain</strong>
             <span>
-              daybreak.rest serves the app over HTTP while GitHub Pages
-              provisions HTTPS.
+              daybreak.rest serves the app over HTTPS on the apex and www
+              hosts.
             </span>
           </li>
           <li>
@@ -170,7 +170,8 @@ export default function Home() {
           <li>
             <strong>Domain</strong>
             <span>
-              daybreak.rest is attached; GitHub Pages HTTPS is pending.
+              daybreak.rest is attached to GitHub Pages with an approved
+              certificate.
             </span>
           </li>
           <li>

@@ -45,7 +45,7 @@ counts, screenshots, or testimonials.
 | Legal pages share with homepage social metadata | A buyer or reviewer sharing the privacy or terms URL could see a homepage title and URL preview, making the policy route look accidental or duplicate. | Privacy and terms pages now define page-specific Open Graph and Twitter title, description, URL, and image metadata, with `scripts/site-export-metadata.test.ts` proving the exported legal route previews identify themselves. |
 | Landing page copy drifts from implementation | The site said "local database" while v1 persists local JSON. | FAQ now says "local file," matching the completion ledger. |
 | Pending CTA points nowhere | A disabled-looking checkout link to a missing anchor feels unfinished. | Pending checkout is rendered as non-clickable status, and the page now exposes a launch status section. |
-| Public launch status overclaims preview health | Once the custom domain redirects the project preview, saying the GitHub Pages preview is simply online can conflict with `verify:launch` while HTTPS is still pending. | The status section now says `daybreak.rest` serves over HTTP while GitHub Pages provisions HTTPS, and `scripts/site-export-metadata.test.ts` proves the exported homepage does not contain the old overclaim. |
+| Public launch status overclaims preview health | Once the custom domain redirects the project preview, saying the GitHub Pages preview is simply online can conflict with `verify:launch`; later, stale certificate-provisioning copy can make a live HTTPS domain look unfinished. | The status section now says `daybreak.rest` serves over HTTPS on the apex and `www` hosts, and `scripts/site-export-metadata.test.ts` proves the exported homepage does not contain the old preview or HTTPS-pending overclaims. |
 | Sale page has no product visual | A text-only product page asks buyers to trust copy without seeing the actual Windows ritual. | The landing page now uses an Electron smoke-captured PNG from the current desktop build, with deterministic text and no fabricated mockup. |
 | Sale page visual captures a half-swiped row | A real app screenshot can still look broken if the smoke harness captures while a row is visually translated from the gesture proof. | Smoke capture now clears transient swipe transforms and preview classes before `capturePage()`, `scripts/smoke-screenshot-contract.test.ts` guards that order, and the public PNG was regenerated from the patched Electron app. |
 | Sale page app visual clips the wipe controls | A too-narrow app capture can make the embedded Windows UI look broken on desktop and mobile, even when the real app works. | The public screenshot capture now uses a wider smoke viewport, the PNG was regenerated at 1252x878, and `scripts/product-image-dimensions.test.ts` keeps the image and site metadata dimensions aligned. |
@@ -67,6 +67,7 @@ counts, screenshots, or testimonials.
 | Local release artifact lacks proof | Packaging could produce a file while leaving signing status and checksum to manual inspection. | Added `npm run verify:release`, which computes the installer SHA-256 and checks Authenticode status before any hosted release is considered ready. |
 | Packaged app crashes even though the installer builds | A green Electron dev smoke does not prove the `win-unpacked` release binary can boot with packaged paths and asar resources. | `npm run verify:release` now runs `desktop/release/win-unpacked/Daybreak.exe` in `DAYBREAK_SMOKE=1` mode for both morning and evening scenarios, reporting `packaged_smoke=pass` only when the packaged runtime loads, round-trips IPC, completes the wipe flow, and renders the evening streak summary. |
 | Stale installer gets signed after source changes | A release artifact from an older desktop/core build could be signed and hosted after later fixes landed, making the public installer lag behind the verified source. | Release preflight now compares the installer and packaged app timestamps against desktop/core release inputs, reports `release_freshness=stale` when artifacts are older, and keeps release pending until packaging is rerun. |
+| Dependency or icon changes leave the installer stale | Root manifest, lockfile, or Windows icon changes can alter the packaged output even when desktop/core source files are untouched. | Release freshness now treats `package.json`, `package-lock.json`, `desktop/assets/icon.ico`, and `desktop/assets/icon.png` as release inputs before an installer can be signed or hosted. |
 | Domain verifier hides the real HTTPS blocker | A generic HTTP failure message can make an attached-but-cert-pending GitHub Pages domain look misconfigured. | Launch and readiness verifiers now label apex failures as HTTPS readiness failures and surface the certificate fetch error. |
 | TLS certificate cause is lost in a generic fetch failure | Node can wrap certificate mismatches as `fetch failed`, which obscures whether the blocker is DNS, Pages serving, or cert issuance. | Launch and readiness verifiers now preserve fetch `cause` code/message when available, so certificate-name and verification failures stay visible in gate output. |
 | Installer metadata drifts before signing | A signed installer with a missing app id, wrong product name, or nonstandard target would still look amateurish even if Authenticode passes. | Release preflight now validates Daybreak's app id, product name, author, NSIS x64 target, and installer mode before marking release ready. |
@@ -83,16 +84,16 @@ counts, screenshots, or testimonials.
 
 These remain intentionally pending and must not be faked:
 
-1. Finish `daybreak.rest` and `www.daybreak.rest` HTTPS certificate issuance and enforcement.
-2. Create a real $19 one-time Stripe Payment Link.
-3. Sign and timestamp the Windows installer, host it, then publish the exact SHA-256 checksum.
-4. Earn at least one genuine paid order.
+1. Create a real $19 one-time Stripe Payment Link.
+2. Sign and timestamp the Windows installer, host it, then publish the exact SHA-256 checksum.
+3. Earn at least one genuine paid order.
 
 ## Residual risks to monitor
 
 | Risk | Current evidence | Position |
 | --- | --- | --- |
 | npm reports the intentional PostCSS override as invalid in `npm ls postcss` | `npm audit --omit=dev --audit-level=moderate` is clean and `package-lock.json` contains only `postcss@8.5.15`, but `npm ls postcss` exits with `ELSPROBLEMS` because Next's published manifest still says `postcss: 8.4.31`. | Do not use `npm ls postcss` as a launch gate for this override. Keep `npm audit`, `scripts/dependency-security.test.ts`, and `npm run check` as the authoritative dependency-safety gates; remove the override when Next publishes a patched direct PostCSS dependency. |
+| GitHub Pages HTTPS redirect state can lag config | `npm run verify:launch` now passes on `https://daybreak.rest/` and `https://www.daybreak.rest/`, and the Pages API reports `https_enforced=true` with an approved certificate, but `npm run verify:pages-health` can still report `enforces_https=false` from GitHub's health object while cached HTTP redirects settle. | Keep `npm run verify:pages-health` as the stricter propagation monitor; do not treat launch/readiness domain pass as proof that every HTTP edge cache has flipped until this command reports `PAGES_HEALTH=ready`. |
 
 ## Verification policy
 

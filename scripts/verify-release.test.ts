@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  RELEASE_SOURCE_PATHS,
   buildAuthenticodeCommand,
   evaluateBuildIcon,
   evaluateInstallerArtifact,
@@ -24,6 +25,17 @@ function withTempDir<T>(fn: (dir: string) => T): T {
 }
 
 describe("release preflight", () => {
+  it("treats dependency manifests and icon assets as release inputs", () => {
+    expect(RELEASE_SOURCE_PATHS).toEqual(
+      expect.arrayContaining([
+        "package.json",
+        "package-lock.json",
+        "desktop/assets/icon.ico",
+        "desktop/assets/icon.png",
+      ]),
+    );
+  });
+
   it("builds a valid PowerShell Authenticode command", () => {
     const command = buildAuthenticodeCommand(
       "C:\\Users\\Truet\\Projects\\daybreak\\desktop\\release\\Daybreak Setup 0.1.0.exe",

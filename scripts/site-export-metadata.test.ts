@@ -83,8 +83,10 @@ describe("site static export metadata", () => {
         `name="twitter:image" content="${SITE_URL}/daybreak-app.png"`,
       );
       expect(indexHtml).toContain(
-        "daybreak.rest serves the app over HTTP while GitHub Pages provisions HTTPS",
+        "daybreak.rest serves the app over HTTPS on the apex and www hosts",
       );
+      expect(indexHtml).not.toContain("GitHub Pages provisions HTTPS");
+      expect(indexHtml).not.toContain("GitHub Pages HTTPS is pending");
       expect(indexHtml).not.toContain("GitHub Pages preview is online");
     },
     120000,

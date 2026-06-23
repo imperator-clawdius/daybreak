@@ -32,6 +32,10 @@ export function expectedPackagedAppPath(
 }
 
 export const RELEASE_SOURCE_PATHS = [
+  "package.json",
+  "package-lock.json",
+  "desktop/assets/icon.ico",
+  "desktop/assets/icon.png",
   "desktop/package.json",
   "desktop/build.mjs",
   "desktop/src/main/main.ts",
