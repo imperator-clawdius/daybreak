@@ -418,7 +418,43 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true surface_clean=false surface_issue=tracking_marker:googletagmanager",
+      "LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true surface_clean=false copy_clean=true surface_issue=tracking_marker:googletagmanager",
+    );
+  });
+
+  it("keeps launch pending when live homepage copy promises unsupported lifetime updates", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: {
+          status: 200,
+          body: `${validPage()} <p>$19 once with lifetime updates</p>`,
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true surface_clean=true copy_clean=false copy_issue=unsupported_update_promise",
+    );
+  });
+
+  it("keeps launch pending when live homepage copy reverts to stale preview status", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: {
+          status: 200,
+          body: `${validPage()} <p>GitHub Pages preview is online</p>`,
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "copy_issue=stale_preview_status_copy",
     );
   });
 
@@ -454,7 +490,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "WWW_SITE=pass status=200 contains_daybreak=true support_contact=true surface_clean=false surface_issue=tracking_marker:api.segment.io",
+      "WWW_SITE=pass status=200 contains_daybreak=true support_contact=true surface_clean=false copy_clean=true surface_issue=tracking_marker:api.segment.io",
     );
   });
 
@@ -530,7 +566,7 @@ describe("launch verifier", () => {
       "WWW_HTTP_SITE=pass status=200 contains_daybreak=true",
     );
     expect(report.text).toContain(
-      "WWW_SITE=pending status=495 contains_daybreak=false support_contact=false surface_clean=true",
+      "WWW_SITE=pending status=495 contains_daybreak=false support_contact=false surface_clean=true copy_clean=true",
     );
   });
 

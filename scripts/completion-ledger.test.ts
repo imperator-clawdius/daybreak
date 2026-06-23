@@ -9,7 +9,7 @@ describe("completion ledger", () => {
       "utf8",
     );
 
-    expect(ledger).toContain("**285 tests, 32 files passed**");
+    expect(ledger).toContain("**287 tests, 32 files passed**");
     expect(ledger).toContain("completion ledger evidence contract");
     expect(ledger).toContain("dark browser chrome metadata");
     expect(ledger).toContain("honest update-promise copy");
@@ -18,6 +18,8 @@ describe("completion ledger", () => {
     expect(ledger).toContain("legal sale-state terms copy");
     expect(ledger).toContain("live clean-surface verification");
     expect(ledger).toContain("live legal effective-date verification");
+    expect(ledger).toContain("live public-copy verification");
+    expect(ledger).not.toContain("**285 tests, 32 files passed**");
     expect(ledger).not.toContain("**284 tests, 32 files passed**");
     expect(ledger).not.toContain("**282 tests, 32 files passed**");
     expect(ledger).not.toContain("**281 tests, 32 files passed**");

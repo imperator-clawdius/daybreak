@@ -31,6 +31,24 @@ export const FORBIDDEN_TRACKING_MARKERS = [
   "cdn.segment.com",
   "sentry",
 ];
+export const FORBIDDEN_PUBLIC_COPY = [
+  {
+    marker: "lifetime updates",
+    reason: "unsupported_update_promise",
+  },
+  {
+    marker: "GitHub Pages preview is online",
+    reason: "stale_preview_status_copy",
+  },
+  {
+    marker: "GitHub Pages provisions HTTPS",
+    reason: "stale_https_status_copy",
+  },
+  {
+    marker: "GitHub Pages HTTPS is pending",
+    reason: "stale_https_status_copy",
+  },
+];
 export const REQUIRED_ROUTES = [
   "privacy/",
   "terms/",
@@ -64,6 +82,17 @@ export function liveSurfaceIssue(body = "") {
     const parsed = new URL(url);
     if (!ALLOWED_LIVE_HOSTS.has(parsed.hostname)) {
       return `unexpected_host:${parsed.hostname}`;
+    }
+  }
+
+  return null;
+}
+
+export function publicCopyIssue(body = "") {
+  const lower = body.toLowerCase();
+  for (const { marker, reason } of FORBIDDEN_PUBLIC_COPY) {
+    if (lower.includes(marker.toLowerCase())) {
+      return reason;
     }
   }
 
@@ -110,6 +139,7 @@ export async function fetchSite(
       hasApp: /Daybreak/.test(body),
       hasSupportContact: body.includes(`href="${SUPPORT_MAILTO}"`),
       surfaceIssue: liveSurfaceIssue(body),
+      publicCopyIssue: publicCopyIssue(body),
       body,
       bytes,
     };
@@ -206,6 +236,7 @@ function routeIssue(routeResult) {
     if (!routeResult.res.hasApp) return "missing_daybreak";
     if (!routeResult.res.hasSupportContact) return "missing_support_contact";
     if (routeResult.res.surfaceIssue) return routeResult.res.surfaceIssue;
+    if (routeResult.res.publicCopyIssue) return routeResult.res.publicCopyIssue;
     return null;
   }
 
@@ -214,6 +245,7 @@ function routeIssue(routeResult) {
     if (!routeResult.res.hasApp) return "missing_daybreak";
     if (!routeResult.res.hasSupportContact) return "missing_support_contact";
     if (routeResult.res.surfaceIssue) return routeResult.res.surfaceIssue;
+    if (routeResult.res.publicCopyIssue) return routeResult.res.publicCopyIssue;
     if (!LEGAL_EFFECTIVE_DATE_PATTERN.test(body)) {
       return "missing_legal_effective_date";
     }
@@ -223,6 +255,7 @@ function routeIssue(routeResult) {
   if (!routeResult.res.ok) return `status_${routeResult.res.status}`;
   if (!routeResult.res.hasApp) return "missing_daybreak";
   if (routeResult.res.surfaceIssue) return routeResult.res.surfaceIssue;
+  if (routeResult.res.publicCopyIssue) return routeResult.res.publicCopyIssue;
   return null;
 }
 
@@ -285,8 +318,10 @@ export function renderLaunchReport({
   const lines = [];
   lines.push(`PRIMARY ${primary}`);
   lines.push(
-    `LIVE_SITE=${primaryRes.ok ? "pass" : "FAIL"} status=${primaryRes.status} contains_daybreak=${primaryRes.hasApp ?? false} support_contact=${primaryRes.hasSupportContact ?? false} surface_clean=${!primaryRes.surfaceIssue}${
+    `LIVE_SITE=${primaryRes.ok ? "pass" : "FAIL"} status=${primaryRes.status} contains_daybreak=${primaryRes.hasApp ?? false} support_contact=${primaryRes.hasSupportContact ?? false} surface_clean=${!primaryRes.surfaceIssue} copy_clean=${!primaryRes.publicCopyIssue}${
       primaryRes.surfaceIssue ? ` surface_issue=${primaryRes.surfaceIssue}` : ""
+    }${
+      primaryRes.publicCopyIssue ? ` copy_issue=${primaryRes.publicCopyIssue}` : ""
     }${
       primaryRes.error ? ` error=${primaryRes.error}` : ""
     }`,
@@ -325,8 +360,10 @@ export function renderLaunchReport({
   lines.push(`WWW_DNS host=${wwwHost} resolves=${wwwDns}`);
   if (wwwLive) {
     lines.push(
-      `WWW_SITE=${wwwLive.ok ? "pass" : "pending"} status=${wwwLive.status} contains_daybreak=${wwwLive.hasApp ?? false} support_contact=${wwwLive.hasSupportContact ?? false} surface_clean=${!wwwLive.surfaceIssue}${
+      `WWW_SITE=${wwwLive.ok ? "pass" : "pending"} status=${wwwLive.status} contains_daybreak=${wwwLive.hasApp ?? false} support_contact=${wwwLive.hasSupportContact ?? false} surface_clean=${!wwwLive.surfaceIssue} copy_clean=${!wwwLive.publicCopyIssue}${
         wwwLive.surfaceIssue ? ` surface_issue=${wwwLive.surfaceIssue}` : ""
+      }${
+        wwwLive.publicCopyIssue ? ` copy_issue=${wwwLive.publicCopyIssue}` : ""
       }${
         wwwLive.error ? ` error=${wwwLive.error}` : ""
       }`,
@@ -387,13 +424,15 @@ export async function verifyLaunch({
     primaryRes.ok &&
     primaryRes.hasSupportContact &&
     !primaryRes.surfaceIssue &&
+    !primaryRes.publicCopyIssue &&
     primaryRoutesOk;
   const wwwOk =
     wwwLive
       ? wwwLive.ok &&
         wwwLive.hasApp &&
         wwwLive.hasSupportContact &&
-        !wwwLive.surfaceIssue
+        !wwwLive.surfaceIssue &&
+        !wwwLive.publicCopyIssue
       : false;
 
   return {
