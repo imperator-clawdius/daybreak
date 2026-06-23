@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
+  shouldDisableDesktopApplicationMenu,
 } from "../src/desktop-shell";
 
 describe("desktop shell policy", () => {
@@ -55,5 +56,9 @@ describe("desktop shell policy", () => {
         "form-action 'none'",
       ].join("; "),
     );
+  });
+
+  it("requires the desktop shell to remove the Electron application menu", () => {
+    expect(shouldDisableDesktopApplicationMenu()).toBe(true);
   });
 });

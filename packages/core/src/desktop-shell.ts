@@ -16,6 +16,10 @@ export function getDesktopContentSecurityPolicy(): string {
   ].join("; ");
 }
 
+export function shouldDisableDesktopApplicationMenu(): boolean {
+  return true;
+}
+
 export function isAllowedDesktopNavigation(
   appEntrypointUrl: string,
   targetUrl: string,

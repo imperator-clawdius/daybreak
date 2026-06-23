@@ -3,7 +3,7 @@
 // renderer reports (via IPC) that every item has been wiped. The renderer
 // computes that with @daybreak/core's canDismiss(); main trusts only the
 // boolean it is told AND re-validates against the persisted board.
-import { app, BrowserWindow, ipcMain, screen } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, screen } from "electron";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -15,6 +15,7 @@ import {
   makeItem,
   planStartupRegistration,
   resolveLogForPhase,
+  shouldDisableDesktopApplicationMenu,
   validateLogUpdate,
   type DayLog,
   type Phase,
@@ -43,6 +44,7 @@ let win: BrowserWindow | null = null;
 let activeSession: { phase: Phase; log: DayLog } | null = null;
 let dismissAllowed = false;
 let smokeFailed = false;
+let applicationMenuDisabled = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -171,7 +173,9 @@ async function runSmokeFlow(): Promise<void> {
     ok
       ? `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=${SMOKE_SCENARIO} swipe_flow=true${
           SMOKE_SCENARIO === "evening" ? " streak_summary=true" : ""
-        }${SMOKE_CLOSE_PROBE ? " close_probe=true" : ""}${
+        } app_menu_disabled=${applicationMenuDisabled ? "true" : "false"}${
+          SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
+        }${
           screenshotCaptured ? " screenshot=true" : ""
         }`
       : "DAYBREAK_SMOKE=fail",
@@ -400,6 +404,12 @@ function configureStartupRegistration(): void {
   });
 }
 
+function configureApplicationMenu(): void {
+  if (!shouldDisableDesktopApplicationMenu()) return;
+  Menu.setApplicationMenu(null);
+  applicationMenuDisabled = Menu.getApplicationMenu() === null;
+}
+
 ipcMain.handle("daybreak:load", () => {
   const now = nowForSession();
   dismissAllowed = false;
@@ -466,6 +476,7 @@ ipcMain.handle("daybreak:dismiss", (_evt, payload: { log: DayLog; phase: Phase }
 });
 
 app.whenReady().then(() => {
+  configureApplicationMenu();
   configureStartupRegistration();
   createWindow();
   app.on("activate", () => {

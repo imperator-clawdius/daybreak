@@ -508,7 +508,7 @@ describe("release preflight", () => {
           status: 0,
           signal: null,
           stdout:
-            "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
+            "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true close_probe=true swipe_flow=true",
           stderr: "",
         },
       });
@@ -579,7 +579,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -592,7 +592,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening close_probe=true swipe_flow=true streak_summary=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening app_menu_disabled=true close_probe=true swipe_flow=true streak_summary=true",
                 stderr: "",
               },
             }),
@@ -623,7 +623,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -666,7 +666,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -679,7 +679,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening app_menu_disabled=true close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
