@@ -8,7 +8,7 @@ fabricated proof.
 Required before the checkout gate can pass. Generate it from the real Stripe
 account after creating the live $19 one-time Payment Link. The verifier expects:
 
-- `payment_link.id` is a non-empty Stripe Payment Link ID
+- `payment_link.id` starts with `plink_`
 - `payment_link.url` equals `CHECKOUT_URL` in `site/app/config.ts`
 - `payment_link.active` is `true`
 - `payment_link.livemode` is `true`
@@ -45,7 +45,7 @@ the first real paid checkout. The verifier expects:
 - `checkout_session.payment_status` is `paid`
 - `checkout_session.amount_total` is `1900`
 - `checkout_session.currency` is `usd`
-- `checkout_session.id` is a non-empty Checkout Session ID
+- `checkout_session.id` starts with `cs_`
 - `checkout_session.payment_link` equals `payment_link.id`
 - `payment_link.url` equals `CHECKOUT_URL` in `site/app/config.ts`
 - `refunds.data` is empty

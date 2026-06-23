@@ -50,6 +50,10 @@ export function isStripePaymentLink(url: string): boolean {
   }
 }
 
+function isStripePaymentLinkId(value: string): boolean {
+  return value.trim().startsWith("plink_");
+}
+
 export function isSha256(value: string): boolean {
   return /^[a-f0-9]{64}$/i.test(value);
 }
@@ -265,7 +269,10 @@ export function getCheckoutProofState({
       reason: hasRecurring ? "checkout_not_one_time" : "checkout_price_mismatch",
     };
   }
-  if (typeof paymentLink.id !== "string" || paymentLink.id.trim() === "") {
+  if (
+    typeof paymentLink.id !== "string" ||
+    !isStripePaymentLinkId(paymentLink.id)
+  ) {
     return { ready: false, reason: "checkout_proof_malformed" };
   }
 

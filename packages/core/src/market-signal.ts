@@ -103,6 +103,14 @@ function isStripePaymentLink(url: string): boolean {
   }
 }
 
+function isStripePaymentLinkId(value: string): boolean {
+  return value.trim().startsWith("plink_");
+}
+
+function isStripeCheckoutSessionId(value: string): boolean {
+  return value.trim().startsWith("cs_");
+}
+
 function normalizeProofKey(key: string): string {
   return key
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -223,11 +231,11 @@ export function getPaidOrderProofState({
   }
   if (
     typeof paymentLink.id !== "string" ||
-    paymentLink.id.trim() === "" ||
+    !isStripePaymentLinkId(paymentLink.id) ||
     typeof session.id !== "string" ||
-    session.id.trim() === "" ||
+    !isStripeCheckoutSessionId(session.id) ||
     typeof session.payment_link !== "string" ||
-    session.payment_link.trim() === ""
+    !isStripePaymentLinkId(session.payment_link)
   ) {
     return {
       ready: false,

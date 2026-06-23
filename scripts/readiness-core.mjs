@@ -149,6 +149,14 @@ function isStripePaymentLink(url) {
   }
 }
 
+function isStripePaymentLinkId(value) {
+  return value.trim().startsWith("plink_");
+}
+
+function isStripeCheckoutSessionId(value) {
+  return value.trim().startsWith("cs_");
+}
+
 function isSha256(value) {
   return /^[a-f0-9]{64}$/i.test(value);
 }
@@ -340,11 +348,14 @@ function evaluateCheckoutProof({ checkoutUrl, expectedPriceUsd, proof }) {
       detail: `proof must contain one non-recurring USD ${expectedCents} cent line item`,
     };
   }
-  if (typeof paymentLink.id !== "string" || paymentLink.id.trim() === "") {
+  if (
+    typeof paymentLink.id !== "string" ||
+    !isStripePaymentLinkId(paymentLink.id)
+  ) {
     return {
       pass: false,
       reason: "checkout_proof_malformed",
-      detail: "Stripe Payment Link proof payment_link.id must be a non-empty string",
+      detail: "Stripe Payment Link proof payment_link.id must start with plink_",
     };
   }
 
@@ -859,11 +870,11 @@ export function evaluateMarketSignal({
   }
   if (
     typeof paymentLink.id !== "string" ||
-    paymentLink.id.trim() === "" ||
+    !isStripePaymentLinkId(paymentLink.id) ||
     typeof session.id !== "string" ||
-    session.id.trim() === "" ||
+    !isStripeCheckoutSessionId(session.id) ||
     typeof session.payment_link !== "string" ||
-    session.payment_link.trim() === ""
+    !isStripePaymentLinkId(session.payment_link)
   ) {
     return {
       pass: false,
