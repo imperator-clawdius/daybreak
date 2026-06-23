@@ -12,6 +12,7 @@ export const REQUIRED_ROUTES = [
   "terms/",
   "robots.txt",
   "sitemap.xml",
+  "manifest.webmanifest",
 ];
 
 export function getPrimaryUrl(argv = []) {
@@ -97,6 +98,30 @@ function routePass(routeResult) {
       body.includes(`<loc>${PRODUCTION_URL}privacy/</loc>`) &&
       body.includes(`<loc>${PRODUCTION_URL}terms/</loc>`)
     );
+  }
+
+  if (routeResult.route === "manifest.webmanifest") {
+    if (!routeResult.res.ok) return false;
+
+    try {
+      const manifest = JSON.parse(body);
+      return (
+        manifest?.name === "Daybreak" &&
+        manifest?.short_name === "Daybreak" &&
+        manifest?.start_url === PRODUCTION_URL.replace(/\/$/, "") &&
+        manifest?.scope === PRODUCTION_URL &&
+        manifest?.background_color === "#0b1020" &&
+        manifest?.theme_color === "#0b1020" &&
+        Array.isArray(manifest?.icons) &&
+        manifest.icons.some(
+          (icon) =>
+            icon?.src === `${PRODUCTION_URL}daybreak-app.png` &&
+            icon?.type === "image/png",
+        )
+      );
+    } catch {
+      return false;
+    }
   }
 
   return routeResult.res.ok && routeResult.res.hasApp;

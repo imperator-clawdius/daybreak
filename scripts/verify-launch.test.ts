@@ -28,21 +28,32 @@ function fetchErrorWithCause(message: string, cause: { code: string; message: st
   };
 }
 
+function defaultRouteResponse(url: string) {
+  if (
+    !url.startsWith("https://daybreak.rest/") &&
+    !url.startsWith("http://daybreak.rest/") &&
+    !url.startsWith("https://www.daybreak.rest/") &&
+    !url.startsWith("http://www.daybreak.rest/") &&
+    !url.startsWith("https://imperator-clawdius.github.io/daybreak/")
+  ) {
+    return undefined;
+  }
+
+  return {
+    status: 200,
+    body: url.endsWith("/robots.txt")
+      ? validRobots()
+      : url.endsWith("/sitemap.xml")
+        ? validSitemap()
+        : url.endsWith("/manifest.webmanifest")
+          ? validManifest()
+          : "Daybreak",
+  };
+}
+
 function fetchByUrl(responses: Record<string, { status: number; body: string }>) {
   return async (url: string) => {
-    const response =
-      responses[url] ??
-      (url.startsWith("https://www.daybreak.rest/") ||
-      url.startsWith("http://www.daybreak.rest/")
-        ? {
-            status: 200,
-            body: url.endsWith("/robots.txt")
-              ? validRobots()
-              : url.endsWith("/sitemap.xml")
-                ? validSitemap()
-                : "Daybreak",
-          }
-        : undefined);
+    const response = responses[url] ?? defaultRouteResponse(url);
     if (!response) throw new Error(`unexpected fetch ${url}`);
     return {
       ok: response.status >= 200 && response.status < 300,
@@ -65,6 +76,26 @@ function validSitemap() {
     "<loc>https://daybreak.rest/terms/</loc>",
     "</urlset>",
   ].join("\n");
+}
+
+function validManifest() {
+  return JSON.stringify({
+    name: "Daybreak",
+    short_name: "Daybreak",
+    start_url: "https://daybreak.rest",
+    scope: "https://daybreak.rest/",
+    display: "standalone",
+    background_color: "#0b1020",
+    theme_color: "#0b1020",
+    icons: [
+      {
+        src: "https://daybreak.rest/daybreak-app.png",
+        sizes: "1252x878",
+        type: "image/png",
+        purpose: "any",
+      },
+    ],
+  });
 }
 
 describe("launch verifier", () => {
@@ -90,6 +121,9 @@ describe("launch verifier", () => {
         }
         if (url.endsWith("/sitemap.xml")) {
           return { ok: true, status: 200, text: async () => validSitemap() };
+        }
+        if (url.endsWith("/manifest.webmanifest")) {
+          return { ok: true, status: 200, text: async () => validManifest() };
         }
         return { ok: true, status: 200, text: async () => "Daybreak" };
       },
@@ -169,6 +203,9 @@ describe("launch verifier", () => {
         }
         if (url.endsWith("/sitemap.xml")) {
           return { ok: true, status: 200, text: async () => validSitemap() };
+        }
+        if (url.endsWith("/manifest.webmanifest")) {
+          return { ok: true, status: 200, text: async () => validManifest() };
         }
         return { ok: true, status: 200, text: async () => "Daybreak" };
       },
@@ -270,6 +307,24 @@ describe("launch verifier", () => {
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
       "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pending(404)",
+    );
+  });
+
+  it("keeps launch pending when the production manifest is malformed", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        "https://daybreak.rest/manifest.webmanifest": {
+          status: 200,
+          body: "{\"name\":\"Daybreak\"}",
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200) manifest.webmanifest=pending(200)",
     );
   });
 
