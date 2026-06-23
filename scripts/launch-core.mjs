@@ -13,6 +13,8 @@ export const REQUIRED_ROUTES = [
   "robots.txt",
   "sitemap.xml",
   "manifest.webmanifest",
+  "icon.png",
+  "apple-icon.png",
 ];
 
 export function getPrimaryUrl(argv = []) {
@@ -48,12 +50,17 @@ export async function fetchSite(
       redirect,
       headers: { connection: "close" },
     });
-    const body = await res.text();
+    const bytes =
+      typeof res.arrayBuffer === "function"
+        ? Buffer.from(await res.arrayBuffer())
+        : null;
+    const body = bytes ? new TextDecoder().decode(bytes) : await res.text();
     return {
       ok: res.ok,
       status: res.status,
       hasApp: /Daybreak/.test(body),
       body,
+      bytes,
     };
   } catch (e) {
     return { ok: false, status: 0, error: formatFetchError(e) };
@@ -122,6 +129,17 @@ function routePass(routeResult) {
     } catch {
       return false;
     }
+  }
+
+  if (routeResult.route === "icon.png" || routeResult.route === "apple-icon.png") {
+    const bytes = routeResult.res.bytes;
+    return (
+      routeResult.res.ok &&
+      Buffer.isBuffer(bytes) &&
+      bytes.length >= 24 &&
+      bytes[0] === 0x89 &&
+      bytes.toString("ascii", 1, 4) === "PNG"
+    );
   }
 
   return routeResult.res.ok && routeResult.res.hasApp;

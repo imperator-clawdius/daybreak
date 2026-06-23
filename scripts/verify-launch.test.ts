@@ -8,11 +8,22 @@ import {
 } from "./launch-core.mjs";
 import { PRODUCTION_URL } from "./readiness-core.mjs";
 
-function fetchPage(status: number, body: string) {
+type FetchBody = string | Buffer;
+
+function bodyToArrayBuffer(body: FetchBody): ArrayBuffer {
+  const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
+  return buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  ) as ArrayBuffer;
+}
+
+function fetchPage(status: number, body: FetchBody) {
   return async () => ({
     ok: status >= 200 && status < 300,
     status,
     text: async () => body,
+    arrayBuffer: async () => bodyToArrayBuffer(body),
   });
 }
 
@@ -47,11 +58,13 @@ function defaultRouteResponse(url: string) {
         ? validSitemap()
         : url.endsWith("/manifest.webmanifest")
           ? validManifest()
+          : url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")
+            ? validPng()
           : "Daybreak",
   };
 }
 
-function fetchByUrl(responses: Record<string, { status: number; body: string }>) {
+function fetchByUrl(responses: Record<string, { status: number; body: FetchBody }>) {
   return async (url: string) => {
     const response = responses[url] ?? defaultRouteResponse(url);
     if (!response) throw new Error(`unexpected fetch ${url}`);
@@ -59,6 +72,7 @@ function fetchByUrl(responses: Record<string, { status: number; body: string }>)
       ok: response.status >= 200 && response.status < 300,
       status: response.status,
       text: async () => response.body,
+      arrayBuffer: async () => bodyToArrayBuffer(response.body),
     };
   };
 }
@@ -98,6 +112,13 @@ function validManifest() {
   });
 }
 
+function validPng() {
+  return Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00,
+  ]);
+}
+
 describe("launch verifier", () => {
   it("uses the production apex as the default primary URL", () => {
     expect(getPrimaryUrl(["node", "scripts/verify-launch.mjs"])).toBe(
@@ -123,7 +144,10 @@ describe("launch verifier", () => {
           return { ok: true, status: 200, text: async () => validSitemap() };
         }
         if (url.endsWith("/manifest.webmanifest")) {
-          return { ok: true, status: 200, text: async () => validManifest() };
+          return await fetchPage(200, validManifest())();
+        }
+        if (url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")) {
+          return await fetchPage(200, validPng())();
         }
         return { ok: true, status: 200, text: async () => "Daybreak" };
       },
@@ -205,7 +229,10 @@ describe("launch verifier", () => {
           return { ok: true, status: 200, text: async () => validSitemap() };
         }
         if (url.endsWith("/manifest.webmanifest")) {
-          return { ok: true, status: 200, text: async () => validManifest() };
+          return await fetchPage(200, validManifest())();
+        }
+        if (url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")) {
+          return await fetchPage(200, validPng())();
         }
         return { ok: true, status: 200, text: async () => "Daybreak" };
       },
@@ -325,6 +352,24 @@ describe("launch verifier", () => {
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
       "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200) manifest.webmanifest=pending(200)",
+    );
+  });
+
+  it("keeps launch pending when the production browser icon is not a PNG", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        "https://daybreak.rest/icon.png": {
+          status: 200,
+          body: "not a png",
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200) manifest.webmanifest=pass(200) icon.png=pending(200) apple-icon.png=pass(200)",
     );
   });
 

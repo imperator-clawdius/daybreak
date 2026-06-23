@@ -24,6 +24,16 @@ function outFile(path: string): string {
   return join(process.cwd(), "site", "out", path);
 }
 
+function pngDimensions(path: string): { width: number; height: number } {
+  const bytes = readFileSync(path);
+  expect(bytes[0]).toBe(0x89);
+  expect(bytes.toString("ascii", 1, 4)).toBe("PNG");
+  return {
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+  };
+}
+
 describe("site static export metadata", () => {
   it(
     "publishes crawlable production metadata for the apex domain",
@@ -33,6 +43,8 @@ describe("site static export metadata", () => {
       const robotsPath = outFile("robots.txt");
       const sitemapPath = outFile("sitemap.xml");
       const manifestPath = outFile("manifest.webmanifest");
+      const iconPath = outFile("icon.png");
+      const appleIconPath = outFile("apple-icon.png");
       const indexHtml = readFileSync(outFile("index.html"), "utf8");
       const privacyHtml = readFileSync(outFile("privacy/index.html"), "utf8");
       const termsHtml = readFileSync(outFile("terms/index.html"), "utf8");
@@ -89,6 +101,11 @@ describe("site static export metadata", () => {
       expect(manifest.categories).toEqual(["productivity"]);
 
       expect(indexHtml).toContain('rel="manifest" href="/manifest.webmanifest"');
+      expect(pngDimensions(iconPath)).toEqual({ width: 256, height: 256 });
+      expect(pngDimensions(appleIconPath)).toEqual({ width: 256, height: 256 });
+      expect(indexHtml).toContain('rel="icon" href="/icon.png?');
+      expect(indexHtml).toContain('rel="apple-touch-icon" href="/apple-icon.png?');
+      expect(indexHtml).toContain('type="image/png" sizes="256x256"');
       expect(indexHtml).toContain(`rel="canonical" href="${SITE_URL}/"`);
       expect(privacyHtml).toContain(
         `rel="canonical" href="${SITE_URL}/privacy/"`,
