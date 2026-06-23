@@ -314,10 +314,17 @@ describe("release preflight", () => {
 
   it("passes release metadata only when app identity and NSIS target are configured", () =>
     withTempDir((dir) => {
+      writeFileSync(join(dir, "package.json"), JSON.stringify({ version: "0.1.0" }));
+      mkdirSync(join(dir, "packages", "core"), { recursive: true });
+      writeFileSync(
+        join(dir, "packages", "core", "package.json"),
+        JSON.stringify({ version: "0.1.0" }),
+      );
       writeFileSync(join(dir, "installer-license.txt"), "Daybreak license");
       writeFileSync(
         join(dir, "desktop-package.json"),
         JSON.stringify({
+          version: "0.1.0",
           author: "Passive Print Labs LLC",
           build: {
             appId: "com.passiveprintlabs.daybreak",
@@ -560,6 +567,49 @@ describe("release preflight", () => {
           build: {
             productName: "Daybreak",
             win: { target: [{ target: "nsis", arch: ["x64"] }] },
+          },
+        }),
+      );
+
+      expect(
+        evaluateReleaseMetadata({
+          root: dir,
+          packagePath: "desktop-package.json",
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "metadata_incomplete",
+      });
+    }));
+
+  it("keeps release metadata pending when workspace versions drift", () =>
+    withTempDir((dir) => {
+      writeFileSync(
+        join(dir, "package.json"),
+        JSON.stringify({ version: "0.1.1" }),
+      );
+      mkdirSync(join(dir, "packages", "core"), { recursive: true });
+      writeFileSync(
+        join(dir, "packages", "core", "package.json"),
+        JSON.stringify({ version: "0.1.0" }),
+      );
+      writeFileSync(join(dir, "installer-license.txt"), "Daybreak license");
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({
+          version: "0.1.0",
+          author: "Passive Print Labs LLC",
+          build: {
+            appId: "com.passiveprintlabs.daybreak",
+            productName: "Daybreak",
+            win: {
+              target: [{ target: "nsis", arch: ["x64"] }],
+            },
+            nsis: {
+              oneClick: false,
+              allowToChangeInstallationDirectory: true,
+              license: "installer-license.txt",
+            },
           },
         }),
       );

@@ -10,6 +10,14 @@ export function readJson(root, relativePath) {
   return JSON.parse(readFileSync(join(root, relativePath), "utf8"));
 }
 
+function readOptionalJson(root, relativePath) {
+  try {
+    return readJson(root, relativePath);
+  } catch {
+    return null;
+  }
+}
+
 export function expectedInstallerPath(root) {
   const desktopPackage = readJson(root, "desktop/package.json");
   const productName = desktopPackage.build?.productName || "Daybreak";
@@ -508,6 +516,8 @@ export function evaluateReleaseMetadata({
   packagePath = "desktop/package.json",
 }) {
   const fullPackagePath = join(root, packagePath);
+  const rootPackage = readOptionalJson(root, "package.json");
+  const corePackage = readOptionalJson(root, "packages/core/package.json");
   const desktopPackage = readJson(root, packagePath);
   const build = desktopPackage.build || {};
   const missing = [];
@@ -520,6 +530,13 @@ export function evaluateReleaseMetadata({
   }
   if (build.productName !== "Daybreak") {
     missing.push("build.productName=Daybreak");
+  }
+  if (
+    !desktopPackage.version ||
+    desktopPackage.version !== rootPackage?.version ||
+    desktopPackage.version !== corePackage?.version
+  ) {
+    missing.push("workspace versions match");
   }
   if (!hasNsisX64Target(build.win?.target)) {
     missing.push("build.win.target=nsis x64");
@@ -544,7 +561,7 @@ export function evaluateReleaseMetadata({
     reason: missing.length === 0 ? "metadata_configured" : "metadata_incomplete",
     detail:
       missing.length === 0
-        ? "appId=com.passiveprintlabs.daybreak productName=Daybreak author=Passive Print Labs LLC target=nsis/x64 license=configured"
+        ? `appId=com.passiveprintlabs.daybreak productName=Daybreak version=${desktopPackage.version} author=Passive Print Labs LLC target=nsis/x64 license=configured`
         : `missing ${missing.join(", ")}`,
   };
 }
