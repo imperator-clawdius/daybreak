@@ -30,7 +30,9 @@
     },
     "files": [
       "dist/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**/*.ts",
+      "!node_modules/**/tsconfig.json"
     ],
     "win": {
       "icon": "assets/icon.ico",

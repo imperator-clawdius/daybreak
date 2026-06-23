@@ -16,6 +16,7 @@ import {
   evaluateReleasePreflight,
   evaluateSourceMapExclusion,
   evaluatePackagedSourceMapExclusion,
+  evaluatePackagedSourceExclusion,
   readJson,
   renderReleaseReport,
 } from "./release-core.mjs";
@@ -568,6 +569,32 @@ describe("release preflight", () => {
         pass: false,
         reason: "packaged_source_maps_present",
         sourceMapPaths: ["/dist/main.js.map"],
+      });
+    }));
+
+  it("keeps release pending when TypeScript source is inside the packaged app", () =>
+    withTempDir((dir) => {
+      const asarPath = join(dir, "resources", "app.asar");
+      mkdirSync(join(dir, "resources"), { recursive: true });
+      writeFileSync(asarPath, "synthetic asar placeholder", "utf8");
+
+      expect(
+        evaluatePackagedSourceExclusion({
+          packagedAppAsarPath: asarPath,
+          listAsarFiles: () => [
+            "/dist/main.js",
+            "/node_modules/@daybreak/core/dist/index.js",
+            "/node_modules/@daybreak/core/src/index.ts",
+            "/node_modules/@daybreak/core/tsconfig.json",
+          ],
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "packaged_source_present",
+        sourcePaths: [
+          "/node_modules/@daybreak/core/src/index.ts",
+          "/node_modules/@daybreak/core/tsconfig.json",
+        ],
       });
     }));
 

@@ -200,6 +200,53 @@ export function evaluatePackagedSourceMapExclusion({
   }
 }
 
+export function evaluatePackagedSourceExclusion({
+  packagedAppAsarPath,
+  listAsarFiles = readAsarFileList,
+}) {
+  if (!existsSync(packagedAppAsarPath)) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_missing",
+      packagedAppAsarPath,
+      sourcePaths: [],
+      detail: `missing ${packagedAppAsarPath}`,
+    };
+  }
+
+  try {
+    const sourcePaths = listAsarFiles(packagedAppAsarPath).filter((path) => {
+      const normalized = slashPath(path);
+      return (
+        normalized.endsWith(".ts") ||
+        normalized.endsWith("/tsconfig.json")
+      );
+    });
+
+    return {
+      pass: sourcePaths.length === 0,
+      reason:
+        sourcePaths.length === 0
+          ? "packaged_source_absent"
+          : "packaged_source_present",
+      packagedAppAsarPath,
+      sourcePaths,
+      detail:
+        sourcePaths.length === 0
+          ? "packaged app.asar contains no TypeScript source files"
+          : `packaged app.asar contains TypeScript source files: ${sourcePaths.join(", ")}`,
+    };
+  } catch (e) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_unreadable",
+      packagedAppAsarPath,
+      sourcePaths: [],
+      detail: String(e.message || e),
+    };
+  }
+}
+
 export function sha256File(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
@@ -602,6 +649,9 @@ export function evaluateReleasePreflight({
   const packagedSourceMaps = evaluatePackagedSourceMapExclusion({
     packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
   });
+  const packagedSource = evaluatePackagedSourceExclusion({
+    packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
+  });
   const smoke =
     packagedSmoke ??
     evaluatePackagedSmoke({
@@ -622,12 +672,14 @@ export function evaluateReleasePreflight({
       metadata.pass &&
       sourceMaps.pass &&
       packagedSourceMaps.pass &&
+      packagedSource.pass &&
       smoke.pass &&
       freshness.pass,
     icon,
     metadata,
     sourceMaps,
     packagedSourceMaps,
+    packagedSource,
     packagedSmoke: smoke,
     freshness,
   };
@@ -687,6 +739,14 @@ export function renderReleaseReport(result) {
       );
     }
   }
+  if (result.packagedSource) {
+    lines.push(
+      `packaged_source=${result.packagedSource.pass ? "absent" : "present"}`,
+    );
+    if (!result.packagedSource.pass) {
+      lines.push(`packaged_source_message=${result.packagedSource.detail}`);
+    }
+  }
   if (result.packagedSmoke) {
     lines.push(
       `packaged_smoke=${result.packagedSmoke.pass ? "pass" : "pending"}`,
@@ -740,6 +800,11 @@ export function renderReleaseReport(result) {
     if (result.packagedSourceMaps && !result.packagedSourceMaps.pass) {
       blockers.push(
         "- Repackage the Windows app without source maps inside app.asar before signing or hosting the installer.",
+      );
+    }
+    if (result.packagedSource && !result.packagedSource.pass) {
+      blockers.push(
+        "- Repackage the Windows app without TypeScript source files inside app.asar before signing or hosting the installer.",
       );
     }
     if (result.packagedSmoke && !result.packagedSmoke.pass) {
