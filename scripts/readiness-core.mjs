@@ -139,7 +139,11 @@ function isHttpsUrl(url) {
 function isStripePaymentLink(url) {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "https:" && parsed.hostname === "buy.stripe.com";
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "buy.stripe.com" &&
+      parsed.pathname.length > 1
+    );
   } catch {
     return false;
   }

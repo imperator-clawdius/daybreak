@@ -40,7 +40,11 @@ export function isHttpsUrl(url: string): boolean {
 export function isStripePaymentLink(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.protocol === "https:" && parsed.hostname === "buy.stripe.com";
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "buy.stripe.com" &&
+      parsed.pathname.length > 1
+    );
   } catch {
     return false;
   }

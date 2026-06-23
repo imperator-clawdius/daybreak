@@ -20,6 +20,38 @@ describe("external launch links", () => {
     expect(isLiveCheckoutUrl("https://buy.stripe.com/live_123")).toBe(true);
   });
 
+  it("rejects host-only Stripe checkout URLs", () => {
+    const checkoutUrl = "https://buy.stripe.com";
+
+    expect(isLiveCheckoutUrl(checkoutUrl)).toBe(false);
+    expect(
+      getVerifiedCheckoutLinkState({
+        checkoutUrl,
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            id: "plink_live_123",
+            url: checkoutUrl,
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+        },
+      }),
+    ).toMatchObject({ ready: false, reason: "not_stripe_payment_link" });
+  });
+
   it("explains why checkout is not live", () => {
     expect(getCheckoutLinkState("PENDING_STRIPE_PAYMENT_LINK")).toMatchObject({
       ready: false,

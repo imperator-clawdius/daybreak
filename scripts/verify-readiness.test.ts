@@ -168,6 +168,18 @@ describe("readiness external-link proof", () => {
     ).resolves.toMatchObject({ pass: false, reason: "not_stripe_payment_link" });
   });
 
+  it("keeps checkout pending for host-only Stripe URLs", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com",
+        expectedPriceUsd: 19,
+        checkoutProof: stripeProof({ url: "https://buy.stripe.com" }),
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({ pass: false, reason: "not_stripe_payment_link" });
+  });
+
   it("keeps market signal pending without real paid-order proof", () => {
     expect(
       evaluateMarketSignal({
