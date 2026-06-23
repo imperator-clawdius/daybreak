@@ -10,6 +10,7 @@ import { PRODUCTION_URL } from "./readiness-core.mjs";
 
 type FetchBody = string | Buffer;
 const SUPPORT_LINK = 'href="mailto:founder@daybreak.rest"';
+const LEGAL_EFFECTIVE_DATE = "Effective June 23, 2026";
 
 function bodyToArrayBuffer(body: FetchBody): ArrayBuffer {
   const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
@@ -121,7 +122,7 @@ function validPng() {
 }
 
 function validPage(title = "Daybreak") {
-  return `${title} <a ${SUPPORT_LINK}>founder@daybreak.rest</a>`;
+  return `${title} ${LEGAL_EFFECTIVE_DATE} <a ${SUPPORT_LINK}>founder@daybreak.rest</a>`;
 }
 
 describe("launch verifier", () => {
@@ -382,6 +383,24 @@ describe("launch verifier", () => {
     expect(report.text).toContain("LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true");
     expect(report.text).toContain(
       "APEX_ROUTES=pending privacy=pending(200) terms=pass(200)",
+    );
+  });
+
+  it("keeps launch pending when a legal page omits the effective date", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        "https://daybreak.rest/terms/": {
+          status: 200,
+          body: `Terms - Daybreak <a ${SUPPORT_LINK}>founder@daybreak.rest</a>`,
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "APEX_ROUTES=pending privacy=pass(200) terms=pending(200)",
     );
   });
 

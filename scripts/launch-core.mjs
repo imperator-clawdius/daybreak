@@ -8,6 +8,8 @@ export const WWW_HOST = `www.${PRODUCTION_HOST}`;
 export const WWW_URL = `https://${WWW_HOST}/`;
 export const WWW_HTTP_URL = `http://${WWW_HOST}/`;
 export const SUPPORT_MAILTO = "mailto:founder@daybreak.rest";
+export const LEGAL_EFFECTIVE_DATE_PATTERN =
+  /Effective\s*(?:<!-- -->)?\s*June 23, 2026/;
 export const REQUIRED_ROUTES = [
   "privacy/",
   "terms/",
@@ -158,7 +160,8 @@ function routePass(routeResult) {
     return (
       routeResult.res.ok &&
       routeResult.res.hasApp &&
-      routeResult.res.hasSupportContact
+      routeResult.res.hasSupportContact &&
+      LEGAL_EFFECTIVE_DATE_PATTERN.test(body)
     );
   }
 
