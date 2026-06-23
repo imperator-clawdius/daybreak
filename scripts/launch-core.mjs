@@ -310,7 +310,9 @@ export function renderLaunchReport({
   lines.push(`WWW_DNS host=${wwwHost} resolves=${wwwDns}`);
   if (wwwLive) {
     lines.push(
-      `WWW_SITE=${wwwLive.ok ? "pass" : "pending"} status=${wwwLive.status} contains_daybreak=${wwwLive.hasApp ?? false} support_contact=${wwwLive.hasSupportContact ?? false}${
+      `WWW_SITE=${wwwLive.ok ? "pass" : "pending"} status=${wwwLive.status} contains_daybreak=${wwwLive.hasApp ?? false} support_contact=${wwwLive.hasSupportContact ?? false} surface_clean=${!wwwLive.surfaceIssue}${
+        wwwLive.surfaceIssue ? ` surface_issue=${wwwLive.surfaceIssue}` : ""
+      }${
         wwwLive.error ? ` error=${wwwLive.error}` : ""
       }`,
     );

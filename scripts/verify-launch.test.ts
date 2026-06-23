@@ -440,6 +440,24 @@ describe("launch verifier", () => {
     );
   });
 
+  it("reports clean-surface failures on the www homepage", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        "https://www.daybreak.rest/": {
+          status: 200,
+          body: `${validPage("Daybreak")} <img src="https://api.segment.io/pixel.gif" alt="" />`,
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "WWW_SITE=pass status=200 contains_daybreak=true support_contact=true surface_clean=false surface_issue=tracking_marker:api.segment.io",
+    );
+  });
+
   it("keeps launch pending when the branded 404 page is not served", async () => {
     const report = await verifyLaunch({
       argv: ["node", "scripts/verify-launch.mjs"],
@@ -512,7 +530,7 @@ describe("launch verifier", () => {
       "WWW_HTTP_SITE=pass status=200 contains_daybreak=true",
     );
     expect(report.text).toContain(
-      "WWW_SITE=pending status=495 contains_daybreak=false",
+      "WWW_SITE=pending status=495 contains_daybreak=false support_contact=false surface_clean=true",
     );
   });
 
