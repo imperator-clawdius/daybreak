@@ -73,7 +73,7 @@ function certificateState(config) {
   return config?.https_certificate?.state ?? "missing";
 }
 
-function hostPass(host) {
+function hostPass(host, { redirectsToHttps = false } = {}) {
   return Boolean(
     host?.host &&
       host.dns_resolves === true &&
@@ -81,12 +81,12 @@ function hostPass(host) {
       host.is_served_by_pages === true &&
       host.is_https_eligible === true &&
       host.responds_to_https === true &&
-      host.enforces_https === true &&
+      (host.enforces_https === true || redirectsToHttps === true) &&
       !host.caa_error,
   );
 }
 
-function hostStatus(host) {
+function hostStatus(host, edge = {}) {
   if (!host || typeof host !== "object") {
     return {
       pass: false,
@@ -95,7 +95,7 @@ function hostStatus(host) {
   }
 
   return {
-    pass: hostPass(host),
+    pass: hostPass(host, edge),
     text: [
       `host=${host.host ?? "missing"}`,
       `dns_resolves=${host.dns_resolves === true}`,
@@ -110,9 +110,85 @@ function hostStatus(host) {
   };
 }
 
-export function evaluatePagesHealth({ config, health }) {
-  const domain = hostStatus(health?.domain);
-  const altDomain = hostStatus(health?.alt_domain);
+function redirectLocation(response) {
+  return response?.headers?.get?.("location") ?? "";
+}
+
+function redirectsToHttpsHost(location, expectedHosts) {
+  try {
+    const url = new URL(location);
+    return url.protocol === "https:" && expectedHosts.includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function isRedirectStatus(status) {
+  return status >= 300 && status < 400;
+}
+
+function redirectsToApex(location) {
+  try {
+    const url = new URL(location);
+    return url.protocol === "https:" && url.hostname === PRODUCTION_HOST;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchManualRedirect(fetchImpl, url) {
+  const response = await fetchImpl(url, {
+    method: "HEAD",
+    redirect: "manual",
+  });
+  return {
+    status: response.status,
+    location: redirectLocation(response),
+  };
+}
+
+export async function fetchPagesEdgeRedirects({ fetchImpl = fetch } = {}) {
+  const [apexHttp, wwwHttp, wwwHttps] = await Promise.all([
+    fetchManualRedirect(fetchImpl, `http://${PRODUCTION_HOST}/`),
+    fetchManualRedirect(fetchImpl, `http://${WWW_HOST}/`),
+    fetchManualRedirect(fetchImpl, `https://${WWW_HOST}/`),
+  ]);
+
+  return {
+    apexHttpRedirectsToHttps:
+      isRedirectStatus(apexHttp.status) &&
+      redirectsToHttpsHost(apexHttp.location, [PRODUCTION_HOST]),
+    wwwHttpRedirectsToHttps:
+      isRedirectStatus(wwwHttp.status) &&
+      redirectsToHttpsHost(wwwHttp.location, [PRODUCTION_HOST, WWW_HOST]),
+    wwwHttpsCanonicalizesToApex:
+      isRedirectStatus(wwwHttps.status) && redirectsToApex(wwwHttps.location),
+    details: {
+      apexHttp,
+      wwwHttp,
+      wwwHttps,
+    },
+  };
+}
+
+function edgeStatus(edge) {
+  return {
+    apexHttpRedirectsToHttps: edge?.apexHttpRedirectsToHttps === true,
+    wwwHttpRedirectsToHttps: edge?.wwwHttpRedirectsToHttps === true,
+    wwwHttpsCanonicalizesToApex: edge?.wwwHttpsCanonicalizesToApex === true,
+  };
+}
+
+export function evaluatePagesHealth({ config, health, edge }) {
+  const redirects = edgeStatus(edge);
+  const domain = hostStatus(health?.domain, {
+    redirectsToHttps: redirects.apexHttpRedirectsToHttps,
+  });
+  const altDomain = hostStatus(health?.alt_domain, {
+    redirectsToHttps:
+      redirects.wwwHttpRedirectsToHttps &&
+      redirects.wwwHttpsCanonicalizesToApex,
+  });
   const certState = certificateState(config);
   const certPass = certState === "approved";
   const configPass =
@@ -122,6 +198,7 @@ export function evaluatePagesHealth({ config, health }) {
     pass: certPass && configPass && domain.pass && altDomain.pass,
     config,
     health,
+    edge: redirects,
     certificateState: certState,
     configPass,
     domain,
@@ -136,6 +213,12 @@ export function renderPagesHealthReport(evaluation) {
     `PAGES_CERTIFICATE=${evaluation.certificateState}`,
     `PAGES_DOMAIN ${evaluation.domain.text}`,
     `PAGES_ALT_DOMAIN ${evaluation.altDomain.text}`,
+    [
+      "PAGES_EDGE_REDIRECTS",
+      `apex_http_to_https=${evaluation.edge.apexHttpRedirectsToHttps}`,
+      `www_http_to_https=${evaluation.edge.wwwHttpRedirectsToHttps}`,
+      `www_https_to_apex=${evaluation.edge.wwwHttpsCanonicalizesToApex}`,
+    ].join(" "),
     `PAGES_REQUIRED apex=${PRODUCTION_HOST} alt=${WWW_HOST}`,
     `PAGES_HEALTH=${evaluation.pass ? "ready" : "pending"}`,
   ].join("\n");

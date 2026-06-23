@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 
 import {
   evaluatePagesHealth,
+  fetchPagesEdgeRedirects,
   fetchPagesConfig,
   fetchPagesHealth,
   renderPagesHealthReport,
@@ -46,6 +47,7 @@ if (!health.ok) {
 const evaluation = evaluatePagesHealth({
   config: config.body,
   health: health.body,
+  edge: await fetchPagesEdgeRedirects(),
 });
 
 console.log(renderPagesHealthReport(evaluation));

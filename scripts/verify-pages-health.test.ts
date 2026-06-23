@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   evaluatePagesHealth,
+  fetchPagesEdgeRedirects,
   fetchPagesHealth,
   renderPagesHealthReport,
 } from "./pages-health-core.mjs";
@@ -11,6 +12,15 @@ function jsonResponse(status: number, body: unknown) {
     ok: status >= 200 && status < 300,
     status,
     json: async () => body,
+  };
+}
+
+function redirectResponse(status: number, location: string) {
+  return {
+    status,
+    headers: {
+      get: (name: string) => (name.toLowerCase() === "location" ? location : ""),
+    },
   };
 }
 
@@ -126,5 +136,52 @@ describe("GitHub Pages health verifier", () => {
 
     expect(evaluation.pass).toBe(true);
     expect(renderPagesHealthReport(evaluation)).toContain("PAGES_HEALTH=ready");
+  });
+
+  it("accepts edge redirect proof when GitHub's www enforcement flag lags", () => {
+    const evaluation = evaluatePagesHealth({
+      config: {
+        cname: "daybreak.rest",
+        https_certificate: {
+          state: "approved",
+          description: "Certificate is approved",
+          domains: ["daybreak.rest", "www.daybreak.rest"],
+        },
+        https_enforced: true,
+      },
+      health: {
+        domain: healthyHost("daybreak.rest"),
+        alt_domain: {
+          ...healthyHost("www.daybreak.rest"),
+          enforces_https: false,
+        },
+      },
+      edge: {
+        apexHttpRedirectsToHttps: true,
+        wwwHttpRedirectsToHttps: true,
+        wwwHttpsCanonicalizesToApex: true,
+      },
+    });
+
+    expect(evaluation.pass).toBe(true);
+    expect(renderPagesHealthReport(evaluation)).toContain(
+      "PAGES_EDGE_REDIRECTS apex_http_to_https=true www_http_to_https=true www_https_to_apex=true",
+    );
+  });
+
+  it("does not count non-redirect edge responses as HTTPS enforcement", async () => {
+    const responses = [
+      redirectResponse(200, "https://daybreak.rest/"),
+      redirectResponse(301, "https://daybreak.rest/"),
+      redirectResponse(301, "https://daybreak.rest/"),
+    ];
+
+    const edge = await fetchPagesEdgeRedirects({
+      fetchImpl: async () => responses.shift(),
+    });
+
+    expect(edge.apexHttpRedirectsToHttps).toBe(false);
+    expect(edge.wwwHttpRedirectsToHttps).toBe(true);
+    expect(edge.wwwHttpsCanonicalizesToApex).toBe(true);
   });
 });
