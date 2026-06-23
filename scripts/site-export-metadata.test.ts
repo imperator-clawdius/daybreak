@@ -32,6 +32,7 @@ describe("site static export metadata", () => {
 
       const robotsPath = outFile("robots.txt");
       const sitemapPath = outFile("sitemap.xml");
+      const manifestPath = outFile("manifest.webmanifest");
       const indexHtml = readFileSync(outFile("index.html"), "utf8");
       const privacyHtml = readFileSync(outFile("privacy/index.html"), "utf8");
       const termsHtml = readFileSync(outFile("terms/index.html"), "utf8");
@@ -47,6 +48,47 @@ describe("site static export metadata", () => {
       expect(sitemap).toContain(`<loc>${SITE_URL}/privacy/</loc>`);
       expect(sitemap).toContain(`<loc>${SITE_URL}/terms/</loc>`);
 
+      expect(existsSync(manifestPath)).toBe(true);
+      const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
+        name?: string;
+        short_name?: string;
+        description?: string;
+        start_url?: string;
+        scope?: string;
+        display?: string;
+        background_color?: string;
+        theme_color?: string;
+        icons?: Array<{
+          src?: string;
+          sizes?: string;
+          type?: string;
+          purpose?: string;
+        }>;
+        categories?: string[];
+      };
+      expect(manifest).toMatchObject({
+        name: "Daybreak",
+        short_name: "Daybreak",
+        start_url: SITE_URL,
+        scope: `${SITE_URL}/`,
+        display: "standalone",
+        background_color: "#0b1020",
+        theme_color: "#0b1020",
+      });
+      expect(manifest.description).toContain(
+        "A Windows app that takes over your screen",
+      );
+      expect(manifest.icons).toEqual([
+        {
+          src: `${SITE_URL}/daybreak-app.png`,
+          sizes: "1252x878",
+          type: "image/png",
+          purpose: "any",
+        },
+      ]);
+      expect(manifest.categories).toEqual(["productivity"]);
+
+      expect(indexHtml).toContain('rel="manifest" href="/manifest.webmanifest"');
       expect(indexHtml).toContain(`rel="canonical" href="${SITE_URL}/"`);
       expect(privacyHtml).toContain(
         `rel="canonical" href="${SITE_URL}/privacy/"`,
