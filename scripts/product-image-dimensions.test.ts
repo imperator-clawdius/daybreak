@@ -40,13 +40,17 @@ describe("product image dimensions", () => {
     const image = pngDimensions("site/public/daybreak-app.png");
     const page = readFileSync("site/app/page.tsx", "utf8");
     const layout = readFileSync("site/app/layout.tsx", "utf8");
+    const privacy = readFileSync("site/app/privacy/page.tsx", "utf8");
+    const terms = readFileSync("site/app/terms/page.tsx", "utf8");
 
     expect(image.width).toBeGreaterThanOrEqual(1200);
     expect(image.height).toBeGreaterThanOrEqual(750);
+    for (const source of [layout, privacy, terms]) {
+      expect(source).toContain(`width: ${image.width}`);
+      expect(source).toContain(`height: ${image.height}`);
+    }
     expect(page).toContain(`width={${image.width}}`);
     expect(page).toContain(`height={${image.height}}`);
-    expect(layout).toContain(`width: ${image.width}`);
-    expect(layout).toContain(`height: ${image.height}`);
   });
 
   it("keeps generated brand art separate from the real app screenshot proof", () => {
