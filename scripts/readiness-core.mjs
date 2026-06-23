@@ -819,6 +819,7 @@ export async function evaluateExternalLink({
 export function evaluateMarketSignal({
   checkoutUrl,
   expectedPriceUsd,
+  expectedPaymentLinkId,
   proof,
 }) {
   if (!proof || typeof proof !== "object") {
@@ -947,6 +948,12 @@ export function evaluateMarketSignal({
     return pending("paid_order_checkout_mismatch");
   }
   if (
+    expectedPaymentLinkId !== undefined &&
+    session.payment_link !== expectedPaymentLinkId
+  ) {
+    return pending("paid_order_checkout_mismatch");
+  }
+  if (
     typeof session.livemode !== "boolean" ||
     typeof session.mode !== "string" ||
     typeof session.status !== "string" ||
@@ -1051,6 +1058,7 @@ export async function buildReadinessGates({
   const marketSignal = evaluateMarketSignal({
     checkoutUrl,
     expectedPriceUsd: priceUsd,
+    expectedPaymentLinkId: checkoutProof?.payment_link?.id,
     proof: paidOrderProof,
   });
 

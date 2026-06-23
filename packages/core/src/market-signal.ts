@@ -147,10 +147,12 @@ function containsDisallowedCustomerData(value: unknown): boolean {
 export function getPaidOrderProofState({
   checkoutUrl,
   expectedPriceUsd,
+  expectedPaymentLinkId,
   proof,
 }: {
   checkoutUrl: string;
   expectedPriceUsd: number;
+  expectedPaymentLinkId?: string;
   proof: unknown;
 }): PaidOrderProofState {
   if (!proof || typeof proof !== "object") {
@@ -262,6 +264,17 @@ export function getPaidOrderProofState({
     };
   }
   if (session.payment_link !== paymentLink.id) {
+    return {
+      ready: false,
+      reason: "paid_order_checkout_mismatch",
+      paidOrders: 0,
+      refunds,
+    };
+  }
+  if (
+    expectedPaymentLinkId !== undefined &&
+    session.payment_link !== expectedPaymentLinkId
+  ) {
     return {
       ready: false,
       reason: "paid_order_checkout_mismatch",

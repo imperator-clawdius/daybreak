@@ -32,12 +32,29 @@ describe("paid order proof", () => {
       getPaidOrderProofState({
         checkoutUrl: "https://buy.stripe.com/live_123",
         expectedPriceUsd: 19,
+        expectedPaymentLinkId: "plink_live_123",
         proof: paidOrderProof(),
       }),
     ).toMatchObject({
       ready: true,
       reason: "ready",
       paidOrders: 1,
+      refunds: 0,
+    });
+  });
+
+  it("rejects paid-order proof for a different verified Stripe Payment Link id", () => {
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        expectedPaymentLinkId: "plink_live_verified",
+        proof: paidOrderProof(),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_checkout_mismatch",
+      paidOrders: 0,
       refunds: 0,
     });
   });

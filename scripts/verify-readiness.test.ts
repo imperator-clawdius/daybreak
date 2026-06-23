@@ -279,6 +279,7 @@ describe("readiness external-link proof", () => {
       evaluateMarketSignal({
         checkoutUrl: "https://buy.stripe.com/live_123",
         expectedPriceUsd: 19,
+        expectedPaymentLinkId: "plink_live_123",
         proof: paidOrderProof(),
       }),
     ).toMatchObject({
@@ -302,6 +303,72 @@ describe("readiness external-link proof", () => {
       paidOrders: 1,
       refunds: 1,
     });
+  });
+
+  it("keeps market signal pending when the paid order is for a different verified Payment Link id", () => {
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        expectedPaymentLinkId: "plink_live_verified",
+        proof: paidOrderProof(),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_checkout_mismatch",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
+  it("keeps the assembled market-signal gate pending when first-order proof does not match the verified checkout proof id", async () => {
+    const root = makeReadinessRoot();
+    try {
+      writeFileSync(
+        join(root, "site/app/config.ts"),
+        [
+          'export const CHECKOUT_URL = "https://buy.stripe.com/live_123";',
+          'export const DOWNLOAD_URL = "PENDING_INSTALLER_DOWNLOAD";',
+          'export const DOWNLOAD_SHA256 = "PENDING_INSTALLER_SHA256";',
+          "export const PRICE_USD = 19;",
+        ].join("\n"),
+      );
+      mkdirSync(join(root, "proof"), { recursive: true });
+      writeFileSync(
+        join(root, "proof/stripe-payment-link.json"),
+        JSON.stringify(stripeProof({ id: "plink_live_verified" })),
+      );
+      writeFileSync(
+        join(root, "proof/first-paid-order.json"),
+        JSON.stringify(paidOrderProof()),
+      );
+
+      const gates = await buildReadinessGates({
+        root,
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: async () => ({
+          ok: true,
+          status: 200,
+          text: async () => "Daybreak",
+        }),
+      });
+
+      const marketSignal = gates.find(
+        (gate) => gate.name === "Real market signal (>=1 paid order)",
+      );
+
+      expect(marketSignal).toMatchObject({ pass: false });
+      expect(marketSignal?.detail).toContain(
+        "reason=paid_order_checkout_mismatch",
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("keeps market signal pending until refund proof explicitly shows no refunds", () => {

@@ -57,6 +57,7 @@ the first real paid checkout. The verifier expects:
 - `checkout_session.currency` is `usd`
 - `checkout_session.id` starts with `cs_live_`
 - `checkout_session.payment_link` equals `payment_link.id`
+- `payment_link.id` equals `payment_link.id` in `stripe-payment-link.json`
 - `payment_link.url` equals `CHECKOUT_URL` in `site/app/config.ts`
 - `refunds.data` is empty
 - `refunds.has_more` is `false`
