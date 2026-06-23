@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   RELEASE_SOURCE_PATHS,
   buildAuthenticodeCommand,
+  buildAsarListCommand,
   collectReleaseSourcePaths,
   evaluateBuildIcon,
   evaluateInstallerArtifact,
@@ -14,6 +15,8 @@ import {
   evaluateReleaseMetadata,
   evaluateReleasePreflight,
   evaluateSourceMapExclusion,
+  evaluatePackagedSourceMapExclusion,
+  readJson,
   renderReleaseReport,
 } from "./release-core.mjs";
 
@@ -27,6 +30,28 @@ function withTempDir<T>(fn: (dir: string) => T): T {
 }
 
 describe("release preflight", () => {
+  it("declares the asar reader used by release preflight as a direct dev dependency", () => {
+    const rootPackage = readJson(process.cwd(), "package.json");
+
+    expect(rootPackage.devDependencies).toMatchObject({
+      "@electron/asar": expect.any(String),
+    });
+  });
+
+  it("runs the local asar CLI through node for packaged artifact inspection", () => {
+    const command = buildAsarListCommand({
+      root: "C:\\repo",
+      packagedAppAsarPath: "C:\\repo\\desktop\\release\\win-unpacked\\resources\\app.asar",
+    });
+
+    expect(command.executablePath).toBe(process.execPath);
+    expect(command.args).toEqual([
+      join("C:\\repo", "node_modules", "@electron", "asar", "bin", "asar.js"),
+      "list",
+      "C:\\repo\\desktop\\release\\win-unpacked\\resources\\app.asar",
+    ]);
+  });
+
   it("treats dependency manifests and icon assets as release inputs", () => {
     expect(RELEASE_SOURCE_PATHS).toEqual(
       expect.arrayContaining([
@@ -525,6 +550,24 @@ describe("release preflight", () => {
         pass: false,
         reason: "source_maps_present",
         sourceMapPaths: [join(distPath, "main.js.map")],
+      });
+    }));
+
+  it("keeps release pending when source maps are already inside the packaged app", () =>
+    withTempDir((dir) => {
+      const asarPath = join(dir, "resources", "app.asar");
+      mkdirSync(join(dir, "resources"), { recursive: true });
+      writeFileSync(asarPath, "synthetic asar placeholder", "utf8");
+
+      expect(
+        evaluatePackagedSourceMapExclusion({
+          packagedAppAsarPath: asarPath,
+          listAsarFiles: () => ["/dist/main.js", "/dist/main.js.map"],
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "packaged_source_maps_present",
+        sourceMapPaths: ["/dist/main.js.map"],
       });
     }));
 

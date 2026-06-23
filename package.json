@@ -34,6 +34,7 @@
     "dev:site": "npm run dev -w @daybreak/site"
   },
   "devDependencies": {
+    "@electron/asar": "^3.4.1",
     "typescript": "^5.6.3",
     "vitest": "^4.1.9"
   }

@@ -31,6 +31,17 @@ export function expectedPackagedAppPath(
   );
 }
 
+export function expectedPackagedAppAsarPath(
+  root,
+  packagePath = "desktop/package.json",
+) {
+  return join(
+    dirname(expectedPackagedAppPath(root, packagePath)),
+    "resources",
+    "app.asar",
+  );
+}
+
 export const RELEASE_SOURCE_PATHS = [
   "package.json",
   "package-lock.json",
@@ -119,6 +130,74 @@ export function evaluateSourceMapExclusion({ distPath }) {
         ? "desktop dist contains no source maps"
         : `desktop dist contains source maps: ${sourceMapPaths.join(", ")}`,
   };
+}
+
+export function buildAsarListCommand({
+  root = process.cwd(),
+  packagedAppAsarPath,
+}) {
+  return {
+    executablePath: process.execPath,
+    args: [
+      join(root, "node_modules", "@electron", "asar", "bin", "asar.js"),
+      "list",
+      packagedAppAsarPath,
+    ],
+  };
+}
+
+export function readAsarFileList(packagedAppAsarPath) {
+  const command = buildAsarListCommand({ packagedAppAsarPath });
+  const raw = execFileSync(command.executablePath, command.args, {
+    encoding: "utf8",
+  });
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+export function evaluatePackagedSourceMapExclusion({
+  packagedAppAsarPath,
+  listAsarFiles = readAsarFileList,
+}) {
+  if (!existsSync(packagedAppAsarPath)) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_missing",
+      packagedAppAsarPath,
+      sourceMapPaths: [],
+      detail: `missing ${packagedAppAsarPath}`,
+    };
+  }
+
+  try {
+    const sourceMapPaths = listAsarFiles(packagedAppAsarPath).filter((path) =>
+      path.endsWith(".map"),
+    );
+
+    return {
+      pass: sourceMapPaths.length === 0,
+      reason:
+        sourceMapPaths.length === 0
+          ? "packaged_source_maps_absent"
+          : "packaged_source_maps_present",
+      packagedAppAsarPath,
+      sourceMapPaths,
+      detail:
+        sourceMapPaths.length === 0
+          ? "packaged app.asar contains no source maps"
+          : `packaged app.asar contains source maps: ${sourceMapPaths.join(", ")}`,
+    };
+  } catch (e) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_unreadable",
+      packagedAppAsarPath,
+      sourceMapPaths: [],
+      detail: String(e.message || e),
+    };
+  }
 }
 
 export function sha256File(path) {
@@ -520,6 +599,9 @@ export function evaluateReleasePreflight({
     distPath: join(dirname(join(root, packagePath)), "dist"),
   });
   const packagedAppPath = expectedPackagedAppPath(root, packagePath);
+  const packagedSourceMaps = evaluatePackagedSourceMapExclusion({
+    packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
+  });
   const smoke =
     packagedSmoke ??
     evaluatePackagedSmoke({
@@ -539,11 +621,13 @@ export function evaluateReleasePreflight({
       icon.pass &&
       metadata.pass &&
       sourceMaps.pass &&
+      packagedSourceMaps.pass &&
       smoke.pass &&
       freshness.pass,
     icon,
     metadata,
     sourceMaps,
+    packagedSourceMaps,
     packagedSmoke: smoke,
     freshness,
   };
@@ -589,6 +673,18 @@ export function renderReleaseReport(result) {
     );
     if (!result.sourceMaps.pass) {
       lines.push(`source_maps_message=${result.sourceMaps.detail}`);
+    }
+  }
+  if (result.packagedSourceMaps) {
+    lines.push(
+      `packaged_source_maps=${
+        result.packagedSourceMaps.pass ? "absent" : "present"
+      }`,
+    );
+    if (!result.packagedSourceMaps.pass) {
+      lines.push(
+        `packaged_source_maps_message=${result.packagedSourceMaps.detail}`,
+      );
     }
   }
   if (result.packagedSmoke) {
@@ -639,6 +735,11 @@ export function renderReleaseReport(result) {
     if (result.sourceMaps && !result.sourceMaps.pass) {
       blockers.push(
         "- Rebuild the desktop bundle without source maps before signing or hosting the installer.",
+      );
+    }
+    if (result.packagedSourceMaps && !result.packagedSourceMaps.pass) {
+      blockers.push(
+        "- Repackage the Windows app without source maps inside app.asar before signing or hosting the installer.",
       );
     }
     if (result.packagedSmoke && !result.packagedSmoke.pass) {
