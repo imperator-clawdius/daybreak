@@ -16,5 +16,16 @@ describe("CI workflow", () => {
     expect(workflow).toContain("npm audit --omit=dev --audit-level=moderate");
     expect(workflow).toContain("npm run check");
     expect(workflow).toContain("npm run verify:local-only");
+    expect(workflow).toContain("npm run verify:readiness -- --allow-pending");
+  });
+
+  it("checks live production drift only on main pushes", () => {
+    const workflow = ciWorkflowSource();
+
+    expect(workflow).toContain("npm run verify:launch");
+    expect(workflow).toContain("npm run verify:pages-health");
+    expect(workflow).toContain("github.event_name == 'push'");
+    expect(workflow).toContain("github.ref == 'refs/heads/main'");
+    expect(workflow).toContain("GH_TOKEN: ${{ github.token }}");
   });
 });
