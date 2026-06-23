@@ -432,7 +432,87 @@ describe("readiness external-link proof", () => {
         proof: paidOrderProof({
           checkout_session: {
             ...base.checkout_session,
+            id: "cs_live_123!",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
+            id: "cs_live 123",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
             id: " cs_live_123",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
+            payment_link: "plink_live_123!",
+          },
+          payment_link: {
+            ...base.payment_link,
+            id: "plink_live_123!",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
+            payment_link: "plink_live 123",
+          },
+          payment_link: {
+            ...base.payment_link,
+            id: "plink_live 123",
           },
         }),
       }),
@@ -1161,6 +1241,8 @@ describe("readiness external-link proof", () => {
       { ...stripeProof().payment_link, id: 123 },
       { ...stripeProof().payment_link, id: " plink_live_123" },
       { ...stripeProof().payment_link, id: "plink_live_123 " },
+      { ...stripeProof().payment_link, id: "plink_live_123!" },
+      { ...stripeProof().payment_link, id: "plink_live 123" },
       { ...stripeProof().payment_link, id: "link_live_123" },
       { ...stripeProof().payment_link, id: "plink_" },
       { url: "https://buy.stripe.com/live_123", active: "true", livemode: true },

@@ -330,7 +330,91 @@ describe("paid order proof", () => {
           ...base,
           checkout_session: {
             ...base.checkout_session,
+            id: "cs_live_123!",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            id: "cs_live 123",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
             id: " cs_live_123",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            payment_link: "plink_live_123!",
+          },
+          payment_link: {
+            ...base.payment_link,
+            id: "plink_live_123!",
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          ...base,
+          checkout_session: {
+            ...base.checkout_session,
+            payment_link: "plink_live 123",
+          },
+          payment_link: {
+            ...base.payment_link,
+            id: "plink_live 123",
           },
         },
       }),

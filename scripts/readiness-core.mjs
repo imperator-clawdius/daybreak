@@ -150,21 +150,11 @@ function isStripePaymentLink(url) {
 }
 
 function isStripePaymentLinkId(value) {
-  const trimmed = value.trim();
-  return (
-    value === trimmed &&
-    value.startsWith("plink_") &&
-    value.length > "plink_".length
-  );
+  return /^plink_[A-Za-z0-9_]+$/.test(value);
 }
 
 function isLiveStripeCheckoutSessionId(value) {
-  const trimmed = value.trim();
-  return (
-    value === trimmed &&
-    value.startsWith("cs_live_") &&
-    value.length > "cs_live_".length
-  );
+  return /^cs_live_[A-Za-z0-9_]+$/.test(value);
 }
 
 function isSha256(value) {

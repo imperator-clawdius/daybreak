@@ -444,6 +444,8 @@ describe("external launch links", () => {
       { ...baseProof.payment_link, id: 123 },
       { ...baseProof.payment_link, id: " plink_live_123" },
       { ...baseProof.payment_link, id: "plink_live_123 " },
+      { ...baseProof.payment_link, id: "plink_live_123!" },
+      { ...baseProof.payment_link, id: "plink_live 123" },
     ]) {
       expect(
         getCheckoutProofState({

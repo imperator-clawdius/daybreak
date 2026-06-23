@@ -104,21 +104,11 @@ function isStripePaymentLink(url: string): boolean {
 }
 
 function isStripePaymentLinkId(value: string): boolean {
-  const trimmed = value.trim();
-  return (
-    value === trimmed &&
-    value.startsWith("plink_") &&
-    value.length > "plink_".length
-  );
+  return /^plink_[A-Za-z0-9_]+$/.test(value);
 }
 
 function isLiveStripeCheckoutSessionId(value: string): boolean {
-  const trimmed = value.trim();
-  return (
-    value === trimmed &&
-    value.startsWith("cs_live_") &&
-    value.length > "cs_live_".length
-  );
+  return /^cs_live_[A-Za-z0-9_]+$/.test(value);
 }
 
 function normalizeProofKey(key: string): string {
