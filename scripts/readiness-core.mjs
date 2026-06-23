@@ -14,6 +14,11 @@ import {
   EXPECTED_SIGNER_SUBJECT,
   readAuthenticodeSignature,
 } from "./release-core.mjs";
+import {
+  SUPPORT_MAILTO,
+  liveSurfaceIssue,
+  publicCopyIssue,
+} from "./live-site-policy.mjs";
 
 export const PRODUCTION_HOST = "daybreak.rest";
 export const PRODUCTION_URL = `https://${PRODUCTION_HOST}/`;
@@ -570,9 +575,25 @@ async function fetchSite(url, fetchImpl) {
       headers: { connection: "close" },
     });
     const body = await res.text();
-    return { ok: res.ok, status: res.status, hasApp: /Daybreak/.test(body) };
+    const allowedHosts = new Set([PRODUCTION_HOST, WWW_HOST]);
+    return {
+      ok: res.ok,
+      status: res.status,
+      hasApp: /Daybreak/.test(body),
+      hasSupportContact: body.includes(`href="${SUPPORT_MAILTO}"`),
+      surfaceIssue: liveSurfaceIssue(body, allowedHosts),
+      publicCopyIssue: publicCopyIssue(body),
+    };
   } catch (e) {
-    return { ok: false, status: 0, hasApp: false, error: formatFetchError(e) };
+    return {
+      ok: false,
+      status: 0,
+      hasApp: false,
+      hasSupportContact: false,
+      surfaceIssue: null,
+      publicCopyIssue: null,
+      error: formatFetchError(e),
+    };
   }
 }
 
@@ -616,12 +637,25 @@ export async function evaluateProductionDomain({
   }
 
   const site = await fetchSite(url, fetchImpl);
-  if (!site.ok || !site.hasApp) {
+  if (
+    !site.ok ||
+    !site.hasApp ||
+    !site.hasSupportContact ||
+    site.surfaceIssue ||
+    site.publicCopyIssue
+  ) {
+    const issue = [
+      site.ok && !site.hasSupportContact ? "missing_support_contact" : "",
+      site.surfaceIssue || "",
+      site.publicCopyIssue || "",
+    ].find(Boolean);
     return {
       pass: false,
       reason: "apex_https_not_ready",
       status: site.status,
-      detail: `HTTPS ${site.status || "error"} contains_daybreak=${site.hasApp}${
+      detail: `HTTPS ${site.status || "error"} contains_daybreak=${site.hasApp} support_contact=${site.hasSupportContact} surface_clean=${!site.surfaceIssue} copy_clean=${!site.publicCopyIssue}${
+        issue ? ` issue=${issue}` : ""
+      }${
         site.error ? ` error=${site.error}` : ""
       }`,
       error: site.error,
@@ -631,7 +665,7 @@ export async function evaluateProductionDomain({
   return {
     pass: true,
     status: site.status,
-    detail: `DNS A records resolved to GitHub Pages and apex returned HTTP ${site.status}`,
+    detail: `DNS A records resolved to GitHub Pages and apex returned HTTP ${site.status} with Daybreak, support contact, clean surface, and clean public copy`,
   };
 }
 

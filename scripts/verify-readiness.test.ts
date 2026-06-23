@@ -28,6 +28,10 @@ function fetchPage(status: number, body: string) {
   });
 }
 
+function validPublicPage() {
+  return 'Daybreak <a href="mailto:founder@daybreak.rest">founder@daybreak.rest</a>';
+}
+
 function fetchError(message: string) {
   return async () => {
     throw new Error(message);
@@ -354,7 +358,7 @@ describe("readiness external-link proof", () => {
         fetchImpl: async () => ({
           ok: true,
           status: 200,
-          text: async () => "Daybreak",
+          text: async () => validPublicPage(),
         }),
       });
 
@@ -2286,7 +2290,7 @@ describe("readiness external-link proof", () => {
         host: "daybreak.rest",
         url: "https://daybreak.rest/",
         lookupImpl: async () => [],
-        fetchImpl: fetchPage(200, "Daybreak"),
+        fetchImpl: fetchPage(200, validPublicPage()),
       }),
     ).resolves.toMatchObject({
       pass: false,
@@ -2300,7 +2304,7 @@ describe("readiness external-link proof", () => {
         host: "daybreak.rest",
         url: "https://daybreak.rest/",
         lookupImpl: async () => ["185.199.108.153"],
-        fetchImpl: fetchPage(200, "Daybreak"),
+        fetchImpl: fetchPage(200, validPublicPage()),
       }),
     ).resolves.toMatchObject({
       pass: false,
@@ -2319,12 +2323,78 @@ describe("readiness external-link proof", () => {
           "185.199.110.153",
           "185.199.111.153",
         ],
-        fetchImpl: fetchPage(200, "Daybreak"),
+        fetchImpl: fetchPage(200, validPublicPage()),
       }),
     ).resolves.toMatchObject({
       pass: true,
       detail:
-        "DNS A records resolved to GitHub Pages and apex returned HTTP 200",
+        "DNS A records resolved to GitHub Pages and apex returned HTTP 200 with Daybreak, support contact, clean surface, and clean public copy",
+    });
+  });
+
+  it("keeps production domain pending when the live page lacks support contact", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: fetchPage(200, "Daybreak without support"),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "apex_https_not_ready",
+      detail:
+        "HTTPS 200 contains_daybreak=true support_contact=false surface_clean=true copy_clean=true issue=missing_support_contact",
+    });
+  });
+
+  it("keeps production domain pending when the live page contains a tracker", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: fetchPage(
+          200,
+          `${validPublicPage()} <script src="https://www.googletagmanager.com/gtm.js"></script>`,
+        ),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "apex_https_not_ready",
+      detail:
+        "HTTPS 200 contains_daybreak=true support_contact=true surface_clean=false copy_clean=true issue=tracking_marker:googletagmanager",
+    });
+  });
+
+  it("keeps production domain pending when the live page overpromises updates", async () => {
+    await expect(
+      evaluateProductionDomain({
+        host: "daybreak.rest",
+        url: "https://daybreak.rest/",
+        lookupImpl: async () => [
+          "185.199.108.153",
+          "185.199.109.153",
+          "185.199.110.153",
+          "185.199.111.153",
+        ],
+        fetchImpl: fetchPage(200, `${validPublicPage()} lifetime updates`),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "apex_https_not_ready",
+      detail:
+        "HTTPS 200 contains_daybreak=true support_contact=true surface_clean=true copy_clean=false issue=unsupported_update_promise",
     });
   });
 
@@ -2343,7 +2413,7 @@ describe("readiness external-link proof", () => {
           "185.199.110.153",
           "185.199.111.153",
         ],
-        fetchImpl: fetchPage(200, "Daybreak"),
+        fetchImpl: fetchPage(200, validPublicPage()),
       }),
     ).resolves.toMatchObject({ pass: true });
   });
@@ -2364,7 +2434,8 @@ describe("readiness external-link proof", () => {
     ).resolves.toMatchObject({
       pass: false,
       reason: "apex_https_not_ready",
-      detail: "HTTPS error contains_daybreak=false error=certificate pending",
+      detail:
+        "HTTPS error contains_daybreak=false support_contact=false surface_clean=true copy_clean=true error=certificate pending",
     });
   });
 
@@ -2388,7 +2459,7 @@ describe("readiness external-link proof", () => {
       pass: false,
       reason: "apex_https_not_ready",
       detail:
-        "HTTPS error contains_daybreak=false error=fetch failed cause=ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames",
+        "HTTPS error contains_daybreak=false support_contact=false surface_clean=true copy_clean=true error=fetch failed cause=ERR_TLS_CERT_ALTNAME_INVALID: Hostname/IP does not match certificate's altnames",
     });
   });
 
@@ -2405,7 +2476,7 @@ describe("readiness external-link proof", () => {
         ],
         fetchImpl: async (url: string) => {
           if (url === "https://daybreak.rest/") {
-            return { ok: true, status: 200, text: async () => "Daybreak" };
+            return { ok: true, status: 200, text: async () => validPublicPage() };
           }
           if (url === "https://www.daybreak.rest/") {
             return {
