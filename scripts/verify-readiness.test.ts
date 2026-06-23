@@ -13,6 +13,7 @@ import {
   evaluateProductionDomain,
   evaluateExternalLink,
   extractConfigUrl,
+  renderReadinessReport,
 } from "./readiness-core.mjs";
 
 function fetchStatus(status: number) {
@@ -1345,6 +1346,27 @@ describe("readiness external-link proof", () => {
       pass: false,
       reason: "installer_proof_missing",
     });
+  });
+
+  it("tells operators that installer readiness requires timestamping", async () => {
+    const root = makeReadinessRoot();
+    try {
+      const gates = await buildReadinessGates({
+        root,
+        lookupImpl: async () => [],
+        fetchImpl: fetchStatus(404),
+      });
+      const report = renderReadinessReport(gates);
+
+      expect(report.text).toContain(
+        "produce a signed and timestamped Windows installer",
+      );
+      expect(report.text).toContain(
+        "timestamped Passive Print Labs Authenticode signer",
+      );
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it("rejects malformed installer proof fields", async () => {

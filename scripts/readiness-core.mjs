@@ -995,7 +995,7 @@ export async function buildReadinessGates({
         ? `${downloadUrl} (${download.detail})`
         : `site/app/config.ts -> DOWNLOAD_URL/DOWNLOAD_SHA256 (${download.detail})`,
       blocker:
-        "produce a signed Windows installer, publish its SHA-256, host it, set DOWNLOAD_URL and DOWNLOAD_SHA256, add proof/installer-download.json, and verify the bytes and Passive Print Labs Authenticode signer match",
+        "produce a signed and timestamped Windows installer, publish its SHA-256, host it, set DOWNLOAD_URL and DOWNLOAD_SHA256, add proof/installer-download.json, and verify the bytes and timestamped Passive Print Labs Authenticode signer match",
     },
     {
       name: "Production domain owned + attached",
