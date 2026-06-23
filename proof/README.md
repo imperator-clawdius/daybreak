@@ -23,6 +23,32 @@ client reference IDs, invoices, subscriptions, card or network metadata, session
 data, request/response logs, discount or promotion fields, and order data out of
 this file.
 
+Minimal shape, with placeholder values only:
+
+```json
+{
+  "payment_link": {
+    "id": "plink_REPLACE_WITH_LIVE_ID",
+    "url": "https://buy.stripe.com/REPLACE_WITH_CANONICAL_PAYMENT_LINK",
+    "active": true,
+    "livemode": true
+  },
+  "line_items": {
+    "data": [
+      {
+        "quantity": 1,
+        "price": {
+          "unit_amount": 1900,
+          "currency": "usd",
+          "recurring": null
+        }
+      }
+    ],
+    "has_more": false
+  }
+}
+```
+
 ## `installer-download.json`
 
 Required before the public download CTA can go live and before the installer
@@ -43,6 +69,22 @@ Keep certificate private keys, signing credentials, authorization headers,
 cookies, request logs, customer data, Stripe metadata, client reference IDs,
 invoices, subscriptions, discount or promotion fields, and card or network
 metadata out of this file.
+
+Minimal shape, with placeholder values only:
+
+```json
+{
+  "download": {
+    "url": "https://daybreak.rest/downloads/Daybreak-Setup-0.1.0.exe",
+    "sha256": "REPLACE_WITH_SIGNED_INSTALLER_SHA256"
+  },
+  "signature": {
+    "status": "Valid",
+    "signer": "CN=Passive Print Labs LLC",
+    "timestamped": true
+  }
+}
+```
 
 ## `first-paid-order.json`
 
@@ -66,6 +108,31 @@ Keep customer email, customer name, payment method details, Stripe metadata,
 client reference IDs, invoices, subscriptions, card metadata, network metadata,
 discount or promotion fields, receipts, authorization headers, cookies, and API
 keys out of this file.
+
+Minimal shape, with placeholder values only:
+
+```json
+{
+  "payment_link": {
+    "id": "plink_REPLACE_WITH_LIVE_ID",
+    "url": "https://buy.stripe.com/REPLACE_WITH_CANONICAL_PAYMENT_LINK"
+  },
+  "checkout_session": {
+    "id": "cs_live_REPLACE_WITH_SESSION_ID",
+    "livemode": true,
+    "mode": "payment",
+    "status": "complete",
+    "payment_status": "paid",
+    "amount_total": 1900,
+    "currency": "usd",
+    "payment_link": "plink_REPLACE_WITH_LIVE_ID"
+  },
+  "refunds": {
+    "data": [],
+    "has_more": false
+  }
+}
+```
 
 The verifier rejects any proof artifact that includes sensitive fields such as
 `customer`, `customer_email`, `customer_details`, `payment_intent`,
