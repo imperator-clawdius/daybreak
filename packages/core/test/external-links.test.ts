@@ -893,6 +893,45 @@ describe("external launch links", () => {
     });
   });
 
+  it("rejects checkout proof with generic personal-data fields", () => {
+    expect(
+      getCheckoutProofState({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: {
+          payment_link: {
+            url: "https://buy.stripe.com/live_123",
+            active: true,
+            livemode: true,
+          },
+          line_items: {
+            data: [
+              {
+                quantity: 1,
+                price: {
+                  unit_amount: 1900,
+                  currency: "usd",
+                  recurring: null,
+                },
+              },
+            ],
+          },
+          billing_details: {
+            email: "buyer@example.com",
+            name: "Buyer",
+            phone: "+15555550123",
+            address: {
+              line1: "1 Main St",
+            },
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
+  });
+
   it("rejects checkout proof with order or session proof data", () => {
     const baseProof = {
       payment_link: {

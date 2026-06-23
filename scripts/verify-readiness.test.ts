@@ -574,6 +574,27 @@ describe("readiness external-link proof", () => {
       reason: "paid_order_proof_contains_customer_data",
       paidOrders: 0,
     });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          billing_details: {
+            email: "buyer@example.com",
+            name: "Buyer",
+            phone: "+15555550123",
+            address: {
+              line1: "1 Main St",
+            },
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_contains_customer_data",
+      paidOrders: 0,
+    });
   });
 
   it("keeps market signal pending for sensitive proof before other proof mismatches", () => {
@@ -1250,6 +1271,31 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("rejects checkout proof with generic personal-data fields", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "checkout",
+        url: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        checkoutProof: {
+          ...stripeProof(),
+          shipping_details: {
+            email: "buyer@example.com",
+            name: "Buyer",
+            phone: "+15555550123",
+            address: {
+              line1: "1 Main St",
+            },
+          },
+        },
+        fetchImpl: fetchStatus(200),
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "checkout_proof_contains_sensitive_data",
+    });
+  });
+
   it("rejects checkout proof with order or session proof data", async () => {
     for (const checkoutProof of [
       { ...stripeProof(), order_count: 1 },
@@ -1509,6 +1555,32 @@ describe("readiness external-link proof", () => {
         installerProof: {
           ...installerProof(),
           stripe_secret_key: "sk_live_secret",
+        },
+      }),
+    ).resolves.toMatchObject({
+      pass: false,
+      reason: "installer_proof_contains_sensitive_data",
+    });
+  });
+
+  it("rejects installer proof with generic personal-data fields", async () => {
+    await expect(
+      evaluateExternalLink({
+        kind: "download",
+        url: "https://downloads.example.com/daybreak.exe",
+        expectedSha256:
+          "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+        fetchImpl: fetchBody(200, "hello"),
+        signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+        installerProof: {
+          ...installerProof(),
+          shipping_details: {
+            email: "buyer@example.com",
+            name: "Buyer",
+            address: {
+              line1: "1 Main St",
+            },
+          },
         },
       }),
     ).resolves.toMatchObject({
