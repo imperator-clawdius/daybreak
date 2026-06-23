@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,6 +8,7 @@ import {
   evaluateInstallerArtifact,
   evaluatePackagedSmoke,
   evaluatePackagedSmokeSuite,
+  evaluateReleaseFreshness,
   evaluateReleaseMetadata,
   evaluateReleasePreflight,
   renderReleaseReport,
@@ -428,6 +429,34 @@ describe("release preflight", () => {
       ).toMatchObject({
         pass: false,
         reason: "metadata_incomplete",
+      });
+    }));
+
+  it("keeps release pending when installer artifacts are older than source inputs", () =>
+    withTempDir((dir) => {
+      const installerPath = join(dir, "Daybreak Setup 0.1.0.exe");
+      const executablePath = join(dir, "Daybreak.exe");
+      const sourcePath = join(dir, "main.ts");
+      writeFileSync(installerPath, "installer", "utf8");
+      writeFileSync(executablePath, "exe", "utf8");
+      writeFileSync(sourcePath, "source", "utf8");
+
+      const oldTime = new Date("2026-06-22T12:00:00Z");
+      const newTime = new Date("2026-06-22T22:00:00Z");
+      utimesSync(installerPath, oldTime, oldTime);
+      utimesSync(executablePath, oldTime, oldTime);
+      utimesSync(sourcePath, newTime, newTime);
+
+      const freshness = evaluateReleaseFreshness({
+        installerPath,
+        packagedAppPath: executablePath,
+        sourcePaths: [sourcePath],
+      });
+
+      expect(freshness).toMatchObject({
+        pass: false,
+        reason: "release_artifacts_stale",
+        staleSourcePaths: [sourcePath],
       });
     }));
 

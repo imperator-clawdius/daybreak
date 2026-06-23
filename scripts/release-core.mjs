@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
@@ -31,8 +31,38 @@ export function expectedPackagedAppPath(
   );
 }
 
+export const RELEASE_SOURCE_PATHS = [
+  "desktop/package.json",
+  "desktop/build.mjs",
+  "desktop/src/main/main.ts",
+  "desktop/src/main/preload.ts",
+  "desktop/src/main/store.ts",
+  "desktop/src/renderer/index.html",
+  "desktop/src/renderer/renderer.css",
+  "desktop/src/renderer/renderer.ts",
+  "packages/core/package.json",
+  "packages/core/src/commit.ts",
+  "packages/core/src/dates.ts",
+  "packages/core/src/desktop-shell.ts",
+  "packages/core/src/external-links.ts",
+  "packages/core/src/index.ts",
+  "packages/core/src/log-update.ts",
+  "packages/core/src/market-signal.ts",
+  "packages/core/src/model.ts",
+  "packages/core/src/persisted-log.ts",
+  "packages/core/src/session.ts",
+  "packages/core/src/startup.ts",
+  "packages/core/src/streak.ts",
+  "packages/core/src/swipe-gesture.ts",
+  "packages/core/src/wipe.ts",
+];
+
 export function sha256File(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+function mtimeMs(path) {
+  return statSync(path).mtimeMs;
 }
 
 function psString(value) {
@@ -367,29 +397,84 @@ export function runPackagedSmokeSuite(
   return evaluatePackagedSmokeSuite({ executablePath, scenarioResults });
 }
 
+export function evaluateReleaseFreshness({
+  installerPath,
+  packagedAppPath,
+  sourcePaths,
+}) {
+  if (!existsSync(installerPath)) {
+    return {
+      pass: false,
+      reason: "installer_missing",
+      staleSourcePaths: [],
+      detail: `missing ${installerPath}`,
+    };
+  }
+  if (!existsSync(packagedAppPath)) {
+    return {
+      pass: false,
+      reason: "packaged_app_missing",
+      staleSourcePaths: [],
+      detail: `missing ${packagedAppPath}`,
+    };
+  }
+
+  const artifactMtime = Math.min(mtimeMs(installerPath), mtimeMs(packagedAppPath));
+  const staleSourcePaths = sourcePaths.filter(
+    (sourcePath) => existsSync(sourcePath) && mtimeMs(sourcePath) > artifactMtime,
+  );
+
+  return {
+    pass: staleSourcePaths.length === 0,
+    reason:
+      staleSourcePaths.length === 0
+        ? "release_artifacts_current"
+        : "release_artifacts_stale",
+    staleSourcePaths,
+    artifactMtime,
+    detail:
+      staleSourcePaths.length === 0
+        ? "installer and packaged app are newer than release source inputs"
+        : `release artifacts are older than ${staleSourcePaths.join(", ")}`,
+  };
+}
+
 export function evaluateReleasePreflight({
   root,
   installerPath,
   signature,
   packagedSmoke,
   packagePath = "desktop/package.json",
+  sourcePaths = RELEASE_SOURCE_PATHS.map((sourcePath) => join(root, sourcePath)),
 }) {
   const installer = evaluateInstallerArtifact({ installerPath, signature });
   const icon = evaluateBuildIcon({ root, packagePath });
   const metadata = evaluateReleaseMetadata({ root, packagePath });
+  const packagedAppPath = expectedPackagedAppPath(root, packagePath);
   const smoke =
     packagedSmoke ??
     evaluatePackagedSmoke({
-      executablePath: expectedPackagedAppPath(root, packagePath),
+      executablePath: packagedAppPath,
       runnerResult: null,
     });
+  const freshness = evaluateReleaseFreshness({
+    installerPath,
+    packagedAppPath,
+    sourcePaths,
+  });
 
   return {
     ...installer,
-    pass: installer.pass && icon.pass && metadata.pass && smoke.pass,
+    pass:
+      installer.pass &&
+      icon.pass &&
+      metadata.pass &&
+      smoke.pass &&
+      freshness.pass,
     icon,
     metadata,
     packagedSmoke: smoke,
+    freshness,
   };
 }
 
@@ -441,6 +526,14 @@ export function renderReleaseReport(result) {
       lines.push(`packaged_smoke_message=${result.packagedSmoke.detail}`);
     }
   }
+  if (result.freshness) {
+    lines.push(
+      `release_freshness=${result.freshness.pass ? "current" : "stale"}`,
+    );
+    if (!result.freshness.pass) {
+      lines.push(`release_freshness_message=${result.freshness.detail}`);
+    }
+  }
 
   if (!result.pass) {
     const blockers = [];
@@ -467,6 +560,11 @@ export function renderReleaseReport(result) {
     if (result.packagedSmoke && !result.packagedSmoke.pass) {
       blockers.push(
         "- Run a passing smoke test against desktop/release/win-unpacked/Daybreak.exe before shipping the installer.",
+      );
+    }
+    if (result.freshness && !result.freshness.pass) {
+      blockers.push(
+        "- Rebuild the Windows installer after the latest desktop/core source changes before signing or hosting it.",
       );
     }
     lines.push("", "## Remaining release blocker", "", ...blockers);
