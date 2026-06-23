@@ -22,6 +22,7 @@ import {
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
   shouldEnforceDesktopSingleInstance,
+  shouldGuardDesktopFrameNavigation,
   shouldGuardDesktopRedirects,
   shouldRejectDesktopCertificateError,
   validateLogUpdate,
@@ -61,6 +62,7 @@ let windowChromeLocked = false;
 let permissionsDenied = false;
 let certificateErrorsRejected = false;
 let redirectsGuarded = false;
+let frameNavigationGuarded = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -194,6 +196,15 @@ function createWindow(): void {
     }
   });
   redirectsGuarded = shouldGuardDesktopRedirects();
+  win.webContents.on("will-frame-navigate", (details) => {
+    if (
+      shouldGuardDesktopFrameNavigation() &&
+      !isAllowedDesktopNavigation(entryUrl, details.url)
+    ) {
+      details.preventDefault();
+    }
+  });
+  frameNavigationGuarded = shouldGuardDesktopFrameNavigation();
   win.webContents.on("before-input-event", (event, input) => {
     if (
       shouldBlockDesktopShortcut({
@@ -318,6 +329,10 @@ async function runSmokeFlow(): Promise<void> {
             : " certificate_errors_rejected=false"
         }${
           redirectsGuarded ? " redirects_guarded=true" : " redirects_guarded=false"
+        }${
+          frameNavigationGuarded
+            ? " frame_navigation_guarded=true"
+            : " frame_navigation_guarded=false"
         }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
