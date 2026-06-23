@@ -9,7 +9,7 @@ describe("completion ledger", () => {
       "utf8",
     );
 
-    expect(ledger).toContain("**271 tests, 31 files passed**");
+    expect(ledger).toContain("**272 tests, 31 files passed**");
     expect(ledger).toContain("completion ledger evidence contract");
     expect(ledger).not.toContain("**269 tests, 30 files passed**");
   });

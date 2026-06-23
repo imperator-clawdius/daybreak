@@ -24,4 +24,15 @@ describe("sale-readiness premortem", () => {
       expect(premortem).toContain(field);
     }
   });
+
+  it("documents decorative hero-art accessibility as a closed risk", () => {
+    const premortem = readFileSync(
+      join(process.cwd(), "docs", "PREMORTEM.md"),
+      "utf8",
+    );
+
+    expect(premortem).toContain("Decorative hero art pollutes the accessibility tree");
+    expect(premortem).toContain("aria-hidden");
+    expect(premortem).toContain("empty image alt");
+  });
 });

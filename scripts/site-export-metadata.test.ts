@@ -82,6 +82,12 @@ describe("site static export metadata", () => {
       expect(indexHtml).toContain(
         `name="twitter:image" content="${SITE_URL}/daybreak-app.png"`,
       );
+      expect(indexHtml).toContain('class="hero-brand-art" aria-hidden="true"');
+      expect(indexHtml).toContain('alt=""');
+      expect(indexHtml).toContain(
+        'alt="Daybreak Windows app showing a morning commitment ready to be wiped"',
+      );
+      expect(indexHtml).not.toContain("Generated Daybreak dawn swipe brand art");
       expect(indexHtml).toContain(
         "daybreak.rest serves the app over HTTPS on the apex and www hosts",
       );

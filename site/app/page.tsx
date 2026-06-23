@@ -32,12 +32,12 @@ export default function Home() {
       </header>
 
       <section className="hero">
-        <figure className="hero-brand-art">
+        <figure className="hero-brand-art" aria-hidden="true">
           <Image
             src={`${basePath}/daybreak-hero-bg.jpg`}
             fill
             sizes="100vw"
-            alt="Generated Daybreak dawn swipe brand art"
+            alt=""
             priority
           />
         </figure>

@@ -60,9 +60,8 @@ describe("product image dimensions", () => {
     expect(hero.height).toBeGreaterThanOrEqual(900);
     expect(statSync(heroPath).size).toBeLessThanOrEqual(450_000);
     expect(page).toContain(`src={\`${"${basePath}"}/daybreak-hero-bg.jpg\`}`);
-    expect(page).toContain(
-      'alt="Generated Daybreak dawn swipe brand art"',
-    );
+    expect(page).toContain('<figure className="hero-brand-art" aria-hidden="true">');
+    expect(page).toContain('alt=""');
     expect(site).toContain("daybreak-app.png");
     expect(site).not.toContain("daybreak-hero-bg");
     expect(layout).toContain("openGraph");
