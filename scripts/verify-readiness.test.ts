@@ -210,6 +210,28 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending when the configured checkout URL is not a Stripe Payment Link", () => {
+    const checkoutUrl = "https://buy.stripe.com";
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl,
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          payment_link: {
+            id: "plink_live_123",
+            url: checkoutUrl,
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_checkout_not_payment_link",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("passes market signal only with unrefunded live paid-order proof", () => {
     expect(
       evaluateMarketSignal({

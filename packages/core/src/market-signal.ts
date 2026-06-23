@@ -1,6 +1,7 @@
 export type PaidOrderProofReason =
   | "ready"
   | "paid_order_proof_missing"
+  | "paid_order_checkout_not_payment_link"
   | "paid_order_checkout_mismatch"
   | "paid_order_not_live_mode"
   | "paid_order_not_one_time"
@@ -89,6 +90,19 @@ const DISALLOWED_PROOF_KEYS = new Set([
   "x_api_key",
 ]);
 
+function isStripePaymentLink(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.hostname === "buy.stripe.com" &&
+      parsed.pathname.length > 1
+    );
+  } catch {
+    return false;
+  }
+}
+
 function normalizeProofKey(key: string): string {
   return key
     .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
@@ -126,6 +140,14 @@ export function getPaidOrderProofState({
     return {
       ready: false,
       reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    };
+  }
+  if (!isStripePaymentLink(checkoutUrl)) {
+    return {
+      ready: false,
+      reason: "paid_order_checkout_not_payment_link",
       paidOrders: 0,
       refunds: 0,
     };

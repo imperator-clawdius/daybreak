@@ -769,6 +769,16 @@ export function evaluateMarketSignal({
       detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
     };
   }
+  if (!isStripePaymentLink(checkoutUrl)) {
+    return {
+      pass: false,
+      reason: "paid_order_checkout_not_payment_link",
+      paidOrders: 0,
+      refunds: 0,
+      detail:
+        "paid_orders=0 refunds=0 reason=paid_order_checkout_not_payment_link",
+    };
+  }
 
   if (containsDisallowedPaidOrderProofData(proof)) {
     return {

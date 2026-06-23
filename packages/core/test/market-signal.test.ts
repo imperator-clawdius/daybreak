@@ -57,6 +57,28 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects paid-order proof when the configured checkout URL is not a Stripe Payment Link", () => {
+    const checkoutUrl = "https://buy.stripe.com";
+
+    expect(
+      getPaidOrderProofState({
+        checkoutUrl,
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          payment_link: {
+            id: "plink_live_123",
+            url: checkoutUrl,
+          },
+        }),
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "paid_order_checkout_not_payment_link",
+      paidOrders: 0,
+      refunds: 0,
+    });
+  });
+
   it("rejects malformed top-level paid-order proof", () => {
     expect(
       getPaidOrderProofState({
