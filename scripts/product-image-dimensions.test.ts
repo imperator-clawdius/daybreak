@@ -22,4 +22,23 @@ describe("product image dimensions", () => {
     expect(layout).toContain(`width: ${image.width}`);
     expect(layout).toContain(`height: ${image.height}`);
   });
+
+  it("keeps generated brand art separate from the real app screenshot proof", () => {
+    const hero = pngDimensions("site/public/daybreak-hero-bg.png");
+    const page = readFileSync("site/app/page.tsx", "utf8");
+    const layout = readFileSync("site/app/layout.tsx", "utf8");
+    const site = readFileSync("site/app/site.ts", "utf8");
+
+    expect(hero.width).toBeGreaterThanOrEqual(1600);
+    expect(hero.height).toBeGreaterThanOrEqual(900);
+    expect(page).toContain(`src={\`${"${basePath}"}/daybreak-hero-bg.png\`}`);
+    expect(page).toContain(
+      'alt="Generated Daybreak dawn swipe brand art"',
+    );
+    expect(site).toContain("daybreak-app.png");
+    expect(site).not.toContain("daybreak-hero-bg.png");
+    expect(layout).toContain("openGraph");
+    expect(layout).toContain("twitter");
+    expect(layout).not.toContain("daybreak-hero-bg.png");
+  });
 });

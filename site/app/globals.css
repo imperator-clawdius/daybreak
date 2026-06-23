@@ -19,6 +19,7 @@ html,
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
 
 body {
@@ -33,6 +34,7 @@ body {
 }
 
 main {
+  width: min(var(--maxw), 100%);
   max-width: var(--maxw);
   margin: 0 auto;
   padding: 0 22px 80px;
@@ -69,7 +71,47 @@ main {
 }
 
 .hero {
-  padding: 56px 0 40px;
+  position: relative;
+  min-height: 700px;
+  padding: 118px 0 40px;
+  isolation: isolate;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  z-index: -2;
+  background:
+    linear-gradient(90deg, rgba(11, 16, 32, 0.96) 0%, rgba(11, 16, 32, 0.74) 46%, rgba(11, 16, 32, 0.18) 100%),
+    linear-gradient(180deg, rgba(11, 16, 32, 0) 0%, var(--bg) 92%);
+}
+
+.hero-brand-art {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  z-index: -3;
+  margin: 0;
+  overflow: hidden;
+}
+
+.hero-brand-art img {
+  object-fit: cover;
+  object-position: 68% 40%;
+}
+
+.hero-copy {
+  max-width: 670px;
+  padding: 22px 0 26px;
+  overflow-wrap: break-word;
 }
 
 .hero h1 {
@@ -77,6 +119,7 @@ main {
   line-height: 1.02;
   margin: 0 0 20px;
   letter-spacing: -0.02em;
+  overflow-wrap: break-word;
 }
 
 .lede {
@@ -133,6 +176,7 @@ main {
 
 .product-shot {
   margin: 34px 0 0;
+  overflow: hidden;
 }
 
 .product-shot img {
@@ -149,6 +193,7 @@ main {
   margin-top: 10px;
   color: var(--muted);
   font-size: 13px;
+  overflow-wrap: break-word;
 }
 
 section {
@@ -354,6 +399,38 @@ a {
 
   .product-shot {
     margin-top: 26px;
+  }
+
+  .hero {
+    min-height: auto;
+    padding-top: 84px;
+  }
+
+  .hero-copy,
+  .product-shot {
+    max-width: min(520px, calc(100vw - 110px));
+  }
+
+  .hero h1 {
+    font-size: clamp(32px, 9vw, 38px);
+  }
+
+  .desktop-break {
+    display: none;
+  }
+
+  .lede {
+    font-size: 18px;
+    max-width: 100%;
+  }
+
+  .hero::before {
+    background:
+      linear-gradient(180deg, rgba(11, 16, 32, 0.72) 0%, rgba(11, 16, 32, 0.88) 46%, var(--bg) 100%);
+  }
+
+  .hero-brand-art img {
+    object-position: 72% 18%;
   }
 
   .status-list li {

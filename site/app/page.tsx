@@ -32,34 +32,45 @@ export default function Home() {
       </header>
 
       <section className="hero">
-        <p className="kicker">Windows - one-time $19 - no subscription</p>
-        <h1>
-          Wipe the morning
-          <br />
-          before it owns you.
-        </h1>
-        <p className="lede">
-          Daybreak takes over your screen the moment you log in. It shows
-          yesterday&apos;s unfinished business and asks for today&apos;s three
-          commitments, and it will not get out of your way until you&apos;ve{" "}
-          <strong>physically wiped every item</strong>: commit, defer, or kill.
-        </p>
-        <div className="cta-row">
-          <Cta />
-          {downloadReady ? (
-            <a className="btn btn-ghost" href={DOWNLOAD_URL}>
-              Download for Windows
-            </a>
-          ) : (
-            <span className="btn btn-ghost is-pending" aria-disabled="true">
-              Installer in final packaging
-            </span>
-          )}
+        <figure className="hero-brand-art">
+          <Image
+            src={`${basePath}/daybreak-hero-bg.png`}
+            fill
+            sizes="100vw"
+            alt="Generated Daybreak dawn swipe brand art"
+            priority
+          />
+        </figure>
+        <div className="hero-copy">
+          <p className="kicker">Windows - one-time $19 - no subscription</p>
+          <h1>
+            Wipe the morning
+            <br className="desktop-break" />{" "}
+            before it owns you.
+          </h1>
+          <p className="lede">
+            Daybreak takes over your screen the moment you log in. It shows
+            yesterday&apos;s unfinished business and asks for today&apos;s three
+            commitments, and it will not get out of your way until you&apos;ve{" "}
+            <strong>physically wiped every item</strong>: commit, defer, or kill.
+          </p>
+          <div className="cta-row">
+            <Cta />
+            {downloadReady ? (
+              <a className="btn btn-ghost" href={DOWNLOAD_URL}>
+                Download for Windows
+              </a>
+            ) : (
+              <span className="btn btn-ghost is-pending" aria-disabled="true">
+                Installer in final packaging
+              </span>
+            )}
+          </div>
+          <p className="fine">
+            No account. No cloud. Your commitments stay in a local file on your
+            machine.
+          </p>
         </div>
-        <p className="fine">
-          No account. No cloud. Your commitments stay in a local file on your
-          machine.
-        </p>
         <figure className="product-shot">
           <Image
             src={`${basePath}/daybreak-app.png`}
