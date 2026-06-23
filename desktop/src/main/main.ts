@@ -11,6 +11,7 @@ import { pathToFileURL } from "node:url";
 import {
   buildDaySession,
   canDismiss,
+  getDesktopWindowChromePolicy,
   getDesktopWebPreferencesPolicy,
   isAllowedDesktopNavigation,
   makeItem,
@@ -53,6 +54,7 @@ let devToolsDisabled = false;
 let webPreferencesApplied = false;
 let desktopShortcutsBlocked = false;
 let singleInstanceLocked = false;
+let windowChromeLocked = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -120,6 +122,7 @@ function createWindow(): void {
   const entryFile = join(__dirname, "index.html");
   const entryUrl = pathToFileURL(entryFile).toString();
   const webPreferencesPolicy = getDesktopWebPreferencesPolicy();
+  const windowChromePolicy = getDesktopWindowChromePolicy();
 
   win = new BrowserWindow({
     // Smoke mode: small, hidden, non-intrusive so CI / verification never
@@ -132,11 +135,21 @@ function createWindow(): void {
     closable: true,
     alwaysOnTop: !SMOKE,
     skipTaskbar: false,
+    ...windowChromePolicy,
     webPreferences: {
       preload: join(__dirname, "preload.js"),
       ...webPreferencesPolicy,
     },
   });
+  windowChromeLocked =
+    windowChromePolicy.fullscreenable === false &&
+    windowChromePolicy.maximizable === false &&
+    windowChromePolicy.minimizable === false &&
+    windowChromePolicy.movable === false &&
+    windowChromePolicy.resizable === false &&
+    !win.isResizable() &&
+    !win.isMaximizable() &&
+    !win.isMinimizable();
   devToolsDisabled =
     shouldDisableDesktopDevTools() && !win.webContents.isDevToolsOpened();
   webPreferencesApplied =
@@ -243,6 +256,8 @@ async function runSmokeFlow(): Promise<void> {
           singleInstanceLocked
             ? " single_instance_lock=true"
             : " single_instance_lock=false"
+        }${
+          windowChromeLocked ? " window_chrome=locked" : " window_chrome=loose"
         }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${

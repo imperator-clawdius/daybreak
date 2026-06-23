@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getDesktopWindowChromePolicy,
   getDesktopWebPreferencesPolicy,
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
@@ -84,6 +85,16 @@ describe("desktop shell policy", () => {
       spellcheck: false,
       webSecurity: true,
       webviewTag: false,
+    });
+  });
+
+  it("defines locked kiosk window chrome policy", () => {
+    expect(getDesktopWindowChromePolicy()).toEqual({
+      fullscreenable: false,
+      maximizable: false,
+      minimizable: false,
+      movable: false,
+      resizable: false,
     });
   });
 

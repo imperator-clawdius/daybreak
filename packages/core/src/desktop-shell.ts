@@ -28,6 +28,16 @@ export function shouldEnforceDesktopSingleInstance(): boolean {
   return true;
 }
 
+export function getDesktopWindowChromePolicy() {
+  return {
+    fullscreenable: false,
+    maximizable: false,
+    minimizable: false,
+    movable: false,
+    resizable: false,
+  } as const;
+}
+
 export function getDesktopWebPreferencesPolicy() {
   return {
     allowRunningInsecureContent: false,
