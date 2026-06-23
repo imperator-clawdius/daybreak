@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 const SITE_URL = "https://daybreak.rest";
 const SUPPORT_EMAIL = "founder@daybreak.rest";
 const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}`;
+const LEGAL_EFFECTIVE_DATE = /Effective\s*(?:<!-- -->)?\s*June 23, 2026/;
 
 function runNpm(args: string[]): void {
   if (process.platform === "win32") {
@@ -164,6 +165,8 @@ describe("site static export metadata", () => {
       expect(notFoundHtml.match(new RegExp(`href="${SUPPORT_MAILTO}"`, "g"))).toHaveLength(1);
       expect(privacyHtml.match(new RegExp(`href="${SUPPORT_MAILTO}"`, "g"))).toHaveLength(1);
       expect(termsHtml.match(new RegExp(`href="${SUPPORT_MAILTO}"`, "g"))).toHaveLength(1);
+      expect(privacyHtml).toMatch(LEGAL_EFFECTIVE_DATE);
+      expect(termsHtml).toMatch(LEGAL_EFFECTIVE_DATE);
       expect(indexHtml).toContain('name="theme-color" content="#0b1020"');
       expect(indexHtml).toContain('name="color-scheme" content="dark"');
       expect(indexHtml).toContain('class="hero-brand-art" aria-hidden="true"');

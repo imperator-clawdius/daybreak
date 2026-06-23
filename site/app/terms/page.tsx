@@ -2,7 +2,7 @@ import { PRICE_USD } from "../config";
 import { getPublicCheckoutState } from "../checkout-state";
 import { SupportEmail } from "../contact";
 import { purchaseTermsCopy, refundTermsCopy } from "../legal-copy";
-import { SITE_IMAGE, SITE_URL } from "../site";
+import { LEGAL_EFFECTIVE_DATE, SITE_IMAGE, SITE_URL } from "../site";
 
 const title = "Terms - Daybreak";
 const description =
@@ -46,6 +46,7 @@ export default function TermsPage() {
         Daybreak
       </a>
       <h1>Terms</h1>
+      <p className="fine">Effective {LEGAL_EFFECTIVE_DATE}</p>
       <p className="lede">
         These terms describe the intended Daybreak purchase and support policy.
         {checkoutReady

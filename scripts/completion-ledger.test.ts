@@ -14,6 +14,7 @@ describe("completion ledger", () => {
     expect(ledger).toContain("dark browser chrome metadata");
     expect(ledger).toContain("honest update-promise copy");
     expect(ledger).toContain("icon consistency contract");
+    expect(ledger).toContain("legal effective-date export");
     expect(ledger).toContain("legal sale-state terms copy");
     expect(ledger).not.toContain("**279 tests, 32 files passed**");
     expect(ledger).not.toContain("**278 tests, 32 files passed**");

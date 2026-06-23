@@ -1,6 +1,6 @@
 import { getPublicCheckoutState } from "../checkout-state";
 import { SupportEmail } from "../contact";
-import { SITE_IMAGE, SITE_URL } from "../site";
+import { LEGAL_EFFECTIVE_DATE, SITE_IMAGE, SITE_URL } from "../site";
 
 const title = "Privacy - Daybreak";
 const description =
@@ -44,6 +44,7 @@ export default function PrivacyPage() {
         Daybreak
       </a>
       <h1>Privacy</h1>
+      <p className="fine">Effective {LEGAL_EFFECTIVE_DATE}</p>
       <p className="lede">
         Daybreak is built to stay local. The Windows app does not require an
         account, does not sync commitments to a server, and does not include
