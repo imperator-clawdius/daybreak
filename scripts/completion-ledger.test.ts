@@ -22,6 +22,7 @@ describe("completion ledger", () => {
     expect(ledger).toContain("desktop single-instance policy");
     expect(ledger).toContain("desktop shortcut-lock policy");
     expect(ledger).toContain("desktop web-preferences policy");
+    expect(ledger).toContain("explicit frame blocking");
     expect(ledger).toContain("legal effective-date export");
     expect(ledger).toContain("legal sale-state terms copy");
     expect(ledger).toContain("local data deletion guide");

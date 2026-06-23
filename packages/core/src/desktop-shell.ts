@@ -11,6 +11,7 @@ export function getDesktopContentSecurityPolicy(): string {
     "font-src 'self'",
     "connect-src 'none'",
     "object-src 'none'",
+    "frame-src 'none'",
     "base-uri 'none'",
     "form-action 'none'",
   ].join("; ");
