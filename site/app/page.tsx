@@ -34,7 +34,7 @@ export default function Home() {
       <section className="hero">
         <figure className="hero-brand-art">
           <Image
-            src={`${basePath}/daybreak-hero-bg.png`}
+            src={`${basePath}/daybreak-hero-bg.jpg`}
             fill
             sizes="100vw"
             alt="Generated Daybreak dawn swipe brand art"
