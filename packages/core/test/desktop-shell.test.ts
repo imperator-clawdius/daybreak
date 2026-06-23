@@ -7,6 +7,7 @@ import {
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
   shouldBlockDesktopShortcut,
+  shouldGuardDesktopRedirects,
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
   shouldEnforceDesktopSingleInstance,
@@ -76,6 +77,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to enforce a single running instance", () => {
     expect(shouldEnforceDesktopSingleInstance()).toBe(true);
+  });
+
+  it("requires the desktop shell to guard renderer redirects", () => {
+    expect(shouldGuardDesktopRedirects()).toBe(true);
   });
 
   it("defines strict BrowserWindow web preference policy", () => {

@@ -29,6 +29,10 @@ export function shouldEnforceDesktopSingleInstance(): boolean {
   return true;
 }
 
+export function shouldGuardDesktopRedirects(): boolean {
+  return true;
+}
+
 export function shouldDenyDesktopPermission(_permission: string): boolean {
   return true;
 }

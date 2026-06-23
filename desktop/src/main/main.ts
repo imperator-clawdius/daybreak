@@ -22,6 +22,7 @@ import {
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
   shouldEnforceDesktopSingleInstance,
+  shouldGuardDesktopRedirects,
   shouldRejectDesktopCertificateError,
   validateLogUpdate,
   type DayLog,
@@ -59,6 +60,7 @@ let singleInstanceLocked = false;
 let windowChromeLocked = false;
 let permissionsDenied = false;
 let certificateErrorsRejected = false;
+let redirectsGuarded = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -183,6 +185,15 @@ function createWindow(): void {
       event.preventDefault();
     }
   });
+  win.webContents.on("will-redirect", (event, targetUrl) => {
+    if (
+      shouldGuardDesktopRedirects() &&
+      !isAllowedDesktopNavigation(entryUrl, targetUrl)
+    ) {
+      event.preventDefault();
+    }
+  });
+  redirectsGuarded = shouldGuardDesktopRedirects();
   win.webContents.on("before-input-event", (event, input) => {
     if (
       shouldBlockDesktopShortcut({
@@ -305,6 +316,8 @@ async function runSmokeFlow(): Promise<void> {
           certificateErrorsRejected
             ? " certificate_errors_rejected=true"
             : " certificate_errors_rejected=false"
+        }${
+          redirectsGuarded ? " redirects_guarded=true" : " redirects_guarded=false"
         }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${

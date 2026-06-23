@@ -709,6 +709,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("window_chrome=locked") &&
     stdout.includes("permissions_denied=true") &&
     stdout.includes("certificate_errors_rejected=true") &&
+    stdout.includes("redirects_guarded=true") &&
     stdout.includes("close_probe=true") &&
     stdout.includes("swipe_flow=true");
 
