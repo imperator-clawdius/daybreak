@@ -5,6 +5,9 @@ import { basename, dirname, join, resolve } from "node:path";
 
 export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
 export const EXPECTED_PACKAGED_DEPENDENCIES = ["@daybreak/core"];
+export const EXPECTED_COPYRIGHT =
+  "Copyright (c) 2026 Passive Print Labs LLC";
+export const EXPECTED_ARTIFACT_NAME = "${productName} Setup ${version}.${ext}";
 
 export function readJson(root, relativePath) {
   return JSON.parse(readFileSync(join(root, relativePath), "utf8"));
@@ -531,6 +534,12 @@ export function evaluateReleaseMetadata({
   if (build.productName !== "Daybreak") {
     missing.push("build.productName=Daybreak");
   }
+  if (build.copyright !== EXPECTED_COPYRIGHT) {
+    missing.push(`build.copyright=${EXPECTED_COPYRIGHT}`);
+  }
+  if (build.artifactName !== EXPECTED_ARTIFACT_NAME) {
+    missing.push(`build.artifactName=${EXPECTED_ARTIFACT_NAME}`);
+  }
   if (
     !desktopPackage.version ||
     desktopPackage.version !== rootPackage?.version ||
@@ -547,6 +556,18 @@ export function evaluateReleaseMetadata({
   if (build.nsis?.allowToChangeInstallationDirectory !== true) {
     missing.push("build.nsis.allowToChangeInstallationDirectory=true");
   }
+  if (build.nsis?.createDesktopShortcut !== true) {
+    missing.push("build.nsis.createDesktopShortcut=true");
+  }
+  if (build.nsis?.createStartMenuShortcut !== true) {
+    missing.push("build.nsis.createStartMenuShortcut=true");
+  }
+  if (build.nsis?.shortcutName !== "Daybreak") {
+    missing.push("build.nsis.shortcutName=Daybreak");
+  }
+  if (build.nsis?.uninstallDisplayName !== "Daybreak") {
+    missing.push("build.nsis.uninstallDisplayName=Daybreak");
+  }
   if (typeof build.nsis?.license !== "string" || build.nsis.license.trim() === "") {
     missing.push("build.nsis.license");
   } else {
@@ -561,7 +582,7 @@ export function evaluateReleaseMetadata({
     reason: missing.length === 0 ? "metadata_configured" : "metadata_incomplete",
     detail:
       missing.length === 0
-        ? `appId=com.passiveprintlabs.daybreak productName=Daybreak version=${desktopPackage.version} author=Passive Print Labs LLC target=nsis/x64 license=configured`
+        ? `appId=com.passiveprintlabs.daybreak productName=Daybreak version=${desktopPackage.version} author=Passive Print Labs LLC target=nsis/x64 artifactName=${EXPECTED_ARTIFACT_NAME} shortcuts=Daybreak uninstall=Daybreak license=configured`
         : `missing ${missing.join(", ")}`,
   };
 }

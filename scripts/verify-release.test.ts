@@ -11,6 +11,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  EXPECTED_ARTIFACT_NAME,
+  EXPECTED_COPYRIGHT,
   RELEASE_SOURCE_PATHS,
   buildAuthenticodeCommand,
   buildAsarListCommand,
@@ -39,6 +41,25 @@ function withTempDir<T>(fn: (dir: string) => T): T {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+}
+
+function validWindowsReleaseMetadata() {
+  return {
+    copyright: EXPECTED_COPYRIGHT,
+    artifactName: EXPECTED_ARTIFACT_NAME,
+    win: {
+      target: [{ target: "nsis", arch: ["x64"] }],
+    },
+    nsis: {
+      oneClick: false,
+      allowToChangeInstallationDirectory: true,
+      createDesktopShortcut: true,
+      createStartMenuShortcut: true,
+      shortcutName: "Daybreak",
+      uninstallDisplayName: "Daybreak",
+      license: "installer-license.txt",
+    },
+  };
 }
 
 describe("release preflight", () => {
@@ -329,14 +350,7 @@ describe("release preflight", () => {
           build: {
             appId: "com.passiveprintlabs.daybreak",
             productName: "Daybreak",
-            win: {
-              target: [{ target: "nsis", arch: ["x64"] }],
-            },
-            nsis: {
-              oneClick: false,
-              allowToChangeInstallationDirectory: true,
-              license: "installer-license.txt",
-            },
+            ...validWindowsReleaseMetadata(),
           },
         }),
       );
@@ -350,6 +364,54 @@ describe("release preflight", () => {
         pass: true,
         reason: "metadata_configured",
       });
+    }));
+
+  it("keeps release metadata pending when Windows shell metadata is incomplete", () =>
+    withTempDir((dir) => {
+      writeFileSync(join(dir, "package.json"), JSON.stringify({ version: "0.1.0" }));
+      mkdirSync(join(dir, "packages", "core"), { recursive: true });
+      writeFileSync(
+        join(dir, "packages", "core", "package.json"),
+        JSON.stringify({ version: "0.1.0" }),
+      );
+      writeFileSync(join(dir, "installer-license.txt"), "Daybreak license");
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({
+          version: "0.1.0",
+          author: "Passive Print Labs LLC",
+          build: {
+            appId: "com.passiveprintlabs.daybreak",
+            productName: "Daybreak",
+            win: {
+              target: [{ target: "nsis", arch: ["x64"] }],
+            },
+            nsis: {
+              oneClick: false,
+              allowToChangeInstallationDirectory: true,
+              license: "installer-license.txt",
+            },
+          },
+        }),
+      );
+
+      const metadata = evaluateReleaseMetadata({
+        root: dir,
+        packagePath: "desktop-package.json",
+      });
+
+      expect(metadata).toMatchObject({
+        pass: false,
+        reason: "metadata_incomplete",
+      });
+      expect(metadata.detail).toContain(
+        "build.artifactName=${productName} Setup ${version}.${ext}",
+      );
+      expect(metadata.detail).toContain(
+        "build.copyright=Copyright (c) 2026 Passive Print Labs LLC",
+      );
+      expect(metadata.detail).toContain("build.nsis.shortcutName=Daybreak");
+      expect(metadata.detail).toContain("build.nsis.uninstallDisplayName=Daybreak");
     }));
 
   it("keeps release metadata pending when the NSIS installer license is missing", () =>

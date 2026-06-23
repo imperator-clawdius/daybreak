@@ -25,6 +25,8 @@
   "build": {
     "appId": "com.passiveprintlabs.daybreak",
     "productName": "Daybreak",
+    "copyright": "Copyright (c) 2026 Passive Print Labs LLC",
+    "artifactName": "${productName} Setup ${version}.${ext}",
     "directories": {
       "output": "release"
     },
@@ -49,6 +51,10 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Daybreak",
+      "uninstallDisplayName": "Daybreak",
       "license": "assets/installer-license.txt"
     }
   }
