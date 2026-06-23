@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getCheckoutProofState,
   getCheckoutLinkState,
+  getInstallerProofState,
   getVerifiedCheckoutLinkState,
   getInstallerLinkState,
   getVerifiedInstallerLinkState,
@@ -1187,5 +1188,30 @@ describe("external launch links", () => {
         reason: "installer_proof_contains_sensitive_data",
       });
     }
+  });
+
+  it("rejects installer proof when the expected signer is blank", () => {
+    const url = "https://downloads.example.com/daybreak.exe";
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    expect(
+      getInstallerProofState({
+        url,
+        sha256,
+        expectedSigner: "",
+        proof: {
+          download: { url, sha256 },
+          signature: {
+            status: "Valid",
+            signer: "CN=Some Other Publisher LLC",
+            timestamped: true,
+          },
+        },
+      }),
+    ).toMatchObject({
+      ready: false,
+      reason: "installer_signer_mismatch",
+    });
   });
 });

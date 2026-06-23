@@ -355,7 +355,8 @@ export function getInstallerProofState({
     return { ready: false, reason: "installer_signature_not_valid" };
   }
 
-  if (!proofSigner.includes(expectedSigner)) {
+  const expectedSignerSubject = expectedSigner.trim();
+  if (!expectedSignerSubject || !proofSigner.includes(expectedSignerSubject)) {
     return { ready: false, reason: "installer_signer_mismatch" };
   }
 
