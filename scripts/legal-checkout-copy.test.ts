@@ -12,7 +12,11 @@ describe("legal checkout copy", () => {
 
     expect(terms).toContain("getPublicCheckoutState");
     expect(privacy).toContain("getPublicCheckoutState");
+    expect(terms).toContain("purchaseTermsCopy(checkoutReady, PRICE_USD)");
+    expect(terms).toContain("refundTermsCopy(checkoutReady)");
     expect(terms).not.toContain("Checkout is not live yet");
     expect(privacy).not.toContain("Checkout is not live yet");
+    expect(terms).not.toContain("The planned launch price is");
+    expect(terms).not.toContain("once checkout is live");
   });
 });

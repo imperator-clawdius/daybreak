@@ -1,5 +1,6 @@
 import { PRICE_USD } from "../config";
 import { getPublicCheckoutState } from "../checkout-state";
+import { purchaseTermsCopy, refundTermsCopy } from "../legal-copy";
 import { SITE_IMAGE, SITE_URL } from "../site";
 
 const title = "Terms - Daybreak";
@@ -62,20 +63,12 @@ export default function TermsPage() {
 
       <section>
         <h2>Purchase</h2>
-        <p>
-          The planned launch price is ${PRICE_USD} as a one-time purchase for
-          the Windows app and included updates. No subscription is planned for
-          this v1 release.
-        </p>
+        <p>{purchaseTermsCopy(checkoutReady, PRICE_USD)}</p>
       </section>
 
       <section>
         <h2>Refunds</h2>
-        <p>
-          The stated refund policy is 14 days, no questions asked. Refund
-          requests should be sent to founder@daybreak.rest from the purchase
-          email once checkout is live.
-        </p>
+        <p>{refundTermsCopy(checkoutReady)}</p>
       </section>
 
       <section>
