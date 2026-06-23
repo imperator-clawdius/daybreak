@@ -48,6 +48,7 @@ describe("site static export metadata", () => {
       const iconPath = outFile("icon.png");
       const appleIconPath = outFile("apple-icon.png");
       const indexHtml = readFileSync(outFile("index.html"), "utf8");
+      const notFoundHtml = readFileSync(outFile("404.html"), "utf8");
       const privacyHtml = readFileSync(outFile("privacy/index.html"), "utf8");
       const termsHtml = readFileSync(outFile("terms/index.html"), "utf8");
 
@@ -143,11 +144,14 @@ describe("site static export metadata", () => {
       expect(indexHtml).toContain(
         `name="twitter:image" content="${SITE_URL}/daybreak-app.png"`,
       );
-      for (const html of [indexHtml, privacyHtml, termsHtml]) {
+      for (const html of [indexHtml, notFoundHtml, privacyHtml, termsHtml]) {
         expect(html).toContain(`href="${SUPPORT_MAILTO}"`);
         expect(html).toContain(SUPPORT_EMAIL);
       }
       expect(indexHtml.match(new RegExp(`href="${SUPPORT_MAILTO}"`, "g"))).toHaveLength(2);
+      expect(notFoundHtml).toContain("Page not found");
+      expect(notFoundHtml).toContain("This Daybreak page does not exist");
+      expect(notFoundHtml.match(new RegExp(`href="${SUPPORT_MAILTO}"`, "g"))).toHaveLength(1);
       expect(privacyHtml.match(new RegExp(`href="${SUPPORT_MAILTO}"`, "g"))).toHaveLength(1);
       expect(termsHtml.match(new RegExp(`href="${SUPPORT_MAILTO}"`, "g"))).toHaveLength(1);
       expect(indexHtml).toContain('name="theme-color" content="#0b1020"');

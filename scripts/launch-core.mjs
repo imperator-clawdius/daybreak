@@ -16,6 +16,7 @@ export const REQUIRED_ROUTES = [
   "manifest.webmanifest",
   "icon.png",
   "apple-icon.png",
+  "missing-page",
 ];
 
 export function getPrimaryUrl(argv = []) {
@@ -141,6 +142,14 @@ function routePass(routeResult) {
       bytes.length >= 24 &&
       bytes[0] === 0x89 &&
       bytes.toString("ascii", 1, 4) === "PNG"
+    );
+  }
+
+  if (routeResult.route === "missing-page") {
+    return (
+      routeResult.res.status === 404 &&
+      routeResult.res.hasApp &&
+      routeResult.res.hasSupportContact
     );
   }
 

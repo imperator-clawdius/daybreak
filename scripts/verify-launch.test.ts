@@ -52,7 +52,7 @@ function defaultRouteResponse(url: string) {
   }
 
   return {
-    status: 200,
+    status: url.endsWith("/missing-page") ? 404 : 200,
     body: url.endsWith("/robots.txt")
       ? validRobots()
       : url.endsWith("/sitemap.xml")
@@ -154,6 +154,9 @@ describe("launch verifier", () => {
         if (url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")) {
           return await fetchPage(200, validPng())();
         }
+        if (url.endsWith("/missing-page")) {
+          return { ok: false, status: 404, text: async () => validPage("Daybreak page not found") };
+        }
         return { ok: true, status: 200, text: async () => validPage() };
       },
     });
@@ -238,6 +241,9 @@ describe("launch verifier", () => {
         }
         if (url.endsWith("/icon.png") || url.endsWith("/apple-icon.png")) {
           return await fetchPage(200, validPng())();
+        }
+        if (url.endsWith("/missing-page")) {
+          return { ok: false, status: 404, text: async () => validPage("Daybreak page not found") };
         }
         return { ok: true, status: 200, text: async () => validPage() };
       },
@@ -376,6 +382,24 @@ describe("launch verifier", () => {
     expect(report.text).toContain("LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true");
     expect(report.text).toContain(
       "APEX_ROUTES=pending privacy=pending(200) terms=pass(200)",
+    );
+  });
+
+  it("keeps launch pending when the branded 404 page is not served", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        "https://daybreak.rest/missing-page": {
+          status: 404,
+          body: "Not found",
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "missing-page=pending(404)",
     );
   });
 
