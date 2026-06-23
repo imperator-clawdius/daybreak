@@ -32,6 +32,7 @@ import {
   cleanReleaseSidecars,
   readJson,
   renderReleaseReport,
+  runPackagedSmoke,
 } from "./release-core.mjs";
 
 function withTempDir<T>(fn: (dir: string) => T): T {
@@ -540,6 +541,44 @@ describe("release preflight", () => {
         pass: false,
         reason: "packaged_smoke_failed",
       });
+    }));
+
+  it("retries packaged smoke once when the first launch misses a required marker", () =>
+    withTempDir((dir) => {
+      const executablePath = join(dir, "Daybreak.exe");
+      writeFileSync(executablePath, "exe", "utf8");
+      let calls = 0;
+
+      const result = runPackagedSmoke(executablePath, {
+        scenario: "morning",
+        attempts: 2,
+        runner: () => {
+          calls += 1;
+          return calls === 1
+            ? {
+                status: 0,
+                signal: null,
+                stdout:
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning close_probe=true swipe_flow=true",
+                stderr: "",
+              }
+            : {
+                status: 0,
+                signal: null,
+                stdout:
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true close_probe=true swipe_flow=true",
+                stderr: "",
+              };
+        },
+      });
+
+      expect(result).toMatchObject({
+        pass: true,
+        reason: "packaged_smoke_passed",
+        attempt: 2,
+        attempts: 2,
+      });
+      expect(calls).toBe(2);
     }));
 
   it("keeps release pending when packaged smoke does not prove the app runtime", () =>

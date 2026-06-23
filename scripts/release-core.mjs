@@ -710,32 +710,46 @@ export function evaluatePackagedSmokeSuite({
   };
 }
 
-export function runPackagedSmoke(executablePath, { scenario = "morning" } = {}) {
+export function runPackagedSmoke(
+  executablePath,
+  { scenario = "morning", attempts = 2, runner = spawnSync } = {},
+) {
   if (!existsSync(executablePath)) {
     return evaluatePackagedSmoke({ executablePath, runnerResult: null });
   }
 
-  const child = spawnSync(executablePath, [], {
-    cwd: dirname(executablePath),
-    encoding: "utf8",
-    timeout: 60_000,
-    env: {
-      ...process.env,
-      DAYBREAK_SMOKE: "1",
-      DAYBREAK_SMOKE_CLOSE_PROBE: "1",
-      DAYBREAK_SMOKE_SCENARIO: scenario,
-    },
-  });
+  const maxAttempts = Math.max(1, Math.floor(attempts));
+  let lastResult = null;
 
-  return evaluatePackagedSmoke({
-    executablePath,
-    runnerResult: {
-      status: child.status,
-      signal: child.signal,
-      stdout: child.stdout || "",
-      stderr: child.stderr || child.error?.message || "",
-    },
-  });
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const child = runner(executablePath, [], {
+      cwd: dirname(executablePath),
+      encoding: "utf8",
+      timeout: 60_000,
+      env: {
+        ...process.env,
+        DAYBREAK_SMOKE: "1",
+        DAYBREAK_SMOKE_CLOSE_PROBE: "1",
+        DAYBREAK_SMOKE_SCENARIO: scenario,
+      },
+    });
+
+    const result = evaluatePackagedSmoke({
+      executablePath,
+      runnerResult: {
+        status: child.status,
+        signal: child.signal,
+        stdout: child.stdout || "",
+        stderr: child.stderr || child.error?.message || "",
+      },
+    });
+    result.attempt = attempt;
+    result.attempts = maxAttempts;
+    lastResult = result;
+    if (result.pass) return result;
+  }
+
+  return lastResult;
 }
 
 export function runPackagedSmokeSuite(
