@@ -1491,6 +1491,8 @@ describe("readiness external-link proof", () => {
       pass: true,
       status: 200,
       sha256: "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+      detail:
+        "HTTP 200 sha256=2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 signature_status=Valid timestamped=true timestamped_signer=CN=Passive Print Labs LLC",
     });
   });
 

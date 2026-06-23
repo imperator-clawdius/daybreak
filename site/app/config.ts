@@ -9,10 +9,10 @@
 /** Stripe Payment Link for the $19 one-time purchase. */
 export const CHECKOUT_URL = "PENDING_STRIPE_PAYMENT_LINK";
 
-/** Direct download for the signed Windows installer. */
+/** Direct download for the signed and timestamped Windows installer. */
 export const DOWNLOAD_URL = "PENDING_INSTALLER_DOWNLOAD";
 
-/** SHA-256 of the exact signed installer bytes exposed at DOWNLOAD_URL. */
+/** SHA-256 of the exact signed and timestamped installer bytes exposed at DOWNLOAD_URL. */
 export const DOWNLOAD_SHA256 = "PENDING_INSTALLER_SHA256";
 
 export const PRICE_USD = 19;

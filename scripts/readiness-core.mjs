@@ -712,7 +712,7 @@ export async function evaluateExternalLink({
       signatureStatus,
       signatureTimestamped,
       signer,
-      detail: `HTTP ${proof.status} sha256=${proof.sha256} signature_status=${signatureStatus} timestamped=${signatureTimestamped} signer=${signer}`,
+      detail: `HTTP ${proof.status} sha256=${proof.sha256} signature_status=${signatureStatus} timestamped=${signatureTimestamped} timestamped_signer=${signer}`,
     };
   }
 
