@@ -540,6 +540,18 @@ export function evaluateReleaseMetadata({
   if (build.artifactName !== EXPECTED_ARTIFACT_NAME) {
     missing.push(`build.artifactName=${EXPECTED_ARTIFACT_NAME}`);
   }
+  if (!desktopPackage.scripts?.package?.includes("--publish never")) {
+    missing.push("scripts.package includes --publish never");
+  }
+  if (build.publish !== undefined) {
+    missing.push("build.publish omitted");
+  }
+  if (
+    desktopPackage.dependencies?.["electron-updater"] ||
+    desktopPackage.devDependencies?.["electron-updater"]
+  ) {
+    missing.push("electron-updater absent");
+  }
   if (
     !desktopPackage.version ||
     desktopPackage.version !== rootPackage?.version ||
@@ -582,7 +594,7 @@ export function evaluateReleaseMetadata({
     reason: missing.length === 0 ? "metadata_configured" : "metadata_incomplete",
     detail:
       missing.length === 0
-        ? `appId=com.passiveprintlabs.daybreak productName=Daybreak version=${desktopPackage.version} author=Passive Print Labs LLC target=nsis/x64 artifactName=${EXPECTED_ARTIFACT_NAME} shortcuts=Daybreak uninstall=Daybreak license=configured`
+        ? `appId=com.passiveprintlabs.daybreak productName=Daybreak version=${desktopPackage.version} author=Passive Print Labs LLC target=nsis/x64 artifactName=${EXPECTED_ARTIFACT_NAME} publish=disabled shortcuts=Daybreak uninstall=Daybreak license=configured`
         : `missing ${missing.join(", ")}`,
   };
 }

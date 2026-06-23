@@ -62,6 +62,13 @@ function validWindowsReleaseMetadata() {
   };
 }
 
+function validDesktopPackageScripts() {
+  return {
+    package:
+      "npm run bundle && electron-builder --win --publish never && node ../scripts/clean-release-sidecars.mjs",
+  };
+}
+
 describe("release preflight", () => {
   it("declares the asar reader used by release preflight as a direct dev dependency", () => {
     const rootPackage = readJson(process.cwd(), "package.json");
@@ -347,6 +354,7 @@ describe("release preflight", () => {
         JSON.stringify({
           version: "0.1.0",
           author: "Passive Print Labs LLC",
+          scripts: validDesktopPackageScripts(),
           build: {
             appId: "com.passiveprintlabs.daybreak",
             productName: "Daybreak",
@@ -380,6 +388,7 @@ describe("release preflight", () => {
         JSON.stringify({
           version: "0.1.0",
           author: "Passive Print Labs LLC",
+          scripts: validDesktopPackageScripts(),
           build: {
             appId: "com.passiveprintlabs.daybreak",
             productName: "Daybreak",
@@ -412,6 +421,49 @@ describe("release preflight", () => {
       );
       expect(metadata.detail).toContain("build.nsis.shortcutName=Daybreak");
       expect(metadata.detail).toContain("build.nsis.uninstallDisplayName=Daybreak");
+    }));
+
+  it("keeps release metadata pending when publish or auto-update policy is enabled", () =>
+    withTempDir((dir) => {
+      writeFileSync(join(dir, "package.json"), JSON.stringify({ version: "0.1.0" }));
+      mkdirSync(join(dir, "packages", "core"), { recursive: true });
+      writeFileSync(
+        join(dir, "packages", "core", "package.json"),
+        JSON.stringify({ version: "0.1.0" }),
+      );
+      writeFileSync(join(dir, "installer-license.txt"), "Daybreak license");
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({
+          version: "0.1.0",
+          author: "Passive Print Labs LLC",
+          scripts: {
+            package: "npm run bundle && electron-builder --win",
+          },
+          dependencies: {
+            "electron-updater": "6.0.0",
+          },
+          build: {
+            appId: "com.passiveprintlabs.daybreak",
+            productName: "Daybreak",
+            publish: [{ provider: "github" }],
+            ...validWindowsReleaseMetadata(),
+          },
+        }),
+      );
+
+      const metadata = evaluateReleaseMetadata({
+        root: dir,
+        packagePath: "desktop-package.json",
+      });
+
+      expect(metadata).toMatchObject({
+        pass: false,
+        reason: "metadata_incomplete",
+      });
+      expect(metadata.detail).toContain("scripts.package includes --publish never");
+      expect(metadata.detail).toContain("build.publish omitted");
+      expect(metadata.detail).toContain("electron-updater absent");
     }));
 
   it("keeps release metadata pending when the NSIS installer license is missing", () =>
