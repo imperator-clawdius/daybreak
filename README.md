@@ -37,7 +37,7 @@ npm run verify:release   # installer checksum + signing preflight
 See [`docs/COMPLETION.md`](docs/COMPLETION.md) for the honest completion ledger
 and [`docs/PREMORTEM.md`](docs/PREMORTEM.md) for the launch-hardening premortem:
 what is real and verified vs. what is still blocked (GitHub Pages HTTPS
-certificate, Stripe link, signed hosted installer, first real sale). No
+certificate, Stripe link, signed and timestamped hosted installer, first real sale). No
 fabricated proof appears anywhere in this project by policy (`AGENTS.md`).
 
 Domain: **daybreak.rest** (purchased on Namecheap; apex DNS and Pages custom domain set; GitHub Pages HTTPS certificate pending).

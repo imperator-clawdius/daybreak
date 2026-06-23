@@ -8,7 +8,7 @@ fabricated proof**.
 
 | Item | Evidence |
 | --- | --- |
-| Core mechanic works and is tested | `vitest run` -> **187 tests, 26 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, desktop renderer CSP policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, core package importability, static site metadata export, proof-backed public checkout/download state, legal checkout copy state, sensitive proof-data rejection, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage, root desktop launch contract, GitHub Pages health verifier, local-only telemetry guard) |
+| Core mechanic works and is tested | `vitest run` -> **209 tests, 26 files passed** (wipe machine, carry-over, morning commit gate, same-day migration, session selection, swipe gesture policy, IPC log-update validation, desktop shell policy, desktop renderer CSP policy, startup policy, persisted-shape validation, persistence recovery, consecutive history-backed streak summary, commit validation, external-link policy, market-signal policy, readiness URL proof, launch verifier, release preflight, packaged release smoke suite, core package importability, static site metadata export, proof-backed public checkout/download state, legal checkout copy state, sensitive proof-data rejection, Pages workflow proof/dependency redeploy triggers, dependency security posture, CI workflow coverage, root desktop launch contract, GitHub Pages health verifier, local-only telemetry guard, signed-installer timestamp proof) |
 | App actually launches and completes the wipe flows | From repo root in PowerShell, `$env:DAYBREAK_SMOKE = "1"; npx electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm start` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=morning swipe_flow=true`, exit 0; `$env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w @daybreak/desktop -- electron .` -> `scenario=evening swipe_flow=true streak_summary=true`, exit 0 |
 | Landing page shows the real desktop app | From `desktop/`, `DAYBREAK_SMOKE=1 DAYBREAK_SMOKE_COMMIT_TEXT="Ship Daybreak" DAYBREAK_SMOKE_SCREENSHOT=../site/public/daybreak-app.png npx electron .` -> `scenario=morning swipe_flow=true screenshot=true`, exit 0; the PNG is generated from the Electron app, not drawn as a mockup |
 | Un-closable invariant enforced | `desktop/src/main/main.ts` `close` handler plus `validateLogUpdate()` and `canDismiss()` re-validated against the active main-process session |
@@ -71,8 +71,8 @@ These require the owner; none are faked to look done.
    real release needs a code-signing cert so SmartScreen does not flag it; then
    host it, set `DOWNLOAD_URL` and `DOWNLOAD_SHA256`, add
    `proof/installer-download.json`, and let the readiness gate verify HTTP 2xx,
-   the downloaded file hash, the proof file, and the Passive Print Labs
-   timestamped Passive Print Labs Authenticode signer.
+   the downloaded file hash, the proof file, and the timestamped Passive Print
+   Labs Authenticode signer.
 4. **Earn the first real $19 order.** Market signal is `0` and stays `0` in the
    readiness gate until redacted `proof/first-paid-order.json` proves a genuine
    live, paid, unrefunded Stripe Checkout Session for USD 1900.
@@ -104,6 +104,6 @@ $env:DAYBREAK_SMOKE = "1"; $env:DAYBREAK_SMOKE_SCENARIO = "evening"; npm exec -w
 ```
 
 `npm run verify:readiness` must keep exiting 1 until the real domain, Stripe
-Payment Link, signed hosted installer, and first paid order exist.
+Payment Link, signed and timestamped hosted installer, and first paid order exist.
 `npm run verify:release` must keep exiting 1 until the installer is actually
 signed and timestamped.
