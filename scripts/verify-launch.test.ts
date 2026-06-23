@@ -168,6 +168,25 @@ describe("launch verifier", () => {
     expect(report.text).toContain("APEX_SITE=pass status=200");
   });
 
+  it("keeps launch pending when the primary homepage lacks Daybreak identity", async () => {
+    const report = await verifyLaunch({
+      argv: ["node", "scripts/verify-launch.mjs"],
+      lookupImpl: async () => ["185.199.108.153"],
+      fetchImpl: fetchByUrl({
+        [PRODUCTION_URL]: {
+          status: 200,
+          body: `Morning app <a ${SUPPORT_LINK}>founder@daybreak.rest</a>`,
+        },
+      }),
+    });
+
+    expect(report.ok).toBe(false);
+    expect(report.text).toContain(
+      "LIVE_SITE=pass status=200 contains_daybreak=false support_contact=true",
+    );
+    expect(report.text).toContain("APEX_ROUTES=pass");
+  });
+
   it("reports apex HTTPS fetch errors instead of hiding the reason", async () => {
     const report = await verifyLaunch({
       argv: ["node", "scripts/verify-launch.mjs"],

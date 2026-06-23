@@ -422,6 +422,7 @@ export async function verifyLaunch({
   const primaryRoutesOk = primaryRoutes ? routesPass(primaryRoutes) : false;
   const primaryOk =
     primaryRes.ok &&
+    primaryRes.hasApp &&
     primaryRes.hasSupportContact &&
     !primaryRes.surfaceIssue &&
     !primaryRes.publicCopyIssue &&
