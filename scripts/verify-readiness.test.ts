@@ -453,6 +453,28 @@ describe("readiness external-link proof", () => {
         proof: paidOrderProof({
           checkout_session: {
             ...base.checkout_session,
+            payment_link: "",
+          },
+          payment_link: {
+            ...base.payment_link,
+            id: "",
+          },
+        }),
+      }),
+    ).toMatchObject({
+      pass: false,
+      reason: "paid_order_proof_malformed",
+      paidOrders: 0,
+      refunds: 0,
+    });
+
+    expect(
+      evaluateMarketSignal({
+        checkoutUrl: "https://buy.stripe.com/live_123",
+        expectedPriceUsd: 19,
+        proof: paidOrderProof({
+          checkout_session: {
+            ...base.checkout_session,
             payment_link: 123,
           },
           payment_link: {

@@ -801,7 +801,9 @@ export function evaluateMarketSignal({
   }
   if (
     typeof paymentLink.id !== "string" ||
-    typeof session.payment_link !== "string"
+    paymentLink.id.trim() === "" ||
+    typeof session.payment_link !== "string" ||
+    session.payment_link.trim() === ""
   ) {
     return {
       pass: false,
