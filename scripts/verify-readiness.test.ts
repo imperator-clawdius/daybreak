@@ -1001,6 +1001,28 @@ describe("readiness external-link proof", () => {
     }
   });
 
+  it("keeps market signal pending when paid-order proof contains discount or promotion fields", () => {
+    for (const proof of [
+      paidOrderProof({ allowPromotionCodes: true }),
+      paidOrderProof({ discounts: [{ coupon: "launch" }] }),
+      paidOrderProof({ coupon: "launch" }),
+      paidOrderProof({ promotionCode: "SAVE10" }),
+      paidOrderProof({ totalDetails: { amountDiscount: 500 } }),
+    ]) {
+      expect(
+        evaluateMarketSignal({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof,
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "paid_order_proof_contains_customer_data",
+        paidOrders: 0,
+      });
+    }
+  });
+
   it("keeps market signal pending for sensitive proof before other proof mismatches", () => {
     expect(
       evaluateMarketSignal({
@@ -1770,6 +1792,29 @@ describe("readiness external-link proof", () => {
     }
   });
 
+  it("rejects checkout proof with discount or promotion fields", async () => {
+    for (const checkoutProof of [
+      { ...stripeProof(), allowPromotionCodes: true },
+      { ...stripeProof(), discounts: [{ coupon: "launch" }] },
+      { ...stripeProof(), coupon: "launch" },
+      { ...stripeProof(), promotionCode: "SAVE10" },
+      { ...stripeProof(), totalDetails: { amount_discount: 500 } },
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "checkout",
+          url: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          checkoutProof,
+          fetchImpl: fetchStatus(200),
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "checkout_proof_contains_sensitive_data",
+      });
+    }
+  });
+
   it("passes checkout only when a Stripe Payment Link returns 2xx and proof matches the $19 link", async () => {
     await expect(
       evaluateExternalLink({
@@ -2105,6 +2150,31 @@ describe("readiness external-link proof", () => {
       { ...installerProof(), clientReferenceId: "user_123" },
       { ...installerProof(), invoice: "in_live_123" },
       { ...installerProof(), subscription: "sub_live_123" },
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "download",
+          url: "https://downloads.example.com/daybreak.exe",
+          expectedSha256:
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+          fetchImpl: fetchBody(200, "hello"),
+          signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+          installerProof: installerProofData,
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "installer_proof_contains_sensitive_data",
+      });
+    }
+  });
+
+  it("rejects installer proof with discount or promotion fields", async () => {
+    for (const installerProofData of [
+      { ...installerProof(), allowPromotionCodes: true },
+      { ...installerProof(), discounts: [{ coupon: "launch" }] },
+      { ...installerProof(), coupon: "launch" },
+      { ...installerProof(), promotionCode: "SAVE10" },
+      { ...installerProof(), totalDetails: { amountDiscount: 500 } },
     ]) {
       await expect(
         evaluateExternalLink({

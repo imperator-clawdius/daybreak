@@ -902,6 +902,29 @@ describe("paid order proof", () => {
     }
   });
 
+  it("rejects first-order proof with discount or promotion fields", () => {
+    for (const proof of [
+      paidOrderProof({ allowPromotionCodes: true }),
+      paidOrderProof({ discounts: [{ coupon: "launch" }] }),
+      paidOrderProof({ coupon: "launch" }),
+      paidOrderProof({ promotionCode: "SAVE10" }),
+      paidOrderProof({ totalDetails: { amountDiscount: 500 } }),
+    ]) {
+      expect(
+        getPaidOrderProofState({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof,
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "paid_order_proof_contains_customer_data",
+        paidOrders: 0,
+        refunds: 0,
+      });
+    }
+  });
+
   it("rejects sensitive first-order proof before other proof mismatches", () => {
     expect(
       getPaidOrderProofState({
