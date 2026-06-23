@@ -17,6 +17,7 @@ import {
   evaluateSourceMapExclusion,
   evaluatePackagedSourceMapExclusion,
   evaluatePackagedSourceExclusion,
+  evaluatePackagedDependencyAllowlist,
   readJson,
   renderReleaseReport,
 } from "./release-core.mjs";
@@ -595,6 +596,30 @@ describe("release preflight", () => {
           "/node_modules/@daybreak/core/src/index.ts",
           "/node_modules/@daybreak/core/tsconfig.json",
         ],
+      });
+    }));
+
+  it("keeps release pending when unexpected runtime dependencies are packaged", () =>
+    withTempDir((dir) => {
+      const asarPath = join(dir, "resources", "app.asar");
+      mkdirSync(join(dir, "resources"), { recursive: true });
+      writeFileSync(asarPath, "synthetic asar placeholder", "utf8");
+
+      expect(
+        evaluatePackagedDependencyAllowlist({
+          packagedAppAsarPath: asarPath,
+          listAsarFiles: () => [
+            "/node_modules/@daybreak/core/dist/index.js",
+            "/node_modules/@analytics/sdk/index.js",
+            "/node_modules/lodash/index.js",
+            "/dist/main.js",
+          ],
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "packaged_dependencies_unexpected",
+        dependencies: ["@analytics/sdk", "@daybreak/core", "lodash"],
+        unexpectedDependencies: ["@analytics/sdk", "lodash"],
       });
     }));
 

@@ -4,6 +4,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 
 export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
+export const EXPECTED_PACKAGED_DEPENDENCIES = ["@daybreak/core"];
 
 export function readJson(root, relativePath) {
   return JSON.parse(readFileSync(join(root, relativePath), "utf8"));
@@ -242,6 +243,73 @@ export function evaluatePackagedSourceExclusion({
       reason: "packaged_app_asar_unreadable",
       packagedAppAsarPath,
       sourcePaths: [],
+      detail: String(e.message || e),
+    };
+  }
+}
+
+function dependencyNameFromAsarPath(path) {
+  const parts = slashPath(path).split("/").filter(Boolean);
+  const nodeModulesIndex = parts.indexOf("node_modules");
+  if (nodeModulesIndex < 0 || nodeModulesIndex + 1 >= parts.length) return "";
+
+  const first = parts[nodeModulesIndex + 1];
+  if (first.startsWith("@")) {
+    const second = parts[nodeModulesIndex + 2];
+    return second ? `${first}/${second}` : "";
+  }
+  return first;
+}
+
+export function evaluatePackagedDependencyAllowlist({
+  packagedAppAsarPath,
+  listAsarFiles = readAsarFileList,
+  allowedDependencies = EXPECTED_PACKAGED_DEPENDENCIES,
+}) {
+  if (!existsSync(packagedAppAsarPath)) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_missing",
+      packagedAppAsarPath,
+      dependencies: [],
+      unexpectedDependencies: [],
+      detail: `missing ${packagedAppAsarPath}`,
+    };
+  }
+
+  try {
+    const dependencies = [
+      ...new Set(
+        listAsarFiles(packagedAppAsarPath)
+          .map(dependencyNameFromAsarPath)
+          .filter(Boolean),
+      ),
+    ].sort();
+    const unexpectedDependencies = dependencies
+      .filter((dependency) => !allowedDependencies.includes(dependency))
+      .sort();
+
+    return {
+      pass: unexpectedDependencies.length === 0,
+      reason:
+        unexpectedDependencies.length === 0
+          ? "packaged_dependencies_allowed"
+          : "packaged_dependencies_unexpected",
+      packagedAppAsarPath,
+      dependencies,
+      unexpectedDependencies,
+      detail:
+        unexpectedDependencies.length === 0
+          ? `packaged dependencies allowed: ${dependencies.join(", ") || "none"}`
+          : `unexpected packaged dependencies: ${unexpectedDependencies.join(", ")}`,
+    };
+  } catch (e) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_unreadable",
+      packagedAppAsarPath,
+      dependencies: [],
+      unexpectedDependencies: [],
       detail: String(e.message || e),
     };
   }
@@ -652,6 +720,9 @@ export function evaluateReleasePreflight({
   const packagedSource = evaluatePackagedSourceExclusion({
     packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
   });
+  const packagedDependencies = evaluatePackagedDependencyAllowlist({
+    packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
+  });
   const smoke =
     packagedSmoke ??
     evaluatePackagedSmoke({
@@ -673,6 +744,7 @@ export function evaluateReleasePreflight({
       sourceMaps.pass &&
       packagedSourceMaps.pass &&
       packagedSource.pass &&
+      packagedDependencies.pass &&
       smoke.pass &&
       freshness.pass,
     icon,
@@ -680,6 +752,7 @@ export function evaluateReleasePreflight({
     sourceMaps,
     packagedSourceMaps,
     packagedSource,
+    packagedDependencies,
     packagedSmoke: smoke,
     freshness,
   };
@@ -747,6 +820,14 @@ export function renderReleaseReport(result) {
       lines.push(`packaged_source_message=${result.packagedSource.detail}`);
     }
   }
+  if (result.packagedDependencies) {
+    lines.push(`packaged_dependencies=${result.packagedDependencies.dependencies.join(",") || "none"}`);
+    if (!result.packagedDependencies.pass) {
+      lines.push(
+        `packaged_dependencies_message=${result.packagedDependencies.detail}`,
+      );
+    }
+  }
   if (result.packagedSmoke) {
     lines.push(
       `packaged_smoke=${result.packagedSmoke.pass ? "pass" : "pending"}`,
@@ -805,6 +886,11 @@ export function renderReleaseReport(result) {
     if (result.packagedSource && !result.packagedSource.pass) {
       blockers.push(
         "- Repackage the Windows app without TypeScript source files inside app.asar before signing or hosting the installer.",
+      );
+    }
+    if (result.packagedDependencies && !result.packagedDependencies.pass) {
+      blockers.push(
+        "- Remove unexpected runtime dependencies from app.asar before signing or hosting the installer.",
       );
     }
     if (result.packagedSmoke && !result.packagedSmoke.pass) {
