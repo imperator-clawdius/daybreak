@@ -348,14 +348,23 @@ export function getInstallerProofState({
   }
 
   const installerProof = proof as InstallerDownloadProof;
+  const signatureSigner = installerProof.signature?.signer;
+  const signatureSubject = installerProof.signature?.subject;
   const proofSigner =
-    installerProof.signature?.signer ?? installerProof.signature?.subject;
+    signatureSigner ?? signatureSubject;
+  const hasConflictingSignerFields =
+    typeof signatureSigner === "string" &&
+    typeof signatureSubject === "string" &&
+    signatureSigner !== signatureSubject;
   if (
     typeof installerProof.download?.url !== "string" ||
     typeof installerProof.download.sha256 !== "string" ||
     !isSha256(installerProof.download.sha256) ||
     typeof installerProof.signature?.status !== "string" ||
+    (signatureSigner !== undefined && typeof signatureSigner !== "string") ||
+    (signatureSubject !== undefined && typeof signatureSubject !== "string") ||
     typeof proofSigner !== "string" ||
+    hasConflictingSignerFields ||
     typeof installerProof.signature.timestamped !== "boolean"
   ) {
     return { ready: false, reason: "installer_proof_malformed" };

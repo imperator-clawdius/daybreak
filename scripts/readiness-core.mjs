@@ -385,13 +385,22 @@ function evaluateInstallerProof({ downloadUrl, expectedSha256, signer, proof }) 
     };
   }
 
-  const proofSigner = proof.signature?.signer ?? proof.signature?.subject;
+  const signatureSigner = proof.signature?.signer;
+  const signatureSubject = proof.signature?.subject;
+  const proofSigner = signatureSigner ?? signatureSubject;
+  const hasConflictingSignerFields =
+    typeof signatureSigner === "string" &&
+    typeof signatureSubject === "string" &&
+    signatureSigner !== signatureSubject;
   if (
     typeof proof.download?.url !== "string" ||
     typeof proof.download.sha256 !== "string" ||
     !isSha256(proof.download.sha256) ||
     typeof proof.signature?.status !== "string" ||
+    (signatureSigner !== undefined && typeof signatureSigner !== "string") ||
+    (signatureSubject !== undefined && typeof signatureSubject !== "string") ||
     typeof proofSigner !== "string" ||
+    hasConflictingSignerFields ||
     typeof proof.signature.timestamped !== "boolean"
   ) {
     return {

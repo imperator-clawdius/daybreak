@@ -1622,6 +1622,15 @@ describe("readiness external-link proof", () => {
       installerProof({ signer: 123 }),
       {
         ...installerProof(),
+        signature: {
+          status: "Valid",
+          signer: "CN=Passive Print Labs LLC",
+          subject: "CN=Unrelated Publisher LLC",
+          timestamped: true,
+        },
+      },
+      {
+        ...installerProof(),
         signature: { status: "Valid" },
       },
       installerProof({ timestamped: "true" }),

@@ -1141,6 +1141,13 @@ describe("external launch links", () => {
       },
       {
         ...baseProof,
+        signature: {
+          ...baseProof.signature,
+          subject: "CN=Unrelated Publisher LLC",
+        },
+      },
+      {
+        ...baseProof,
         signature: { status: "Valid" },
       },
       {
