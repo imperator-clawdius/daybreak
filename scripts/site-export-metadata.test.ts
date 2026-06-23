@@ -82,6 +82,8 @@ describe("site static export metadata", () => {
       expect(indexHtml).toContain(
         `name="twitter:image" content="${SITE_URL}/daybreak-app.png"`,
       );
+      expect(indexHtml).toContain('name="theme-color" content="#0b1020"');
+      expect(indexHtml).toContain('name="color-scheme" content="dark"');
       expect(indexHtml).toContain('class="hero-brand-art" aria-hidden="true"');
       expect(indexHtml).toContain('alt=""');
       expect(indexHtml).toContain(

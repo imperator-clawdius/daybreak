@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import { SITE_DESCRIPTION, SITE_IMAGE, SITE_TITLE, SITE_URL } from "./site";
@@ -41,6 +41,11 @@ export const metadata: Metadata = {
       "Full-screen at first login. You can't dismiss it until every item is wiped. $19 once.",
     images: [SITE_IMAGE],
   },
+};
+
+export const viewport: Viewport = {
+  colorScheme: "dark",
+  themeColor: "#0b1020",
 };
 
 export default function RootLayout({
