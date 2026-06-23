@@ -52,7 +52,11 @@ export function isStripePaymentLink(url: string): boolean {
 
 function isStripePaymentLinkId(value: string): boolean {
   const trimmed = value.trim();
-  return trimmed.startsWith("plink_") && trimmed.length > "plink_".length;
+  return (
+    value === trimmed &&
+    value.startsWith("plink_") &&
+    value.length > "plink_".length
+  );
 }
 
 export function isSha256(value: string): boolean {
