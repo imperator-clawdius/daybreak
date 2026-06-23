@@ -9,7 +9,7 @@ describe("completion ledger", () => {
       "utf8",
     );
 
-    expect(ledger).toContain("**305 tests, 34 files passed**");
+    expect(ledger).toContain("**308 tests, 35 files passed**");
     expect(ledger).toContain("completion ledger evidence contract");
     expect(ledger).toContain("dark browser chrome metadata");
     expect(ledger).toContain("honest update-promise copy");
@@ -30,8 +30,10 @@ describe("completion ledger", () => {
     expect(ledger).toContain("packaged smoke retry");
     expect(ledger).toContain("packaged close-prevention smoke proof");
     expect(ledger).toContain("release publish policy");
+    expect(ledger).toContain("packaged manifest metadata contract");
     expect(ledger).toContain("Proof artifact instructions are minimal and redacted");
     expect(ledger).toContain("Windows shell metadata preflight");
+    expect(ledger).not.toContain("**305 tests, 34 files passed**");
     expect(ledger).not.toContain("**304 tests, 34 files passed**");
     expect(ledger).not.toContain("**303 tests, 34 files passed**");
     expect(ledger).not.toContain("**302 tests, 34 files passed**");

@@ -1,7 +1,16 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
+import { extractAll as extractAsar } from "@electron/asar";
 
 export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
 export const EXPECTED_PACKAGED_DEPENDENCIES = ["@daybreak/core"];
@@ -85,6 +94,7 @@ export const RELEASE_SOURCE_PATHS = [
   "packages/core/src/streak.ts",
   "packages/core/src/swipe-gesture.ts",
   "packages/core/src/wipe.ts",
+  "scripts/slim-packaged-manifests.mjs",
 ];
 
 const RELEASE_SOURCE_DIRS = [
@@ -101,6 +111,7 @@ const RELEASE_SOURCE_FILES = [
   "desktop/tsconfig.json",
   "packages/core/package.json",
   "packages/core/tsconfig.json",
+  "scripts/slim-packaged-manifests.mjs",
 ];
 
 function slashPath(path) {
@@ -168,6 +179,17 @@ export function readAsarFileList(packagedAppAsarPath) {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+export function readAsarTextFile(packagedAppAsarPath, filePath) {
+  const tempDir = mkdtempSync(join(tmpdir(), "daybreak-asar-read-"));
+  try {
+    extractAsar(packagedAppAsarPath, tempDir);
+    const relativePath = slashPath(filePath).replace(/^\/+/, "");
+    return readFileSync(join(tempDir, relativePath), "utf8");
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
 }
 
 export function evaluatePackagedSourceMapExclusion({
@@ -322,6 +344,58 @@ export function evaluatePackagedDependencyAllowlist({
       packagedAppAsarPath,
       dependencies: [],
       unexpectedDependencies: [],
+      detail: String(e.message || e),
+    };
+  }
+}
+
+export function evaluatePackagedManifestMetadata({
+  packagedAppAsarPath,
+  listAsarFiles = readAsarFileList,
+  readAsarText = readAsarTextFile,
+}) {
+  if (!existsSync(packagedAppAsarPath)) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_missing",
+      packagedAppAsarPath,
+      manifestIssues: [],
+      detail: `missing ${packagedAppAsarPath}`,
+    };
+  }
+
+  try {
+    const manifestPaths = listAsarFiles(packagedAppAsarPath)
+      .map(slashPath)
+      .filter((path) => path.endsWith("/package.json"))
+      .sort();
+    const forbiddenKeys = ["build", "devDependencies", "scripts"];
+    const manifestIssues = manifestPaths.flatMap((manifestPath) => {
+      const manifest = JSON.parse(readAsarText(packagedAppAsarPath, manifestPath));
+      return forbiddenKeys
+        .filter((key) => manifest[key] !== undefined)
+        .map((key) => `${manifestPath}:${key}`);
+    });
+
+    return {
+      pass: manifestIssues.length === 0,
+      reason:
+        manifestIssues.length === 0
+          ? "packaged_manifest_metadata_absent"
+          : "packaged_manifest_metadata_present",
+      packagedAppAsarPath,
+      manifestIssues,
+      detail:
+        manifestIssues.length === 0
+          ? "packaged manifests contain no scripts, devDependencies, or build metadata"
+          : `packaged manifests expose development metadata: ${manifestIssues.join(", ")}`,
+    };
+  } catch (e) {
+    return {
+      pass: false,
+      reason: "packaged_app_asar_unreadable",
+      packagedAppAsarPath,
+      manifestIssues: [],
       detail: String(e.message || e),
     };
   }
@@ -839,6 +913,9 @@ export function evaluateReleasePreflight({
   const packagedDependencies = evaluatePackagedDependencyAllowlist({
     packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
   });
+  const packagedManifestMetadata = evaluatePackagedManifestMetadata({
+    packagedAppAsarPath: expectedPackagedAppAsarPath(root, packagePath),
+  });
   const sidecars = evaluateReleaseSidecarExclusion({
     releaseDir: dirname(installerPath),
   });
@@ -864,6 +941,7 @@ export function evaluateReleasePreflight({
       packagedSourceMaps.pass &&
       packagedSource.pass &&
       packagedDependencies.pass &&
+      packagedManifestMetadata.pass &&
       sidecars.pass &&
       smoke.pass &&
       freshness.pass,
@@ -873,6 +951,7 @@ export function evaluateReleasePreflight({
     packagedSourceMaps,
     packagedSource,
     packagedDependencies,
+    packagedManifestMetadata,
     sidecars,
     packagedSmoke: smoke,
     freshness,
@@ -949,6 +1028,18 @@ export function renderReleaseReport(result) {
       );
     }
   }
+  if (result.packagedManifestMetadata) {
+    lines.push(
+      `packaged_manifest_metadata=${
+        result.packagedManifestMetadata.pass ? "absent" : "present"
+      }`,
+    );
+    if (!result.packagedManifestMetadata.pass) {
+      lines.push(
+        `packaged_manifest_metadata_message=${result.packagedManifestMetadata.detail}`,
+      );
+    }
+  }
   if (result.sidecars) {
     lines.push(`release_sidecars=${result.sidecars.pass ? "absent" : "present"}`);
     if (!result.sidecars.pass) {
@@ -1018,6 +1109,11 @@ export function renderReleaseReport(result) {
     if (result.packagedDependencies && !result.packagedDependencies.pass) {
       blockers.push(
         "- Remove unexpected runtime dependencies from app.asar before signing or hosting the installer.",
+      );
+    }
+    if (result.packagedManifestMetadata && !result.packagedManifestMetadata.pass) {
+      blockers.push(
+        "- Remove development metadata from packaged package manifests before signing or hosting the installer.",
       );
     }
     if (result.sidecars && !result.sidecars.pass) {

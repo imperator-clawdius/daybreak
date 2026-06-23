@@ -28,6 +28,7 @@ import {
   evaluatePackagedSourceMapExclusion,
   evaluatePackagedSourceExclusion,
   evaluatePackagedDependencyAllowlist,
+  evaluatePackagedManifestMetadata,
   evaluateReleaseSidecarExclusion,
   cleanReleaseSidecars,
   readJson,
@@ -87,6 +88,14 @@ describe("release preflight", () => {
     );
   });
 
+  it("slims packaged manifests before building the installer", () => {
+    const desktopPackage = readJson(process.cwd(), "desktop/package.json");
+
+    expect(desktopPackage.build.afterPack).toBe(
+      "../scripts/slim-packaged-manifests.mjs",
+    );
+  });
+
   it("publishes support and terms contact details in the installer license", () => {
     const license = readFileSync(
       join(process.cwd(), "desktop", "assets", "installer-license.txt"),
@@ -121,6 +130,7 @@ describe("release preflight", () => {
         "desktop/assets/installer-license.txt",
         "desktop/tsconfig.json",
         "packages/core/tsconfig.json",
+        "scripts/slim-packaged-manifests.mjs",
       ]),
     );
   });
@@ -908,6 +918,54 @@ describe("release preflight", () => {
         dependencies: ["@analytics/sdk", "@daybreak/core", "lodash"],
         unexpectedDependencies: ["@analytics/sdk", "lodash"],
       });
+    }));
+
+  it("keeps release pending when packaged manifests expose development metadata", () =>
+    withTempDir((dir) => {
+      const asarPath = join(dir, "resources", "app.asar");
+      mkdirSync(join(dir, "resources"), { recursive: true });
+      writeFileSync(asarPath, "synthetic asar placeholder", "utf8");
+      const readPaths: string[] = [];
+
+      expect(
+        evaluatePackagedManifestMetadata({
+          packagedAppAsarPath: asarPath,
+          listAsarFiles: () => [
+            "\\package.json",
+            "\\node_modules\\@daybreak\\core\\package.json",
+          ],
+          readAsarText: (_asarPath, filePath) => {
+            readPaths.push(filePath);
+            return filePath === "/package.json"
+              ? JSON.stringify({
+                  name: "@daybreak/desktop",
+                  version: "0.1.0",
+                  main: "dist/main.js",
+                  scripts: { dev: "electron ." },
+                })
+              : JSON.stringify({
+                  name: "@daybreak/core",
+                  version: "0.1.0",
+                  type: "module",
+                  main: "./dist/index.js",
+                  scripts: { test: "vitest run" },
+                  devDependencies: { vitest: "^4.1.9" },
+                });
+          },
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "packaged_manifest_metadata_present",
+        manifestIssues: [
+          "/node_modules/@daybreak/core/package.json:devDependencies",
+          "/node_modules/@daybreak/core/package.json:scripts",
+          "/package.json:scripts",
+        ],
+      });
+      expect(readPaths).toEqual([
+        "/node_modules/@daybreak/core/package.json",
+        "/package.json",
+      ]);
     }));
 
   it("keeps release pending when debug or update sidecars remain in the release directory", () =>
