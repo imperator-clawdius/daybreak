@@ -289,7 +289,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "APEX_ROUTES=pending privacy=pass(200) terms=pending(404)",
+      "APEX_ROUTES=pending privacy=pass(200) terms=pending(404:status_404)",
     );
   });
 
@@ -345,7 +345,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pending(404)",
+      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pending(404:status_404)",
     );
   });
 
@@ -363,7 +363,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200) manifest.webmanifest=pending(200)",
+      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200) manifest.webmanifest=pending(200:manifest_malformed)",
     );
   });
 
@@ -382,7 +382,7 @@ describe("launch verifier", () => {
     expect(report.ok).toBe(false);
     expect(report.text).toContain("LIVE_SITE=pass status=200 contains_daybreak=true support_contact=true");
     expect(report.text).toContain(
-      "APEX_ROUTES=pending privacy=pending(200) terms=pass(200)",
+      "APEX_ROUTES=pending privacy=pending(200:missing_support_contact) terms=pass(200)",
     );
   });
 
@@ -400,7 +400,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "APEX_ROUTES=pending privacy=pass(200) terms=pending(200)",
+      "APEX_ROUTES=pending privacy=pass(200) terms=pending(200:missing_legal_effective_date)",
     );
   });
 
@@ -472,7 +472,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "missing-page=pending(404)",
+      "missing-page=pending(404:missing_daybreak)",
     );
   });
 
@@ -490,7 +490,7 @@ describe("launch verifier", () => {
 
     expect(report.ok).toBe(false);
     expect(report.text).toContain(
-      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200) manifest.webmanifest=pass(200) icon.png=pending(200) apple-icon.png=pass(200)",
+      "APEX_ROUTES=pending privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200) manifest.webmanifest=pass(200) icon.png=pending(200:not_png) apple-icon.png=pass(200)",
     );
   });
 
@@ -583,7 +583,7 @@ describe("launch verifier", () => {
       "WWW_HTTP_ROUTES=pass privacy=pass(200) terms=pass(200) robots.txt=pass(200) sitemap.xml=pass(200)",
     );
     expect(report.text).toContain(
-      "WWW_ROUTES=pending privacy=pending(495) terms=pending(495) robots.txt=pending(495) sitemap.xml=pending(495)",
+      "WWW_ROUTES=pending privacy=pending(495:status_495) terms=pending(495:status_495) robots.txt=pending(495:status_495) sitemap.xml=pending(495:status_495)",
     );
   });
 });

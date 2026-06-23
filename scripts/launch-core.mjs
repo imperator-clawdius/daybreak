@@ -139,31 +139,37 @@ function routeName(route) {
   return route.replace(/\/$/, "");
 }
 
-function routePass(routeResult) {
+function routeIssue(routeResult) {
   const body = routeResult.res.body ?? "";
   if (routeResult.route === "robots.txt") {
-    return (
-      routeResult.res.ok &&
-      body.includes("Allow: /") &&
-      body.includes(`Sitemap: ${PRODUCTION_URL}sitemap.xml`)
-    );
+    if (!routeResult.res.ok) return `status_${routeResult.res.status}`;
+    if (!body.includes("Allow: /")) return "robots_missing_allow";
+    if (!body.includes(`Sitemap: ${PRODUCTION_URL}sitemap.xml`)) {
+      return "robots_missing_sitemap";
+    }
+    return null;
   }
 
   if (routeResult.route === "sitemap.xml") {
-    return (
-      routeResult.res.ok &&
-      body.includes(`<loc>${PRODUCTION_URL}</loc>`) &&
-      body.includes(`<loc>${PRODUCTION_URL}privacy/</loc>`) &&
-      body.includes(`<loc>${PRODUCTION_URL}terms/</loc>`)
-    );
+    if (!routeResult.res.ok) return `status_${routeResult.res.status}`;
+    if (!body.includes(`<loc>${PRODUCTION_URL}</loc>`)) {
+      return "sitemap_missing_home";
+    }
+    if (!body.includes(`<loc>${PRODUCTION_URL}privacy/</loc>`)) {
+      return "sitemap_missing_privacy";
+    }
+    if (!body.includes(`<loc>${PRODUCTION_URL}terms/</loc>`)) {
+      return "sitemap_missing_terms";
+    }
+    return null;
   }
 
   if (routeResult.route === "manifest.webmanifest") {
-    if (!routeResult.res.ok) return false;
+    if (!routeResult.res.ok) return `status_${routeResult.res.status}`;
 
     try {
       const manifest = JSON.parse(body);
-      return (
+      const valid =
         manifest?.name === "Daybreak" &&
         manifest?.short_name === "Daybreak" &&
         manifest?.start_url === PRODUCTION_URL.replace(/\/$/, "") &&
@@ -176,44 +182,52 @@ function routePass(routeResult) {
             icon?.src === `${PRODUCTION_URL}icon.png` &&
             icon?.sizes === "256x256" &&
             icon?.type === "image/png",
-        )
-      );
+        );
+      return valid ? null : "manifest_malformed";
     } catch {
-      return false;
+      return "manifest_invalid_json";
     }
   }
 
   if (routeResult.route === "icon.png" || routeResult.route === "apple-icon.png") {
     const bytes = routeResult.res.bytes;
-    return (
+    if (!routeResult.res.ok) return `status_${routeResult.res.status}`;
+    const validPng =
       routeResult.res.ok &&
       Buffer.isBuffer(bytes) &&
       bytes.length >= 24 &&
       bytes[0] === 0x89 &&
-      bytes.toString("ascii", 1, 4) === "PNG"
-    );
+      bytes.toString("ascii", 1, 4) === "PNG";
+    return validPng ? null : "not_png";
   }
 
   if (routeResult.route === "missing-page") {
-    return (
-      routeResult.res.status === 404 &&
-      routeResult.res.hasApp &&
-      routeResult.res.hasSupportContact &&
-      !routeResult.res.surfaceIssue
-    );
+    if (routeResult.res.status !== 404) return `status_${routeResult.res.status}`;
+    if (!routeResult.res.hasApp) return "missing_daybreak";
+    if (!routeResult.res.hasSupportContact) return "missing_support_contact";
+    if (routeResult.res.surfaceIssue) return routeResult.res.surfaceIssue;
+    return null;
   }
 
   if (routeResult.route === "privacy/" || routeResult.route === "terms/") {
-    return (
-      routeResult.res.ok &&
-      routeResult.res.hasApp &&
-      routeResult.res.hasSupportContact &&
-      !routeResult.res.surfaceIssue &&
-      LEGAL_EFFECTIVE_DATE_PATTERN.test(body)
-    );
+    if (!routeResult.res.ok) return `status_${routeResult.res.status}`;
+    if (!routeResult.res.hasApp) return "missing_daybreak";
+    if (!routeResult.res.hasSupportContact) return "missing_support_contact";
+    if (routeResult.res.surfaceIssue) return routeResult.res.surfaceIssue;
+    if (!LEGAL_EFFECTIVE_DATE_PATTERN.test(body)) {
+      return "missing_legal_effective_date";
+    }
+    return null;
   }
 
-  return routeResult.res.ok && routeResult.res.hasApp && !routeResult.res.surfaceIssue;
+  if (!routeResult.res.ok) return `status_${routeResult.res.status}`;
+  if (!routeResult.res.hasApp) return "missing_daybreak";
+  if (routeResult.res.surfaceIssue) return routeResult.res.surfaceIssue;
+  return null;
+}
+
+function routePass(routeResult) {
+  return routeIssue(routeResult) === null;
 }
 
 function routesPass(routeResults) {
@@ -225,9 +239,10 @@ function formatRouteReport(label, routeResults) {
   const routes = routeResults
     .map((routeResult) => {
       const res = routeResult.res;
-      const state = routePass(routeResult) ? "pass" : "pending";
-      const issue = res.surfaceIssue ? `:${res.surfaceIssue}` : "";
-      return `${routeName(routeResult.route)}=${state}(${res.status}${issue})`;
+      const issue = routeIssue(routeResult);
+      const state = issue ? "pending" : "pass";
+      const issueSuffix = issue ? `:${issue}` : "";
+      return `${routeName(routeResult.route)}=${state}(${res.status}${issueSuffix})`;
     })
     .join(" ");
   return `${label}=${allPass ? "pass" : "pending"} ${routes}`;
