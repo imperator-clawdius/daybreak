@@ -71,6 +71,7 @@ describe("release preflight", () => {
         "package-lock.json",
         "desktop/assets/icon.ico",
         "desktop/assets/icon.png",
+        "desktop/assets/installer-license.txt",
         "desktop/tsconfig.json",
         "packages/core/tsconfig.json",
       ]),
@@ -295,6 +296,39 @@ describe("release preflight", () => {
 
   it("passes release metadata only when app identity and NSIS target are configured", () =>
     withTempDir((dir) => {
+      writeFileSync(join(dir, "installer-license.txt"), "Daybreak license");
+      writeFileSync(
+        join(dir, "desktop-package.json"),
+        JSON.stringify({
+          author: "Passive Print Labs LLC",
+          build: {
+            appId: "com.passiveprintlabs.daybreak",
+            productName: "Daybreak",
+            win: {
+              target: [{ target: "nsis", arch: ["x64"] }],
+            },
+            nsis: {
+              oneClick: false,
+              allowToChangeInstallationDirectory: true,
+              license: "installer-license.txt",
+            },
+          },
+        }),
+      );
+
+      expect(
+        evaluateReleaseMetadata({
+          root: dir,
+          packagePath: "desktop-package.json",
+        }),
+      ).toMatchObject({
+        pass: true,
+        reason: "metadata_configured",
+      });
+    }));
+
+  it("keeps release metadata pending when the NSIS installer license is missing", () =>
+    withTempDir((dir) => {
       writeFileSync(
         join(dir, "desktop-package.json"),
         JSON.stringify({
@@ -319,8 +353,8 @@ describe("release preflight", () => {
           packagePath: "desktop-package.json",
         }),
       ).toMatchObject({
-        pass: true,
-        reason: "metadata_configured",
+        pass: false,
+        reason: "metadata_incomplete",
       });
     }));
 

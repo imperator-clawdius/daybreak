@@ -1,0 +1,43 @@
+Daybreak End User License Agreement
+
+Publisher: Passive Print Labs LLC
+Product: Daybreak
+
+Daybreak is licensed, not sold. By installing or using Daybreak, you agree to
+these terms.
+
+1. License Grant
+You may install and use Daybreak for personal or internal business use on
+Windows devices you own or control. You may not resell, sublicense, redistribute,
+or provide Daybreak as a hosted service.
+
+2. Local Data
+Daybreak stores commitment data locally on your device. The application does not
+include an account system, cloud sync, or telemetry in this version. You are
+responsible for backing up or deleting local data according to your own needs.
+
+3. No Reverse Engineering
+You may not reverse engineer, decompile, disassemble, modify, or create
+derivative works from Daybreak except where applicable law expressly allows it.
+
+4. Payment and Refunds
+Daybreak is offered as a one-time purchase. Refund handling follows the terms
+published on the Daybreak website at the time of purchase.
+
+5. No Warranty
+Daybreak is provided "as is" without warranties of any kind, express or implied,
+including warranties of merchantability, fitness for a particular purpose, and
+non-infringement.
+
+6. Limitation of Liability
+To the maximum extent permitted by law, Passive Print Labs LLC will not be liable
+for indirect, incidental, special, consequential, or punitive damages, or for
+lost profits, lost data, or business interruption arising from use of Daybreak.
+
+7. Updates
+This v1 installer does not include automatic updates. Future versions may be
+distributed separately with updated terms.
+
+8. Contact
+Questions about these terms should be sent through the support channel published
+on the Daybreak website.

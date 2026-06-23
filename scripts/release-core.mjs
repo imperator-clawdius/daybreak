@@ -48,6 +48,7 @@ export const RELEASE_SOURCE_PATHS = [
   "package-lock.json",
   "desktop/assets/icon.ico",
   "desktop/assets/icon.png",
+  "desktop/assets/installer-license.txt",
   "desktop/package.json",
   "desktop/tsconfig.json",
   "desktop/build.mjs",
@@ -506,6 +507,7 @@ export function evaluateReleaseMetadata({
   root,
   packagePath = "desktop/package.json",
 }) {
+  const fullPackagePath = join(root, packagePath);
   const desktopPackage = readJson(root, packagePath);
   const build = desktopPackage.build || {};
   const missing = [];
@@ -528,13 +530,21 @@ export function evaluateReleaseMetadata({
   if (build.nsis?.allowToChangeInstallationDirectory !== true) {
     missing.push("build.nsis.allowToChangeInstallationDirectory=true");
   }
+  if (typeof build.nsis?.license !== "string" || build.nsis.license.trim() === "") {
+    missing.push("build.nsis.license");
+  } else {
+    const licensePath = resolve(dirname(fullPackagePath), build.nsis.license);
+    if (!existsSync(licensePath)) {
+      missing.push(`build.nsis.license file exists (${build.nsis.license})`);
+    }
+  }
 
   return {
     pass: missing.length === 0,
     reason: missing.length === 0 ? "metadata_configured" : "metadata_incomplete",
     detail:
       missing.length === 0
-        ? "appId=com.passiveprintlabs.daybreak productName=Daybreak author=Passive Print Labs LLC target=nsis/x64"
+        ? "appId=com.passiveprintlabs.daybreak productName=Daybreak author=Passive Print Labs LLC target=nsis/x64 license=configured"
         : `missing ${missing.join(", ")}`,
   };
 }
