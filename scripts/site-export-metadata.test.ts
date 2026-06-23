@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const SITE_URL = "https://daybreak.rest";
@@ -24,6 +24,16 @@ function runNpm(args: string[]): void {
 
 function outFile(path: string): string {
   return join(process.cwd(), "site", "out", path);
+}
+
+function listStaticFiles(dir: string): string[] {
+  return readdirSync(dir).flatMap((entry) => {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) {
+      return listStaticFiles(path);
+    }
+    return [path];
+  });
 }
 
 function pngDimensions(path: string): { width: number; height: number } {
@@ -168,6 +178,54 @@ describe("site static export metadata", () => {
       expect(indexHtml).not.toContain("GitHub Pages provisions HTTPS");
       expect(indexHtml).not.toContain("GitHub Pages HTTPS is pending");
       expect(indexHtml).not.toContain("GitHub Pages preview is online");
+
+      const inspectedFiles = listStaticFiles(outFile("")).filter((path) =>
+        /\.(?:css|html|js|json|txt|webmanifest|xml)$/i.test(path),
+      );
+      const allowedHosts = new Set(["daybreak.rest", "www.daybreak.rest"]);
+      const allowedDiagnosticHosts = new Set(["github.com", "nextjs.org", "react.dev"]);
+      const allowedHttpUrls = new Set([
+        "http://www.sitemaps.org/schemas/sitemap/0.9",
+        "http://www.w3.org/1998/Math/MathML",
+        "http://www.w3.org/1999/xlink",
+        "http://www.w3.org/2000/svg",
+        "http://www.w3.org/XML/1998/namespace",
+      ]);
+      const forbiddenTrackingMarkers = [
+        "facebook.com/tr",
+        "google-analytics.com",
+        "googletagmanager",
+        "gtag(",
+        "hotjar",
+        "intercom",
+        "mixpanel",
+        "plausible",
+        "api.segment.io",
+        "cdn.segment.com",
+        "sentry",
+      ];
+
+      expect(inspectedFiles.length).toBeGreaterThan(0);
+      for (const path of inspectedFiles) {
+        const body = readFileSync(path, "utf8");
+        const artifact = relative(outFile(""), path);
+
+        for (const marker of forbiddenTrackingMarkers) {
+          expect(body.toLowerCase(), `${artifact} contains ${marker}`).not.toContain(marker);
+        }
+
+        for (const [url] of body.matchAll(/http:\/\/(?:[a-z0-9-]+\.)+[a-z]{2,}[^"'<>\\\s)]*/gi)) {
+          expect(allowedHttpUrls.has(url), `${artifact} links ${url}`).toBe(true);
+        }
+
+        for (const [url] of body.matchAll(/https:\/\/(?:[a-z0-9-]+\.)+[a-z]{2,}[^"'<>\\\s)]*/gi)) {
+          const parsed = new URL(url);
+          expect(
+            allowedHosts.has(parsed.hostname) || allowedDiagnosticHosts.has(parsed.hostname),
+            `${artifact} links ${url}`,
+          ).toBe(true);
+        }
+      }
     },
     120000,
   );
