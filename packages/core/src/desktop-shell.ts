@@ -28,6 +28,10 @@ export function shouldEnforceDesktopSingleInstance(): boolean {
   return true;
 }
 
+export function shouldDenyDesktopPermission(_permission: string): boolean {
+  return true;
+}
+
 export function getDesktopWindowChromePolicy() {
   return {
     fullscreenable: false,

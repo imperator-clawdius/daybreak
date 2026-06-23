@@ -3,7 +3,7 @@
 // renderer reports (via IPC) that every item has been wiped. The renderer
 // computes that with @daybreak/core's canDismiss(); main trusts only the
 // boolean it is told AND re-validates against the persisted board.
-import { app, BrowserWindow, Menu, ipcMain, screen } from "electron";
+import { app, BrowserWindow, Menu, ipcMain, screen, session } from "electron";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -18,6 +18,7 @@ import {
   planStartupRegistration,
   resolveLogForPhase,
   shouldBlockDesktopShortcut,
+  shouldDenyDesktopPermission,
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
   shouldEnforceDesktopSingleInstance,
@@ -55,6 +56,7 @@ let webPreferencesApplied = false;
 let desktopShortcutsBlocked = false;
 let singleInstanceLocked = false;
 let windowChromeLocked = false;
+let permissionsDenied = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -220,6 +222,26 @@ function createWindow(): void {
   }
 }
 
+function configurePermissionPolicy(): void {
+  session.defaultSession.setPermissionRequestHandler(
+    (_webContents, permission, callback) => {
+      callback(!shouldDenyDesktopPermission(permission));
+    },
+  );
+  session.defaultSession.setPermissionCheckHandler(
+    (_webContents, permission) => !shouldDenyDesktopPermission(permission),
+  );
+  permissionsDenied = [
+    "camera",
+    "clipboard-read",
+    "geolocation",
+    "media",
+    "microphone",
+    "notifications",
+    "unknown-future-permission",
+  ].every(shouldDenyDesktopPermission);
+}
+
 async function runSmokeFlow(): Promise<void> {
   // Give the renderer's boot() (load + first save round-trip) time to run.
   await delay(500);
@@ -258,6 +280,10 @@ async function runSmokeFlow(): Promise<void> {
             : " single_instance_lock=false"
         }${
           windowChromeLocked ? " window_chrome=locked" : " window_chrome=loose"
+        }${
+          permissionsDenied
+            ? " permissions_denied=true"
+            : " permissions_denied=false"
         }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
@@ -563,6 +589,7 @@ ipcMain.handle("daybreak:dismiss", (_evt, payload: { log: DayLog; phase: Phase }
 if (configureSingleInstanceLock()) app.whenReady().then(() => {
   configureApplicationMenu();
   configureStartupRegistration();
+  configurePermissionPolicy();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

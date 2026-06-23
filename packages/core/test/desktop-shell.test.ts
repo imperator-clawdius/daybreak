@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  shouldDenyDesktopPermission,
   getDesktopWindowChromePolicy,
   getDesktopWebPreferencesPolicy,
   getDesktopContentSecurityPolicy,
@@ -96,6 +97,20 @@ describe("desktop shell policy", () => {
       movable: false,
       resizable: false,
     });
+  });
+
+  it("denies Chromium permission requests in the desktop shell", () => {
+    for (const permission of [
+      "camera",
+      "clipboard-read",
+      "geolocation",
+      "media",
+      "microphone",
+      "notifications",
+      "unknown-future-permission",
+    ]) {
+      expect(shouldDenyDesktopPermission(permission)).toBe(true);
+    }
   });
 
   it("blocks browser shell shortcuts while allowing ordinary text entry", () => {
