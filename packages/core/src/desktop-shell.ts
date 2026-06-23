@@ -20,6 +20,10 @@ export function shouldDisableDesktopApplicationMenu(): boolean {
   return true;
 }
 
+export function shouldDisableDesktopDevTools(): boolean {
+  return true;
+}
+
 export function isAllowedDesktopNavigation(
   appEntrypointUrl: string,
   targetUrl: string,

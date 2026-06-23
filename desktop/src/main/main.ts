@@ -16,6 +16,7 @@ import {
   planStartupRegistration,
   resolveLogForPhase,
   shouldDisableDesktopApplicationMenu,
+  shouldDisableDesktopDevTools,
   validateLogUpdate,
   type DayLog,
   type Phase,
@@ -45,6 +46,7 @@ let activeSession: { phase: Phase; log: DayLog } | null = null;
 let dismissAllowed = false;
 let smokeFailed = false;
 let applicationMenuDisabled = false;
+let devToolsDisabled = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -107,10 +109,13 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, "preload.js"),
       contextIsolation: true,
+      devTools: !shouldDisableDesktopDevTools(),
       nodeIntegration: false,
       sandbox: true,
     },
   });
+  devToolsDisabled =
+    shouldDisableDesktopDevTools() && !win.webContents.isDevToolsOpened();
 
   // Surface any renderer-side failure as a smoke failure.
   win.webContents.on("console-message", (_e, level, message) => {
@@ -174,6 +179,8 @@ async function runSmokeFlow(): Promise<void> {
       ? `DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=${SMOKE_SCENARIO} swipe_flow=true${
           SMOKE_SCENARIO === "evening" ? " streak_summary=true" : ""
         } app_menu_disabled=${applicationMenuDisabled ? "true" : "false"}${
+          devToolsDisabled ? " devtools_disabled=true" : " devtools_disabled=false"
+        }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
           screenshotCaptured ? " screenshot=true" : ""

@@ -3,6 +3,7 @@ import {
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
   shouldDisableDesktopApplicationMenu,
+  shouldDisableDesktopDevTools,
 } from "../src/desktop-shell";
 
 describe("desktop shell policy", () => {
@@ -60,5 +61,9 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to remove the Electron application menu", () => {
     expect(shouldDisableDesktopApplicationMenu()).toBe(true);
+  });
+
+  it("requires the desktop shell to disable Chromium DevTools", () => {
+    expect(shouldDisableDesktopDevTools()).toBe(true);
   });
 });
