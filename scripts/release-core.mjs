@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
@@ -62,6 +62,45 @@ export const RELEASE_SOURCE_PATHS = [
   "packages/core/src/swipe-gesture.ts",
   "packages/core/src/wipe.ts",
 ];
+
+const RELEASE_SOURCE_DIRS = [
+  "desktop/assets",
+  "desktop/src",
+  "packages/core/src",
+];
+
+const RELEASE_SOURCE_FILES = [
+  "package.json",
+  "package-lock.json",
+  "desktop/build.mjs",
+  "desktop/package.json",
+  "desktop/tsconfig.json",
+  "packages/core/package.json",
+  "packages/core/tsconfig.json",
+];
+
+function slashPath(path) {
+  return path.replace(/\\/g, "/");
+}
+
+function listFiles(root, relativeDir) {
+  const fullDir = join(root, relativeDir);
+  if (!existsSync(fullDir)) return [];
+
+  return readdirSync(fullDir, { withFileTypes: true }).flatMap((entry) => {
+    const relativePath = slashPath(join(relativeDir, entry.name));
+    if (entry.isDirectory()) return listFiles(root, relativePath);
+    if (entry.isFile()) return [relativePath];
+    return [];
+  });
+}
+
+export function collectReleaseSourcePaths({ root }) {
+  return [
+    ...RELEASE_SOURCE_FILES.filter((path) => existsSync(join(root, path))),
+    ...RELEASE_SOURCE_DIRS.flatMap((dir) => listFiles(root, dir)),
+  ].sort();
+}
 
 export function sha256File(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
@@ -451,7 +490,9 @@ export function evaluateReleasePreflight({
   signature,
   packagedSmoke,
   packagePath = "desktop/package.json",
-  sourcePaths = RELEASE_SOURCE_PATHS.map((sourcePath) => join(root, sourcePath)),
+  sourcePaths = collectReleaseSourcePaths({ root }).map((sourcePath) =>
+    join(root, sourcePath),
+  ),
 }) {
   const installer = evaluateInstallerArtifact({ installerPath, signature });
   const icon = evaluateBuildIcon({ root, packagePath });

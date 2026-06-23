@@ -1,10 +1,11 @@
-import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   RELEASE_SOURCE_PATHS,
   buildAuthenticodeCommand,
+  collectReleaseSourcePaths,
   evaluateBuildIcon,
   evaluateInstallerArtifact,
   evaluatePackagedSmoke,
@@ -37,6 +38,44 @@ describe("release preflight", () => {
       ]),
     );
   });
+
+  it("discovers release source inputs without test or release artifacts", () =>
+    withTempDir((dir) => {
+      const files = [
+        "package.json",
+        "package-lock.json",
+        "desktop/package.json",
+        "desktop/tsconfig.json",
+        "desktop/build.mjs",
+        "desktop/assets/icon.ico",
+        "desktop/src/main/main.ts",
+        "desktop/src/renderer/renderer.ts",
+        "desktop/test/store.test.ts",
+        "desktop/release/Daybreak Setup 0.1.0.exe",
+        "packages/core/package.json",
+        "packages/core/tsconfig.json",
+        "packages/core/src/index.ts",
+        "packages/core/test/wipe.test.ts",
+      ];
+      for (const file of files) {
+        mkdirSync(join(dir, file, ".."), { recursive: true });
+        writeFileSync(join(dir, file), "x", "utf8");
+      }
+
+      expect(collectReleaseSourcePaths({ root: dir })).toEqual([
+        "desktop/assets/icon.ico",
+        "desktop/build.mjs",
+        "desktop/package.json",
+        "desktop/src/main/main.ts",
+        "desktop/src/renderer/renderer.ts",
+        "desktop/tsconfig.json",
+        "package-lock.json",
+        "package.json",
+        "packages/core/package.json",
+        "packages/core/src/index.ts",
+        "packages/core/tsconfig.json",
+      ]);
+    }));
 
   it("builds a valid PowerShell Authenticode command", () => {
     const command = buildAuthenticodeCommand(
