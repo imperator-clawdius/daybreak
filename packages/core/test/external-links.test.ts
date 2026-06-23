@@ -997,6 +997,33 @@ describe("external launch links", () => {
     ).toMatchObject({ ready: true, reason: "ready" });
   });
 
+  it("rejects malformed HTTPS installer URLs", () => {
+    const sha256 =
+      "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
+
+    expect(
+      getInstallerLinkState({
+        url: "https://",
+        sha256,
+      }),
+    ).toMatchObject({ ready: false, reason: "url_not_configured" });
+
+    expect(
+      getVerifiedInstallerLinkState({
+        url: "https://",
+        sha256,
+        proof: {
+          download: { url: "https://", sha256 },
+          signature: {
+            status: "Valid",
+            signer: "CN=Passive Print Labs LLC",
+            timestamped: true,
+          },
+        },
+      }),
+    ).toMatchObject({ ready: false, reason: "url_not_configured" });
+  });
+
   it("keeps the public download CTA inactive until signed installer proof matches", () => {
     const url = "https://downloads.example.com/daybreak.exe";
     const sha256 =

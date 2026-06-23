@@ -29,7 +29,12 @@ export interface ExternalLinkState {
 }
 
 export function isHttpsUrl(url: string): boolean {
-  return /^https:\/\//.test(url);
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname.length > 0;
+  } catch {
+    return false;
+  }
 }
 
 export function isStripePaymentLink(url: string): boolean {
