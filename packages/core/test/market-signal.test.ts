@@ -873,6 +873,35 @@ describe("paid order proof", () => {
     });
   });
 
+  it("rejects first-order proof with metadata or account-reference fields", () => {
+    const base = paidOrderProof();
+
+    for (const proof of [
+      paidOrderProof({ metadata: { buyerWorkspace: "acme" } }),
+      paidOrderProof({
+        checkout_session: {
+          ...base.checkout_session,
+          clientReferenceId: "user_123",
+        },
+      }),
+      paidOrderProof({ invoice: "in_live_123" }),
+      paidOrderProof({ subscription: "sub_live_123" }),
+    ]) {
+      expect(
+        getPaidOrderProofState({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof,
+        }),
+      ).toMatchObject({
+        ready: false,
+        reason: "paid_order_proof_contains_customer_data",
+        paidOrders: 0,
+        refunds: 0,
+      });
+    }
+  });
+
   it("rejects sensitive first-order proof before other proof mismatches", () => {
     expect(
       getPaidOrderProofState({

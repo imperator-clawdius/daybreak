@@ -973,6 +973,34 @@ describe("readiness external-link proof", () => {
     });
   });
 
+  it("keeps market signal pending when paid-order proof contains metadata or account references", () => {
+    const base = paidOrderProof();
+
+    for (const proof of [
+      paidOrderProof({ metadata: { buyerWorkspace: "acme" } }),
+      paidOrderProof({
+        checkout_session: {
+          ...base.checkout_session,
+          clientReferenceId: "user_123",
+        },
+      }),
+      paidOrderProof({ invoice: "in_live_123" }),
+      paidOrderProof({ subscription: "sub_live_123" }),
+    ]) {
+      expect(
+        evaluateMarketSignal({
+          checkoutUrl: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          proof,
+        }),
+      ).toMatchObject({
+        pass: false,
+        reason: "paid_order_proof_contains_customer_data",
+        paidOrders: 0,
+      });
+    }
+  });
+
   it("keeps market signal pending for sensitive proof before other proof mismatches", () => {
     expect(
       evaluateMarketSignal({
@@ -1720,6 +1748,28 @@ describe("readiness external-link proof", () => {
     }
   });
 
+  it("rejects checkout proof with metadata or account-reference fields", async () => {
+    for (const checkoutProof of [
+      { ...stripeProof(), metadata: { buyerWorkspace: "acme" } },
+      { ...stripeProof(), clientReferenceId: "user_123" },
+      { ...stripeProof(), invoice: "in_live_123" },
+      { ...stripeProof(), subscription: "sub_live_123" },
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "checkout",
+          url: "https://buy.stripe.com/live_123",
+          expectedPriceUsd: 19,
+          checkoutProof,
+          fetchImpl: fetchStatus(200),
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "checkout_proof_contains_sensitive_data",
+      });
+    }
+  });
+
   it("passes checkout only when a Stripe Payment Link returns 2xx and proof matches the $19 link", async () => {
     await expect(
       evaluateExternalLink({
@@ -2031,6 +2081,30 @@ describe("readiness external-link proof", () => {
     for (const installerProofData of [
       { ...installerProof(), orderCount: 1 },
       { ...installerProof(), audit: { sessionData: { id: "cs_live_123" } } },
+    ]) {
+      await expect(
+        evaluateExternalLink({
+          kind: "download",
+          url: "https://downloads.example.com/daybreak.exe",
+          expectedSha256:
+            "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
+          fetchImpl: fetchBody(200, "hello"),
+          signatureImpl: signature("Valid", "CN=Passive Print Labs LLC"),
+          installerProof: installerProofData,
+        }),
+      ).resolves.toMatchObject({
+        pass: false,
+        reason: "installer_proof_contains_sensitive_data",
+      });
+    }
+  });
+
+  it("rejects installer proof with metadata or account-reference fields", async () => {
+    for (const installerProofData of [
+      { ...installerProof(), metadata: { buyerWorkspace: "acme" } },
+      { ...installerProof(), clientReferenceId: "user_123" },
+      { ...installerProof(), invoice: "in_live_123" },
+      { ...installerProof(), subscription: "sub_live_123" },
     ]) {
       await expect(
         evaluateExternalLink({

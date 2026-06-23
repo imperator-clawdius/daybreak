@@ -18,8 +18,9 @@ account after creating the live $19 one-time Payment Link. The verifier expects:
 
 The configured Payment Link URL must be the canonical public
 `https://buy.stripe.com/...` URL with no query string or fragment.
-Keep API keys, authorization headers, cookies, customer data, card or network
-metadata, session data, request/response logs, and order data out of this file.
+Keep API keys, authorization headers, cookies, customer data, Stripe metadata,
+client reference IDs, invoices, subscriptions, card or network metadata, session
+data, request/response logs, and order data out of this file.
 
 ## `installer-download.json`
 
@@ -38,8 +39,8 @@ The configured download URL must be public HTTPS with no embedded credentials,
 query string, or fragment. Do not use signed, expiring, or tokenized URLs for
 the public installer CTA.
 Keep certificate private keys, signing credentials, authorization headers,
-cookies, request logs, customer data, and card or network metadata out of this
-file.
+cookies, request logs, customer data, Stripe metadata, client reference IDs,
+invoices, subscriptions, and card or network metadata out of this file.
 
 ## `first-paid-order.json`
 
@@ -58,15 +59,16 @@ the first real paid checkout. The verifier expects:
 - `refunds.data` is empty
 - `refunds.has_more` is `false`
 
-Keep customer email, customer name, payment method details, card metadata,
-network metadata, receipts, authorization headers, cookies, and API keys out of
-this file.
+Keep customer email, customer name, payment method details, Stripe metadata,
+client reference IDs, invoices, subscriptions, card metadata, network metadata,
+receipts, authorization headers, cookies, and API keys out of this file.
 
 The verifier rejects any proof artifact that includes sensitive fields such as
 `customer`, `customer_email`, `customer_details`, `payment_intent`,
 `payment_method`, `payment_method_details`, `receipt_email`, `client_secret`,
 `billing_details`, `shipping_details`, `email`, `name`, `phone`, `address`,
-`card`, `last4`, `fingerprint`, `ip_address`,
+`card`, `last4`, `fingerprint`, `ip_address`, `metadata`,
+`client_reference_id`, `invoice`, `subscription`,
 `api_key`, `request`, `response`, `request_headers`, `response_headers`,
 `order`, `order_count`, `orders`, `session`, `session_data`, `sessions`,
 `private_key`, `certificate_private_key`, `signing_key`, `stripe_secret_key`,

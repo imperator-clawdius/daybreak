@@ -93,6 +93,7 @@ const DISALLOWED_PROOF_KEYS = new Set([
   "billing_details",
   "card",
   "certificate_private_key",
+  "client_reference_id",
   "client_secret",
   "cookie",
   "customer",
@@ -101,7 +102,9 @@ const DISALLOWED_PROOF_KEYS = new Set([
   "email",
   "fingerprint",
   "ip_address",
+  "invoice",
   "last4",
+  "metadata",
   "name",
   "order",
   "order_count",
@@ -127,6 +130,7 @@ const DISALLOWED_PROOF_KEYS = new Set([
   "shipping_details",
   "signing_key",
   "stripe_secret_key",
+  "subscription",
   "x_api_key",
 ]);
 
