@@ -26,7 +26,8 @@ gate can pass. Generate it only after hosting the real signed and timestamped
 Windows installer and verifying the hosted bytes. The verifier expects:
 
 - `download.url` equals `DOWNLOAD_URL` in `site/app/config.ts`
-- `download.sha256` equals `DOWNLOAD_SHA256` in `site/app/config.ts`
+- `download.sha256` is a SHA-256 checksum and equals `DOWNLOAD_SHA256` in
+  `site/app/config.ts`
 - `signature.status` is `Valid`
 - `signature.signer` or `signature.subject` contains `Passive Print Labs LLC`
 - `signature.timestamped` is `true`

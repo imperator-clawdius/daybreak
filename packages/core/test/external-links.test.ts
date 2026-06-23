@@ -1130,6 +1130,7 @@ describe("external launch links", () => {
       { ...baseProof, download: "not-an-object" },
       { ...baseProof, signature: "not-an-object" },
       { ...baseProof, download: { ...baseProof.download, sha256: 123 } },
+      { ...baseProof, download: { ...baseProof.download, sha256: "not-a-sha" } },
       {
         ...baseProof,
         signature: { ...baseProof.signature, status: true },

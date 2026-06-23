@@ -353,6 +353,7 @@ export function getInstallerProofState({
   if (
     typeof installerProof.download?.url !== "string" ||
     typeof installerProof.download.sha256 !== "string" ||
+    !isSha256(installerProof.download.sha256) ||
     typeof installerProof.signature?.status !== "string" ||
     typeof proofSigner !== "string" ||
     typeof installerProof.signature.timestamped !== "boolean"

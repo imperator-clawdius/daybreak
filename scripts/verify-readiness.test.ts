@@ -1617,6 +1617,7 @@ describe("readiness external-link proof", () => {
       { ...installerProof(), download: "not-an-object" },
       { ...installerProof(), signature: "not-an-object" },
       installerProof({ sha256: 123 }),
+      installerProof({ sha256: "not-a-sha" }),
       installerProof({ status: true }),
       installerProof({ signer: 123 }),
       {
