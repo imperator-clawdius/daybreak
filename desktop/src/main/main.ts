@@ -22,6 +22,7 @@ import {
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
   shouldEnforceDesktopSingleInstance,
+  shouldRejectDesktopCertificateError,
   validateLogUpdate,
   type DayLog,
   type Phase,
@@ -57,6 +58,7 @@ let desktopShortcutsBlocked = false;
 let singleInstanceLocked = false;
 let windowChromeLocked = false;
 let permissionsDenied = false;
+let certificateErrorsRejected = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -242,6 +244,21 @@ function configurePermissionPolicy(): void {
   ].every(shouldDenyDesktopPermission);
 }
 
+function configureCertificatePolicy(): void {
+  app.on("certificate-error", (event, _webContents, url, error, _certificate, callback) => {
+    if (shouldRejectDesktopCertificateError({ url, error })) {
+      event.preventDefault();
+      callback(false);
+      return;
+    }
+    callback(true);
+  });
+  certificateErrorsRejected = shouldRejectDesktopCertificateError({
+    url: "file:///daybreak-certificate-error-probe",
+    error: "net::ERR_CERT_AUTHORITY_INVALID",
+  });
+}
+
 async function runSmokeFlow(): Promise<void> {
   // Give the renderer's boot() (load + first save round-trip) time to run.
   await delay(500);
@@ -284,6 +301,10 @@ async function runSmokeFlow(): Promise<void> {
           permissionsDenied
             ? " permissions_denied=true"
             : " permissions_denied=false"
+        }${
+          certificateErrorsRejected
+            ? " certificate_errors_rejected=true"
+            : " certificate_errors_rejected=false"
         }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
@@ -590,6 +611,7 @@ if (configureSingleInstanceLock()) app.whenReady().then(() => {
   configureApplicationMenu();
   configureStartupRegistration();
   configurePermissionPolicy();
+  configureCertificatePolicy();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

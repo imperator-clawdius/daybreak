@@ -32,6 +32,13 @@ export function shouldDenyDesktopPermission(_permission: string): boolean {
   return true;
 }
 
+export function shouldRejectDesktopCertificateError(_input: {
+  url: string;
+  error: string;
+}): boolean {
+  return true;
+}
+
 export function getDesktopWindowChromePolicy() {
   return {
     fullscreenable: false,

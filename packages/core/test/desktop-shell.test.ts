@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  shouldRejectDesktopCertificateError,
   shouldDenyDesktopPermission,
   getDesktopWindowChromePolicy,
   getDesktopWebPreferencesPolicy,
@@ -111,6 +112,21 @@ describe("desktop shell policy", () => {
     ]) {
       expect(shouldDenyDesktopPermission(permission)).toBe(true);
     }
+  });
+
+  it("rejects desktop TLS certificate errors", () => {
+    expect(
+      shouldRejectDesktopCertificateError({
+        url: "https://daybreak.rest/",
+        error: "net::ERR_CERT_AUTHORITY_INVALID",
+      }),
+    ).toBe(true);
+    expect(
+      shouldRejectDesktopCertificateError({
+        url: "file:///C:/Daybreak/resources/app.asar/dist/index.html",
+        error: "not a certificate error",
+      }),
+    ).toBe(true);
   });
 
   it("blocks browser shell shortcuts while allowing ordinary text entry", () => {
