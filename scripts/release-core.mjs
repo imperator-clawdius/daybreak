@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 
 export const EXPECTED_SIGNER_SUBJECT = "Passive Print Labs LLC";
 
@@ -100,6 +100,25 @@ export function collectReleaseSourcePaths({ root }) {
     ...RELEASE_SOURCE_FILES.filter((path) => existsSync(join(root, path))),
     ...RELEASE_SOURCE_DIRS.flatMap((dir) => listFiles(root, dir)),
   ].sort();
+}
+
+export function evaluateSourceMapExclusion({ distPath }) {
+  const sourceMapPaths = listFiles(dirname(distPath), basename(distPath))
+    .map((path) => join(dirname(distPath), path))
+    .filter((path) => path.endsWith(".map"));
+
+  return {
+    pass: sourceMapPaths.length === 0,
+    reason:
+      sourceMapPaths.length === 0
+        ? "source_maps_absent"
+        : "source_maps_present",
+    sourceMapPaths,
+    detail:
+      sourceMapPaths.length === 0
+        ? "desktop dist contains no source maps"
+        : `desktop dist contains source maps: ${sourceMapPaths.join(", ")}`,
+  };
 }
 
 export function sha256File(path) {
@@ -497,6 +516,9 @@ export function evaluateReleasePreflight({
   const installer = evaluateInstallerArtifact({ installerPath, signature });
   const icon = evaluateBuildIcon({ root, packagePath });
   const metadata = evaluateReleaseMetadata({ root, packagePath });
+  const sourceMaps = evaluateSourceMapExclusion({
+    distPath: join(dirname(join(root, packagePath)), "dist"),
+  });
   const packagedAppPath = expectedPackagedAppPath(root, packagePath);
   const smoke =
     packagedSmoke ??
@@ -516,10 +538,12 @@ export function evaluateReleasePreflight({
       installer.pass &&
       icon.pass &&
       metadata.pass &&
+      sourceMaps.pass &&
       smoke.pass &&
       freshness.pass,
     icon,
     metadata,
+    sourceMaps,
     packagedSmoke: smoke,
     freshness,
   };
@@ -557,6 +581,14 @@ export function renderReleaseReport(result) {
     );
     if (!result.metadata.pass) {
       lines.push(`metadata_message=${result.metadata.detail}`);
+    }
+  }
+  if (result.sourceMaps) {
+    lines.push(
+      `source_maps=${result.sourceMaps.pass ? "absent" : "present"}`,
+    );
+    if (!result.sourceMaps.pass) {
+      lines.push(`source_maps_message=${result.sourceMaps.detail}`);
     }
   }
   if (result.packagedSmoke) {
@@ -602,6 +634,11 @@ export function renderReleaseReport(result) {
     if (result.metadata && !result.metadata.pass) {
       blockers.push(
         "- Configure Windows release metadata before shipping the installer.",
+      );
+    }
+    if (result.sourceMaps && !result.sourceMaps.pass) {
+      blockers.push(
+        "- Rebuild the desktop bundle without source maps before signing or hosting the installer.",
       );
     }
     if (result.packagedSmoke && !result.packagedSmoke.pass) {

@@ -13,6 +13,7 @@ import {
   evaluateReleaseFreshness,
   evaluateReleaseMetadata,
   evaluateReleasePreflight,
+  evaluateSourceMapExclusion,
   renderReleaseReport,
 } from "./release-core.mjs";
 
@@ -510,6 +511,20 @@ describe("release preflight", () => {
         pass: false,
         reason: "release_artifacts_stale",
         staleSourcePaths: [sourcePath],
+      });
+    }));
+
+  it("keeps release pending when desktop source maps would be packaged", () =>
+    withTempDir((dir) => {
+      const distPath = join(dir, "dist");
+      mkdirSync(distPath, { recursive: true });
+      writeFileSync(join(distPath, "main.js"), "compiled", "utf8");
+      writeFileSync(join(distPath, "main.js.map"), "source map", "utf8");
+
+      expect(evaluateSourceMapExclusion({ distPath })).toMatchObject({
+        pass: false,
+        reason: "source_maps_present",
+        sourceMapPaths: [join(distPath, "main.js.map")],
       });
     }));
 
