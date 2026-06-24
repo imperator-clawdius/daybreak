@@ -9,6 +9,7 @@ import {
   shouldBlockDesktopShortcut,
   shouldEnableDesktopContentProtection,
   shouldStartDesktopPowerSaveBlocker,
+  shouldPreventDesktopClipboardExfiltration,
   shouldPreventDesktopDownloads,
   shouldPreventDesktopDragDropNavigation,
   shouldGuardDesktopFrameNavigation,
@@ -98,6 +99,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to prevent downloads", () => {
     expect(shouldPreventDesktopDownloads()).toBe(true);
+  });
+
+  it("requires the desktop shell to prevent clipboard exfiltration", () => {
+    expect(shouldPreventDesktopClipboardExfiltration()).toBe(true);
   });
 
   it("requires the desktop shell to enable content protection", () => {

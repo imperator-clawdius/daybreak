@@ -45,6 +45,10 @@ export function shouldPreventDesktopDownloads(): boolean {
   return true;
 }
 
+export function shouldPreventDesktopClipboardExfiltration(): boolean {
+  return true;
+}
+
 export function shouldEnableDesktopContentProtection(): boolean {
   return true;
 }

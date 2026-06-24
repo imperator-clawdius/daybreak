@@ -77,6 +77,7 @@ let certificateErrorsRejected = false;
 let redirectsGuarded = false;
 let frameNavigationGuarded = false;
 let dragDropNavigationGuarded = false;
+let clipboardExfiltrationGuarded = false;
 let downloadsBlocked = false;
 let contentProtectionRequested = false;
 let contentProtectionStatus = "disabled";
@@ -336,6 +337,7 @@ async function runSmokeFlow(): Promise<void> {
   await delay(500);
   const closeProbe = SMOKE_CLOSE_PROBE ? await exerciseCloseProbe() : true;
   dragDropNavigationGuarded = await exerciseDragDropNavigationGuard();
+  clipboardExfiltrationGuarded = await exerciseClipboardExfiltrationGuard();
   const swipeFlow =
     SMOKE_SCENARIO === "evening"
       ? await exerciseEveningSwipeFlow()
@@ -347,6 +349,7 @@ async function runSmokeFlow(): Promise<void> {
     data.version === 1 &&
     closeProbe &&
     dragDropNavigationGuarded &&
+    clipboardExfiltrationGuarded &&
     swipeFlow;
   if (ok && SMOKE_SCREENSHOT && win) {
     try {
@@ -402,6 +405,10 @@ async function runSmokeFlow(): Promise<void> {
             ? " drag_drop_guarded=true"
             : " drag_drop_guarded=false"
         }${
+          clipboardExfiltrationGuarded
+            ? " clipboard_exfiltration_guarded=true"
+            : " clipboard_exfiltration_guarded=false"
+        }${
           downloadsBlocked ? " downloads_blocked=true" : " downloads_blocked=false"
         }${
           contentProtectionRequested
@@ -451,6 +458,26 @@ async function exerciseDragDropNavigationGuard(): Promise<boolean> {
     console.error("smoke drag/drop guard failed:", result);
   }
   return result.dragoverPrevented && result.dropPrevented;
+}
+
+async function exerciseClipboardExfiltrationGuard(): Promise<boolean> {
+  if (!win) return false;
+  const result = (await win.webContents.executeJavaScript(`
+    (() => {
+      const copy = new Event("copy", { cancelable: true });
+      const cut = new Event("cut", { cancelable: true });
+      window.dispatchEvent(copy);
+      window.dispatchEvent(cut);
+      return {
+        copyPrevented: copy.defaultPrevented,
+        cutPrevented: cut.defaultPrevented,
+      };
+    })()
+  `)) as { copyPrevented: boolean; cutPrevented: boolean };
+  if (!result.copyPrevented || !result.cutPrevented) {
+    console.error("smoke clipboard exfiltration guard failed:", result);
+  }
+  return result.copyPrevented && result.cutPrevented;
 }
 
 async function stabilizeSmokeScreenshot(): Promise<void> {

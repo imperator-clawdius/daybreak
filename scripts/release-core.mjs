@@ -714,6 +714,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("redirects_guarded=true") &&
     stdout.includes("frame_navigation_guarded=true") &&
     stdout.includes("drag_drop_guarded=true") &&
+    stdout.includes("clipboard_exfiltration_guarded=true") &&
     stdout.includes("downloads_blocked=true") &&
     stdout.includes("content_protection=requested") &&
     stdout.includes("power_save_blocker=started") &&
