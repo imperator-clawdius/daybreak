@@ -220,4 +220,18 @@ describe("desktop shell policy", () => {
     expect(shouldBlockDesktopShortcut({ key: "Q", meta: true })).toBe(true);
     expect(shouldBlockDesktopShortcut({ key: "F4", alt: true })).toBe(true);
   });
+
+  it("blocks system, search, help, open, and find accelerators", () => {
+    for (const key of ["f1", "f3", "f10"]) {
+      expect(shouldBlockDesktopShortcut({ key })).toBe(true);
+    }
+    for (const key of ["e", "f", "g", "h", "l", "o"]) {
+      expect(shouldBlockDesktopShortcut({ key, control: true })).toBe(true);
+      expect(shouldBlockDesktopShortcut({ key: key.toUpperCase(), meta: true }))
+        .toBe(true);
+    }
+    expect(shouldBlockDesktopShortcut({ key: "Tab", alt: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "Escape", alt: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "Space", alt: true })).toBe(true);
+  });
 });
