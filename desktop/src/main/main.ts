@@ -19,6 +19,7 @@ import { pathToFileURL } from "node:url";
 import {
   buildDaySession,
   canDismiss,
+  getDesktopStoragePartitionPolicy,
   getDesktopWindowChromePolicy,
   getDesktopWindowOwnershipPolicy,
   getDesktopWebPreferencesPolicy,
@@ -70,6 +71,7 @@ let smokeFailed = false;
 let applicationMenuDisabled = false;
 let devToolsDisabled = false;
 let webPreferencesApplied = false;
+let browserStorageEphemeral = false;
 let backgroundThrottlingDisabled = false;
 let desktopShortcutsBlocked = false;
 let printSaveShortcutsBlocked = false;
@@ -163,6 +165,7 @@ function createWindow(): void {
   const webPreferencesPolicy = getDesktopWebPreferencesPolicy();
   const windowChromePolicy = getDesktopWindowChromePolicy();
   const windowOwnershipPolicy = getDesktopWindowOwnershipPolicy();
+  const storagePartitionPolicy = getDesktopStoragePartitionPolicy();
 
   win = new BrowserWindow({
     // Smoke mode: small, hidden, non-intrusive so CI / verification never
@@ -178,6 +181,7 @@ function createWindow(): void {
     ...windowChromePolicy,
     webPreferences: {
       preload: join(__dirname, "preload.js"),
+      partition: storagePartitionPolicy.partition,
       ...webPreferencesPolicy,
     },
   });
@@ -219,6 +223,17 @@ function createWindow(): void {
     webPreferencesPolicy.spellcheck === false &&
     webPreferencesPolicy.webSecurity &&
     webPreferencesPolicy.webviewTag === false;
+  browserStorageEphemeral =
+    storagePartitionPolicy.persistent === false &&
+    !storagePartitionPolicy.partition.startsWith("persist:") &&
+    storagePartitionPolicy.cookies === false &&
+    storagePartitionPolicy.indexedDB === false &&
+    storagePartitionPolicy.localStorage === false &&
+    storagePartitionPolicy.serviceWorkers === false &&
+    storagePartitionPolicy.sessionStorage === false &&
+    storagePartitionPolicy.shaderCache === false &&
+    storagePartitionPolicy.webSQL === false &&
+    win.webContents.session.isPersistent() === false;
   backgroundThrottlingDisabled =
     webPreferencesPolicy.backgroundThrottling === false;
 
@@ -440,6 +455,10 @@ async function runSmokeFlow(): Promise<void> {
         } app_menu_disabled=${applicationMenuDisabled ? "true" : "false"}${
           devToolsDisabled ? " devtools_disabled=true" : " devtools_disabled=false"
         }${webPreferencesApplied ? " web_preferences=strict" : " web_preferences=loose"}${
+          browserStorageEphemeral
+            ? " browser_storage=ephemeral"
+            : " browser_storage=persistent"
+        }${
           backgroundThrottlingDisabled
             ? " background_throttling=disabled"
             : " background_throttling=enabled"

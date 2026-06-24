@@ -4,6 +4,7 @@ import {
   shouldDenyDesktopPermission,
   getDesktopWindowChromePolicy,
   getDesktopWindowOwnershipPolicy,
+  getDesktopStoragePartitionPolicy,
   getDesktopWebPreferencesPolicy,
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
@@ -159,6 +160,20 @@ describe("desktop shell policy", () => {
       fullscreen: true,
       visibleOnAllWorkspaces: true,
       visibleOnFullScreen: true,
+    });
+  });
+
+  it("requires Chromium storage surfaces to stay disabled", () => {
+    expect(getDesktopStoragePartitionPolicy()).toEqual({
+      cookies: false,
+      indexedDB: false,
+      localStorage: false,
+      partition: "daybreak-ritual",
+      persistent: false,
+      serviceWorkers: false,
+      sessionStorage: false,
+      shaderCache: false,
+      webSQL: false,
     });
   });
 

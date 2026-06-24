@@ -96,6 +96,20 @@ export function getDesktopWindowOwnershipPolicy() {
   } as const;
 }
 
+export function getDesktopStoragePartitionPolicy() {
+  return {
+    cookies: false,
+    indexedDB: false,
+    localStorage: false,
+    partition: "daybreak-ritual",
+    persistent: false,
+    serviceWorkers: false,
+    sessionStorage: false,
+    shaderCache: false,
+    webSQL: false,
+  } as const;
+}
+
 export function getDesktopWebPreferencesPolicy() {
   return {
     allowRunningInsecureContent: false,
