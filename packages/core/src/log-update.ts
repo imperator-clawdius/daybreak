@@ -1,5 +1,6 @@
 import type { DayLog, Item, ItemState, Phase } from "./model.js";
 import { validateNewCommit } from "./commit.js";
+import { isPersistedDayLog } from "./persisted-log.js";
 
 export type LogUpdateFailureReason =
   | "day-mismatch"
@@ -14,6 +15,11 @@ export type LogUpdateResult =
   | { ok: true; log: DayLog }
   | { ok: false; reason: LogUpdateFailureReason };
 
+export type LogUpdatePayload = {
+  log: DayLog;
+  phase: Phase;
+};
+
 const MORNING_STATES = new Set<ItemState>([
   "pending",
   "open",
@@ -21,6 +27,24 @@ const MORNING_STATES = new Set<ItemState>([
   "killed",
 ]);
 const EVENING_DECISIONS = new Set<ItemState>(["done", "deferred", "killed"]);
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isPhase(value: unknown): value is Phase {
+  return value === "morning" || value === "evening";
+}
+
+export function isValidLogUpdatePayload(
+  value: unknown,
+): value is LogUpdatePayload {
+  return (
+    isObject(value) &&
+    isPhase(value.phase) &&
+    isPersistedDayLog(value.log)
+  );
+}
 
 function sameStableFields(a: Item, b: Item): boolean {
   return (

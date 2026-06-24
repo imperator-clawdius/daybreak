@@ -24,6 +24,7 @@ import {
   getDesktopWindowOwnershipPolicy,
   getDesktopWebPreferencesPolicy,
   hasUnsafeDesktopLaunchArg,
+  isValidLogUpdatePayload,
   isAllowedDesktopIpcSender,
   isAllowedDesktopNavigation,
   makeItem,
@@ -91,6 +92,7 @@ let frameNavigationGuarded = false;
 let dragDropNavigationGuarded = false;
 let clipboardExfiltrationGuarded = false;
 let contextMenuGuarded = false;
+let malformedIpcPayloadGuarded = false;
 let downloadsBlocked = false;
 let rendererCrashRecoveryArmed = false;
 let rendererCrashRecovered = false;
@@ -437,6 +439,7 @@ async function runSmokeFlow(): Promise<void> {
   dragDropNavigationGuarded = await exerciseDragDropNavigationGuard();
   clipboardExfiltrationGuarded = await exerciseClipboardExfiltrationGuard();
   contextMenuGuarded = await exerciseContextMenuGuard();
+  malformedIpcPayloadGuarded = await exerciseMalformedIpcPayloadGuard();
   const swipeFlow =
     SMOKE_SCENARIO === "evening"
       ? await exerciseEveningSwipeFlow()
@@ -451,6 +454,7 @@ async function runSmokeFlow(): Promise<void> {
     dragDropNavigationGuarded &&
     clipboardExfiltrationGuarded &&
     contextMenuGuarded &&
+    malformedIpcPayloadGuarded &&
     swipeFlow;
   if (ok && SMOKE_SCREENSHOT && win) {
     try {
@@ -537,6 +541,10 @@ async function runSmokeFlow(): Promise<void> {
           contextMenuGuarded
             ? " context_menu_guarded=true"
             : " context_menu_guarded=false"
+        }${
+          malformedIpcPayloadGuarded
+            ? " malformed_ipc_payload_guarded=true"
+            : " malformed_ipc_payload_guarded=false"
         }${
           rendererCrashRecovered
             ? " renderer_crash_recovery=recovered"
@@ -643,6 +651,24 @@ async function exerciseContextMenuGuard(): Promise<boolean> {
     console.error("smoke context menu guard failed:", result);
   }
   return result.contextMenuPrevented;
+}
+
+async function exerciseMalformedIpcPayloadGuard(): Promise<boolean> {
+  if (!win) return false;
+  const result = (await win.webContents.executeJavaScript(`
+    (async () => {
+      const saveResult = await window.daybreak.save(null);
+      const dismissResult = await window.daybreak.dismiss(null);
+      return {
+        saveFailedClosed: saveResult && saveResult.canDismiss === false,
+        dismissFailedClosed: dismissResult && dismissResult.closed === false,
+      };
+    })()
+  `)) as { saveFailedClosed: boolean; dismissFailedClosed: boolean };
+  if (!result.saveFailedClosed || !result.dismissFailedClosed) {
+    console.error("smoke malformed IPC payload guard failed:", result);
+  }
+  return result.saveFailedClosed && result.dismissFailedClosed;
 }
 
 async function stabilizeSmokeScreenshot(): Promise<void> {
@@ -886,8 +912,13 @@ ipcMain.handle("daybreak:load", (event) => {
 });
 
 // Persist progress as the user wipes. Returns whether dismissal is now allowed.
-ipcMain.handle("daybreak:save", (event, payload: { log: DayLog; phase: Phase }) => {
+ipcMain.handle("daybreak:save", (event, payload: unknown) => {
   if (!isTrustedIpcSender(event, "daybreak:save")) {
+    dismissAllowed = false;
+    return { canDismiss: false };
+  }
+  if (!isValidLogUpdatePayload(payload)) {
+    console.error("rejected malformed save payload");
     dismissAllowed = false;
     return { canDismiss: false };
   }
@@ -916,8 +947,13 @@ ipcMain.handle("daybreak:save", (event, payload: { log: DayLog; phase: Phase }) 
 });
 
 // Renderer asks to close after a confirmed-resolved board.
-ipcMain.handle("daybreak:dismiss", (event, payload: { log: DayLog; phase: Phase }) => {
+ipcMain.handle("daybreak:dismiss", (event, payload: unknown) => {
   if (!isTrustedIpcSender(event, "daybreak:dismiss")) {
+    dismissAllowed = false;
+    return { closed: false };
+  }
+  if (!isValidLogUpdatePayload(payload)) {
+    console.error("rejected malformed dismiss payload");
     dismissAllowed = false;
     return { closed: false };
   }

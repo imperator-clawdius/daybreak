@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyWipe } from "../src/wipe";
 import { makeItem } from "../src/session";
-import { validateLogUpdate } from "../src/log-update";
+import { isValidLogUpdatePayload, validateLogUpdate } from "../src/log-update";
 import type { DayLog, Item } from "../src/model";
 
 function logFor(items: Item[]): DayLog {
@@ -110,5 +110,26 @@ describe("log update validation", () => {
       ok: false,
       reason: "invalid-new-commitment",
     });
+  });
+
+  it("rejects malformed IPC log-update payloads before domain validation", () => {
+    const valid = { phase: "morning", log: logFor([item("ship installer", "a")]) };
+
+    for (const payload of [
+      null,
+      [],
+      "not an object",
+      { ...valid, phase: "noon" },
+      { ...valid, phase: 12 },
+      { phase: "morning" },
+      { log: valid.log },
+      { ...valid, log: { ...valid.log, items: null } },
+      { ...valid, log: { ...valid.log, day: "tomorrow" } },
+    ]) {
+      expect(isValidLogUpdatePayload(payload)).toBe(false);
+    }
+
+    expect(isValidLogUpdatePayload(valid)).toBe(true);
+    expect(isValidLogUpdatePayload({ ...valid, phase: "evening" })).toBe(true);
   });
 });
