@@ -3,7 +3,15 @@
 // renderer reports (via IPC) that every item has been wiped. The renderer
 // computes that with @daybreak/core's canDismiss(); main trusts only the
 // boolean it is told AND re-validates against the persisted board.
-import { app, BrowserWindow, Menu, ipcMain, screen, session } from "electron";
+import {
+  app,
+  BrowserWindow,
+  Menu,
+  ipcMain,
+  powerSaveBlocker,
+  screen,
+  session,
+} from "electron";
 import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -26,6 +34,7 @@ import {
   shouldGuardDesktopFrameNavigation,
   shouldGuardDesktopRedirects,
   shouldPreventDesktopDownloads,
+  shouldStartDesktopPowerSaveBlocker,
   shouldRejectDesktopCertificateError,
   validateLogUpdate,
   type DayLog,
@@ -69,6 +78,8 @@ let dragDropNavigationGuarded = false;
 let downloadsBlocked = false;
 let contentProtectionRequested = false;
 let contentProtectionStatus = "disabled";
+let powerSaveBlockerStarted = false;
+let powerSaveBlockerId: number | null = null;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -301,6 +312,12 @@ function configureDownloadPolicy(): void {
   downloadsBlocked = shouldPreventDesktopDownloads();
 }
 
+function configurePowerSaveBlocker(): void {
+  if (!shouldStartDesktopPowerSaveBlocker()) return;
+  powerSaveBlockerId = powerSaveBlocker.start("prevent-app-suspension");
+  powerSaveBlockerStarted = powerSaveBlocker.isStarted(powerSaveBlockerId);
+}
+
 async function runSmokeFlow(): Promise<void> {
   // Give the renderer's boot() (load + first save round-trip) time to run.
   await delay(500);
@@ -370,6 +387,10 @@ async function runSmokeFlow(): Promise<void> {
             ? " content_protection=requested"
             : " content_protection=not_requested"
         } content_protection_status=${contentProtectionStatus}${
+          powerSaveBlockerStarted
+            ? " power_save_blocker=started"
+            : " power_save_blocker=stopped"
+        }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
           screenshotCaptured ? " screenshot=true" : ""
@@ -697,6 +718,7 @@ if (configureSingleInstanceLock()) app.whenReady().then(() => {
   configurePermissionPolicy();
   configureCertificatePolicy();
   configureDownloadPolicy();
+  configurePowerSaveBlocker();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

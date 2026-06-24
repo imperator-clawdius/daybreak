@@ -714,6 +714,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("drag_drop_guarded=true") &&
     stdout.includes("downloads_blocked=true") &&
     stdout.includes("content_protection=requested") &&
+    stdout.includes("power_save_blocker=started") &&
     stdout.includes("close_probe=true") &&
     stdout.includes("swipe_flow=true");
 

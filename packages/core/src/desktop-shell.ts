@@ -49,6 +49,10 @@ export function shouldEnableDesktopContentProtection(): boolean {
   return true;
 }
 
+export function shouldStartDesktopPowerSaveBlocker(): boolean {
+  return true;
+}
+
 export function shouldDenyDesktopPermission(_permission: string): boolean {
   return true;
 }

@@ -8,6 +8,7 @@ import {
   isAllowedDesktopNavigation,
   shouldBlockDesktopShortcut,
   shouldEnableDesktopContentProtection,
+  shouldStartDesktopPowerSaveBlocker,
   shouldPreventDesktopDownloads,
   shouldPreventDesktopDragDropNavigation,
   shouldGuardDesktopFrameNavigation,
@@ -101,6 +102,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to enable content protection", () => {
     expect(shouldEnableDesktopContentProtection()).toBe(true);
+  });
+
+  it("requires the desktop shell to block idle sleep during the ritual", () => {
+    expect(shouldStartDesktopPowerSaveBlocker()).toBe(true);
   });
 
   it("defines strict BrowserWindow web preference policy", () => {
