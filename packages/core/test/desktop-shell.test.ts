@@ -6,6 +6,7 @@ import {
   getDesktopWindowOwnershipPolicy,
   getDesktopStoragePartitionPolicy,
   getDesktopWebPreferencesPolicy,
+  hasUnsafeDesktopLaunchArg,
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
   shouldBlockDesktopShortcut,
@@ -175,6 +176,24 @@ describe("desktop shell policy", () => {
       shaderCache: false,
       webSQL: false,
     });
+  });
+
+  it("detects unsafe desktop launch arguments", () => {
+    for (const args of [
+      ["Daybreak.exe", "--remote-debugging-port=9222"],
+      ["Daybreak.exe", "--remote-debugging-pipe"],
+      ["Daybreak.exe", "--inspect=127.0.0.1:9229"],
+      ["Daybreak.exe", "--inspect-brk"],
+      ["Daybreak.exe", "--user-data-dir=C:\\temp\\profile"],
+      ["Daybreak.exe", "--load-extension=C:\\extension"],
+      ["Daybreak.exe", "--disable-web-security"],
+      ["Daybreak.exe", "--js-flags=--expose-gc"],
+    ]) {
+      expect(hasUnsafeDesktopLaunchArg(args)).toBe(true);
+    }
+
+    expect(hasUnsafeDesktopLaunchArg(["Daybreak.exe"])).toBe(false);
+    expect(hasUnsafeDesktopLaunchArg(["Daybreak.exe", "--smoke"])).toBe(false);
   });
 
   it("denies Chromium permission requests in the desktop shell", () => {

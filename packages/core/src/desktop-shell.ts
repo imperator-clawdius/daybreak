@@ -132,6 +132,26 @@ export type DesktopShortcutInput = {
   shift?: boolean;
 };
 
+const UNSAFE_DESKTOP_LAUNCH_ARG_PREFIXES = [
+  "--disable-web-security",
+  "--inspect",
+  "--inspect-brk",
+  "--js-flags",
+  "--load-extension",
+  "--remote-debugging-pipe",
+  "--remote-debugging-port",
+  "--user-data-dir",
+] as const;
+
+export function hasUnsafeDesktopLaunchArg(args: readonly string[]): boolean {
+  return args.some((arg) => {
+    const normalized = arg.toLowerCase();
+    return UNSAFE_DESKTOP_LAUNCH_ARG_PREFIXES.some(
+      (prefix) => normalized === prefix || normalized.startsWith(`${prefix}=`),
+    );
+  });
+}
+
 export function shouldBlockDesktopShortcut(input: DesktopShortcutInput): boolean {
   const key = input.key?.toLowerCase();
   const command = Boolean(input.control || input.meta);

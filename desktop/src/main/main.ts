@@ -23,6 +23,7 @@ import {
   getDesktopWindowChromePolicy,
   getDesktopWindowOwnershipPolicy,
   getDesktopWebPreferencesPolicy,
+  hasUnsafeDesktopLaunchArg,
   isAllowedDesktopNavigation,
   makeItem,
   planStartupRegistration,
@@ -72,6 +73,7 @@ let applicationMenuDisabled = false;
 let devToolsDisabled = false;
 let webPreferencesApplied = false;
 let browserStorageEphemeral = false;
+let launchArgsGuarded = false;
 let backgroundThrottlingDisabled = false;
 let desktopShortcutsBlocked = false;
 let printSaveShortcutsBlocked = false;
@@ -96,6 +98,11 @@ let contentProtectionRequested = false;
 let contentProtectionStatus = "disabled";
 let powerSaveBlockerStarted = false;
 let powerSaveBlockerId: number | null = null;
+
+launchArgsGuarded = !hasUnsafeDesktopLaunchArg(process.argv);
+if (!SMOKE && app.isPackaged && !launchArgsGuarded) {
+  app.exit(1);
+}
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -458,6 +465,10 @@ async function runSmokeFlow(): Promise<void> {
           browserStorageEphemeral
             ? " browser_storage=ephemeral"
             : " browser_storage=persistent"
+        }${
+          launchArgsGuarded
+            ? " launch_args_guarded=true"
+            : " launch_args_guarded=false"
         }${
           backgroundThrottlingDisabled
             ? " background_throttling=disabled"
