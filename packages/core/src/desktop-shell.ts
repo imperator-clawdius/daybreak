@@ -53,6 +53,10 @@ export function shouldPreventDesktopContextMenu(): boolean {
   return true;
 }
 
+export function shouldRecoverDesktopRendererCrash(): boolean {
+  return true;
+}
+
 export function shouldEnableDesktopContentProtection(): boolean {
   return true;
 }

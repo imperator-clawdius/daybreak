@@ -716,6 +716,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("drag_drop_guarded=true") &&
     stdout.includes("clipboard_exfiltration_guarded=true") &&
     stdout.includes("context_menu_guarded=true") &&
+    stdout.includes("renderer_crash_recovery=recovered") &&
     stdout.includes("downloads_blocked=true") &&
     stdout.includes("content_protection=requested") &&
     stdout.includes("power_save_blocker=started") &&
@@ -821,6 +822,7 @@ export function runPackagedSmoke(
         ...process.env,
         DAYBREAK_SMOKE: "1",
         DAYBREAK_SMOKE_CLOSE_PROBE: "1",
+        DAYBREAK_SMOKE_CRASH_PROBE: "1",
         DAYBREAK_SMOKE_SCENARIO: scenario,
       },
     });

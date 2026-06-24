@@ -13,6 +13,7 @@ import {
   shouldPreventDesktopContextMenu,
   shouldPreventDesktopDownloads,
   shouldPreventDesktopDragDropNavigation,
+  shouldRecoverDesktopRendererCrash,
   shouldGuardDesktopFrameNavigation,
   shouldGuardDesktopRedirects,
   shouldDisableDesktopApplicationMenu,
@@ -108,6 +109,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to prevent the browser context menu", () => {
     expect(shouldPreventDesktopContextMenu()).toBe(true);
+  });
+
+  it("requires the desktop shell to recover a crashed renderer", () => {
+    expect(shouldRecoverDesktopRendererCrash()).toBe(true);
   });
 
   it("requires the desktop shell to enable content protection", () => {

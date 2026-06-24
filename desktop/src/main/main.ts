@@ -34,6 +34,7 @@ import {
   shouldGuardDesktopFrameNavigation,
   shouldGuardDesktopRedirects,
   shouldPreventDesktopDownloads,
+  shouldRecoverDesktopRendererCrash,
   shouldStartDesktopPowerSaveBlocker,
   shouldRejectDesktopCertificateError,
   validateLogUpdate,
@@ -46,6 +47,7 @@ const SMOKE = process.env.DAYBREAK_SMOKE === "1";
 const SMOKE_SCENARIO =
   process.env.DAYBREAK_SMOKE_SCENARIO === "evening" ? "evening" : "morning";
 const SMOKE_CLOSE_PROBE = process.env.DAYBREAK_SMOKE_CLOSE_PROBE === "1";
+const SMOKE_CRASH_PROBE = process.env.DAYBREAK_SMOKE_CRASH_PROBE === "1";
 const SMOKE_SCREENSHOT = process.env.DAYBREAK_SMOKE_SCREENSHOT;
 const SMOKE_SCREENSHOT_WIDTH = 1000;
 const SMOKE_SCREENSHOT_HEIGHT = 700;
@@ -80,6 +82,10 @@ let dragDropNavigationGuarded = false;
 let clipboardExfiltrationGuarded = false;
 let contextMenuGuarded = false;
 let downloadsBlocked = false;
+let rendererCrashRecoveryArmed = false;
+let rendererCrashRecovered = false;
+let smokeCrashProbeStarted = false;
+let smokeCrashProbeComplete = !SMOKE_CRASH_PROBE;
 let contentProtectionRequested = false;
 let contentProtectionStatus = "disabled";
 let powerSaveBlockerStarted = false;
@@ -208,6 +214,16 @@ function createWindow(): void {
   });
   win.webContents.on("render-process-gone", (_e, details) => {
     console.error("render process gone:", details.reason);
+    if (
+      shouldRecoverDesktopRendererCrash() &&
+      !dismissAllowed &&
+      win &&
+      !win.isDestroyed()
+    ) {
+      rendererCrashRecoveryArmed = true;
+      win.webContents.reloadIgnoringCache();
+      if (SMOKE && SMOKE_CRASH_PROBE && smokeCrashProbeStarted) return;
+    }
     smokeFailed = true;
   });
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -278,7 +294,11 @@ function createWindow(): void {
 
   if (SMOKE) {
     win.webContents.once("did-finish-load", () => {
-      void runSmokeFlow();
+      if (SMOKE_CRASH_PROBE) {
+        void exerciseRendererCrashRecoveryBeforeSmoke();
+      } else {
+        void runSmokeFlow();
+      }
     });
   }
 }
@@ -349,6 +369,7 @@ async function runSmokeFlow(): Promise<void> {
   let ok =
     !smokeFailed &&
     data.version === 1 &&
+    smokeCrashProbeComplete &&
     closeProbe &&
     dragDropNavigationGuarded &&
     clipboardExfiltrationGuarded &&
@@ -416,6 +437,12 @@ async function runSmokeFlow(): Promise<void> {
             ? " context_menu_guarded=true"
             : " context_menu_guarded=false"
         }${
+          rendererCrashRecovered
+            ? " renderer_crash_recovery=recovered"
+            : rendererCrashRecoveryArmed
+              ? " renderer_crash_recovery=armed"
+              : " renderer_crash_recovery=not_tested"
+        }${
           downloadsBlocked ? " downloads_blocked=true" : " downloads_blocked=false"
         }${
           contentProtectionRequested
@@ -434,6 +461,21 @@ async function runSmokeFlow(): Promise<void> {
   );
   dismissAllowed = true;
   app.exit(ok ? 0 : 1);
+}
+
+async function exerciseRendererCrashRecoveryBeforeSmoke(): Promise<void> {
+  if (!win) {
+    smokeFailed = true;
+    return;
+  }
+
+  smokeCrashProbeStarted = true;
+  win.webContents.once("did-finish-load", () => {
+    rendererCrashRecovered = rendererCrashRecoveryArmed;
+    smokeCrashProbeComplete = rendererCrashRecovered;
+    void runSmokeFlow();
+  });
+  win.webContents.forcefullyCrashRenderer();
 }
 
 async function exerciseCloseProbe(): Promise<boolean> {
