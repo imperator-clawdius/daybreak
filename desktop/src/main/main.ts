@@ -67,6 +67,7 @@ let smokeFailed = false;
 let applicationMenuDisabled = false;
 let devToolsDisabled = false;
 let webPreferencesApplied = false;
+let backgroundThrottlingDisabled = false;
 let desktopShortcutsBlocked = false;
 let singleInstanceLocked = false;
 let windowChromeLocked = false;
@@ -184,6 +185,7 @@ function createWindow(): void {
     shouldDisableDesktopDevTools() && !win.webContents.isDevToolsOpened();
   webPreferencesApplied =
     webPreferencesPolicy.allowRunningInsecureContent === false &&
+    webPreferencesPolicy.backgroundThrottling === false &&
     webPreferencesPolicy.contextIsolation &&
     webPreferencesPolicy.devTools === false &&
     webPreferencesPolicy.nodeIntegration === false &&
@@ -191,6 +193,8 @@ function createWindow(): void {
     webPreferencesPolicy.spellcheck === false &&
     webPreferencesPolicy.webSecurity &&
     webPreferencesPolicy.webviewTag === false;
+  backgroundThrottlingDisabled =
+    webPreferencesPolicy.backgroundThrottling === false;
 
   // Surface any renderer-side failure as a smoke failure.
   win.webContents.on("console-message", (_e, level, message) => {
@@ -353,6 +357,10 @@ async function runSmokeFlow(): Promise<void> {
         } app_menu_disabled=${applicationMenuDisabled ? "true" : "false"}${
           devToolsDisabled ? " devtools_disabled=true" : " devtools_disabled=false"
         }${webPreferencesApplied ? " web_preferences=strict" : " web_preferences=loose"}${
+          backgroundThrottlingDisabled
+            ? " background_throttling=disabled"
+            : " background_throttling=enabled"
+        }${
           desktopShortcutsBlocked
             ? " shortcuts_blocked=true"
             : " shortcuts_blocked=false"

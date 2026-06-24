@@ -77,6 +77,7 @@ export function getDesktopWindowChromePolicy() {
 export function getDesktopWebPreferencesPolicy() {
   return {
     allowRunningInsecureContent: false,
+    backgroundThrottling: false,
     contextIsolation: true,
     devTools: false,
     nodeIntegration: false,

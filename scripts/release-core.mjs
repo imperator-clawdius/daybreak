@@ -704,6 +704,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("app_menu_disabled=true") &&
     stdout.includes("devtools_disabled=true") &&
     stdout.includes("web_preferences=strict") &&
+    stdout.includes("background_throttling=disabled") &&
     stdout.includes("shortcuts_blocked=true") &&
     stdout.includes("single_instance_lock=true") &&
     stdout.includes("window_chrome=locked") &&

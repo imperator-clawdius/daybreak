@@ -108,9 +108,14 @@ describe("desktop shell policy", () => {
     expect(shouldStartDesktopPowerSaveBlocker()).toBe(true);
   });
 
+  it("requires the desktop shell to disable renderer background throttling", () => {
+    expect(getDesktopWebPreferencesPolicy().backgroundThrottling).toBe(false);
+  });
+
   it("defines strict BrowserWindow web preference policy", () => {
     expect(getDesktopWebPreferencesPolicy()).toEqual({
       allowRunningInsecureContent: false,
+      backgroundThrottling: false,
       contextIsolation: true,
       devTools: false,
       nodeIntegration: false,
