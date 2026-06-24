@@ -74,4 +74,16 @@ describe("persisted day log validation", () => {
       false,
     );
   });
+
+  it("rejects persisted history with duplicate day keys", () => {
+    expect(
+      isPersistedDayLogArray([
+        validLog,
+        {
+          ...validLog,
+          items: [],
+        },
+      ]),
+    ).toBe(false);
+  });
 });

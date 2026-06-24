@@ -53,5 +53,12 @@ export function isPersistedDayLog(value: unknown): value is DayLog {
 }
 
 export function isPersistedDayLogArray(value: unknown): value is DayLog[] {
-  return Array.isArray(value) && value.every(isPersistedDayLog);
+  if (!Array.isArray(value) || !value.every(isPersistedDayLog)) return false;
+
+  const seenDays = new Set<string>();
+  for (const log of value) {
+    if (seenDays.has(log.day)) return false;
+    seenDays.add(log.day);
+  }
+  return true;
 }
