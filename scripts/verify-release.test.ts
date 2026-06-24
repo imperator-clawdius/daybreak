@@ -519,7 +519,7 @@ describe("release preflight", () => {
           status: 0,
           signal: null,
           stdout:
-            "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
+            "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true close_quit_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
           stderr: "",
         },
       });
@@ -576,7 +576,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true close_quit_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
                 stderr: "",
               };
         },
@@ -628,7 +628,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true close_quit_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -641,7 +641,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true streak_summary=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true close_quit_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true streak_summary=true",
                 stderr: "",
               },
             }),
@@ -672,7 +672,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true close_quit_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -715,7 +715,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=morning app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true close_quit_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),
@@ -728,7 +728,7 @@ describe("release preflight", () => {
                 status: 0,
                 signal: null,
                 stdout:
-                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
+                  "DAYBREAK_SMOKE=pass renderer_loaded=true ipc_roundtrip=true scenario=evening app_menu_disabled=true devtools_disabled=true web_preferences=strict background_throttling=disabled shortcuts_blocked=true print_save_shortcuts_blocked=true close_quit_shortcuts_blocked=true single_instance_lock=true window_chrome=locked permissions_denied=true certificate_errors_rejected=true redirects_guarded=true frame_navigation_guarded=true drag_drop_guarded=true clipboard_exfiltration_guarded=true context_menu_guarded=true renderer_crash_recovery=recovered downloads_blocked=true content_protection=requested content_protection_status=disabled power_save_blocker=started close_probe=true swipe_flow=true",
                 stderr: "",
               },
             }),

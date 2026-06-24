@@ -72,6 +72,7 @@ let webPreferencesApplied = false;
 let backgroundThrottlingDisabled = false;
 let desktopShortcutsBlocked = false;
 let printSaveShortcutsBlocked = false;
+let closeQuitShortcutsBlocked = false;
 let singleInstanceLocked = false;
 let windowChromeLocked = false;
 let permissionsDenied = false;
@@ -271,6 +272,9 @@ function createWindow(): void {
     { key: "n", control: true },
     { key: "p", control: true },
     { key: "s", control: true },
+    { key: "w", control: true },
+    { key: "q", control: true },
+    { key: "F4", alt: true },
     { key: "F11" },
     { key: "ArrowLeft", alt: true },
     { key: "=", control: true },
@@ -280,6 +284,13 @@ function createWindow(): void {
     { key: "P", meta: true },
     { key: "s", control: true },
     { key: "S", meta: true },
+  ].every(shouldBlockDesktopShortcut);
+  closeQuitShortcutsBlocked = [
+    { key: "w", control: true },
+    { key: "W", meta: true },
+    { key: "q", control: true },
+    { key: "Q", meta: true },
+    { key: "F4", alt: true },
   ].every(shouldBlockDesktopShortcut);
 
   // The gate: refuse close until a wiped board has been committed.
@@ -404,6 +415,10 @@ async function runSmokeFlow(): Promise<void> {
           printSaveShortcutsBlocked
             ? " print_save_shortcuts_blocked=true"
             : " print_save_shortcuts_blocked=false"
+        }${
+          closeQuitShortcutsBlocked
+            ? " close_quit_shortcuts_blocked=true"
+            : " close_quit_shortcuts_blocked=false"
         }${
           singleInstanceLocked
             ? " single_instance_lock=true"

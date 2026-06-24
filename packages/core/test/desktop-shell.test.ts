@@ -212,4 +212,12 @@ describe("desktop shell policy", () => {
     expect(shouldBlockDesktopShortcut({ key: "s", control: true })).toBe(true);
     expect(shouldBlockDesktopShortcut({ key: "S", meta: true })).toBe(true);
   });
+
+  it("blocks close and quit shell shortcuts", () => {
+    expect(shouldBlockDesktopShortcut({ key: "w", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "W", meta: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "q", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "Q", meta: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "F4", alt: true })).toBe(true);
+  });
 });

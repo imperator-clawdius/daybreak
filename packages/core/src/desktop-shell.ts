@@ -114,8 +114,17 @@ export function shouldBlockDesktopShortcut(input: DesktopShortcutInput): boolean
   if (!key) return false;
 
   if (key === "f5" || key === "f11" || key === "f12") return true;
+  if (input.alt && key === "f4") return true;
   if (input.alt && (key === "arrowleft" || key === "arrowright")) return true;
-  if (command && (key === "r" || key === "n" || key === "p" || key === "s")) {
+  if (
+    command &&
+    (key === "r" ||
+      key === "n" ||
+      key === "p" ||
+      key === "s" ||
+      key === "w" ||
+      key === "q")
+  ) {
     return true;
   }
   if (command && (key === "=" || key === "+" || key === "-" || key === "0")) {
