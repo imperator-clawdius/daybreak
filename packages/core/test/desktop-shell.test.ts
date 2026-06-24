@@ -7,6 +7,7 @@ import {
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
   shouldBlockDesktopShortcut,
+  shouldEnableDesktopContentProtection,
   shouldPreventDesktopDownloads,
   shouldPreventDesktopDragDropNavigation,
   shouldGuardDesktopFrameNavigation,
@@ -96,6 +97,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to prevent downloads", () => {
     expect(shouldPreventDesktopDownloads()).toBe(true);
+  });
+
+  it("requires the desktop shell to enable content protection", () => {
+    expect(shouldEnableDesktopContentProtection()).toBe(true);
   });
 
   it("defines strict BrowserWindow web preference policy", () => {

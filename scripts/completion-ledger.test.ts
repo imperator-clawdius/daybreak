@@ -9,7 +9,7 @@ describe("completion ledger", () => {
       "utf8",
     );
 
-    expect(ledger).toContain("**316 tests, 35 files passed**");
+    expect(ledger).toContain("**317 tests, 35 files passed**");
     expect(ledger).toContain("completion ledger evidence contract");
     expect(ledger).toContain("dark browser chrome metadata");
     expect(ledger).toContain("honest update-promise copy");
@@ -23,6 +23,7 @@ describe("completion ledger", () => {
     expect(ledger).toContain("desktop frame-navigation guard policy");
     expect(ledger).toContain("desktop drag/drop navigation guard policy");
     expect(ledger).toContain("desktop download prevention policy");
+    expect(ledger).toContain("desktop content-protection policy");
     expect(ledger).toContain("desktop single-instance policy");
     expect(ledger).toContain("desktop shortcut-lock policy");
     expect(ledger).toContain("desktop web-preferences policy");
@@ -42,6 +43,7 @@ describe("completion ledger", () => {
     expect(ledger).toContain("packaged manifest metadata contract");
     expect(ledger).toContain("Proof artifact instructions are minimal and redacted");
     expect(ledger).toContain("Windows shell metadata preflight");
+    expect(ledger).not.toContain("**316 tests, 35 files passed**");
     expect(ledger).not.toContain("**315 tests, 35 files passed**");
     expect(ledger).not.toContain("**314 tests, 35 files passed**");
     expect(ledger).not.toContain("**313 tests, 35 files passed**");

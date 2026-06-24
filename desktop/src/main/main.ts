@@ -21,6 +21,7 @@ import {
   shouldDenyDesktopPermission,
   shouldDisableDesktopApplicationMenu,
   shouldDisableDesktopDevTools,
+  shouldEnableDesktopContentProtection,
   shouldEnforceDesktopSingleInstance,
   shouldGuardDesktopFrameNavigation,
   shouldGuardDesktopRedirects,
@@ -66,6 +67,8 @@ let redirectsGuarded = false;
 let frameNavigationGuarded = false;
 let dragDropNavigationGuarded = false;
 let downloadsBlocked = false;
+let contentProtectionRequested = false;
+let contentProtectionStatus = "disabled";
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -152,6 +155,11 @@ function createWindow(): void {
       ...webPreferencesPolicy,
     },
   });
+  contentProtectionRequested = shouldEnableDesktopContentProtection();
+  if (contentProtectionRequested) {
+    win.setContentProtection(true);
+  }
+  contentProtectionStatus = win.isContentProtected() ? "enabled" : "disabled";
   windowChromeLocked =
     windowChromePolicy.fullscreenable === false &&
     windowChromePolicy.maximizable === false &&
@@ -358,6 +366,10 @@ async function runSmokeFlow(): Promise<void> {
         }${
           downloadsBlocked ? " downloads_blocked=true" : " downloads_blocked=false"
         }${
+          contentProtectionRequested
+            ? " content_protection=requested"
+            : " content_protection=not_requested"
+        } content_protection_status=${contentProtectionStatus}${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
           screenshotCaptured ? " screenshot=true" : ""
