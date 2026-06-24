@@ -78,6 +78,7 @@ let redirectsGuarded = false;
 let frameNavigationGuarded = false;
 let dragDropNavigationGuarded = false;
 let clipboardExfiltrationGuarded = false;
+let contextMenuGuarded = false;
 let downloadsBlocked = false;
 let contentProtectionRequested = false;
 let contentProtectionStatus = "disabled";
@@ -338,6 +339,7 @@ async function runSmokeFlow(): Promise<void> {
   const closeProbe = SMOKE_CLOSE_PROBE ? await exerciseCloseProbe() : true;
   dragDropNavigationGuarded = await exerciseDragDropNavigationGuard();
   clipboardExfiltrationGuarded = await exerciseClipboardExfiltrationGuard();
+  contextMenuGuarded = await exerciseContextMenuGuard();
   const swipeFlow =
     SMOKE_SCENARIO === "evening"
       ? await exerciseEveningSwipeFlow()
@@ -350,6 +352,7 @@ async function runSmokeFlow(): Promise<void> {
     closeProbe &&
     dragDropNavigationGuarded &&
     clipboardExfiltrationGuarded &&
+    contextMenuGuarded &&
     swipeFlow;
   if (ok && SMOKE_SCREENSHOT && win) {
     try {
@@ -408,6 +411,10 @@ async function runSmokeFlow(): Promise<void> {
           clipboardExfiltrationGuarded
             ? " clipboard_exfiltration_guarded=true"
             : " clipboard_exfiltration_guarded=false"
+        }${
+          contextMenuGuarded
+            ? " context_menu_guarded=true"
+            : " context_menu_guarded=false"
         }${
           downloadsBlocked ? " downloads_blocked=true" : " downloads_blocked=false"
         }${
@@ -478,6 +485,21 @@ async function exerciseClipboardExfiltrationGuard(): Promise<boolean> {
     console.error("smoke clipboard exfiltration guard failed:", result);
   }
   return result.copyPrevented && result.cutPrevented;
+}
+
+async function exerciseContextMenuGuard(): Promise<boolean> {
+  if (!win) return false;
+  const result = (await win.webContents.executeJavaScript(`
+    (() => {
+      const contextmenu = new Event("contextmenu", { cancelable: true });
+      window.dispatchEvent(contextmenu);
+      return { contextMenuPrevented: contextmenu.defaultPrevented };
+    })()
+  `)) as { contextMenuPrevented: boolean };
+  if (!result.contextMenuPrevented) {
+    console.error("smoke context menu guard failed:", result);
+  }
+  return result.contextMenuPrevented;
 }
 
 async function stabilizeSmokeScreenshot(): Promise<void> {

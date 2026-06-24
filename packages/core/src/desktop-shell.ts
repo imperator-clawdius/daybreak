@@ -49,6 +49,10 @@ export function shouldPreventDesktopClipboardExfiltration(): boolean {
   return true;
 }
 
+export function shouldPreventDesktopContextMenu(): boolean {
+  return true;
+}
+
 export function shouldEnableDesktopContentProtection(): boolean {
   return true;
 }

@@ -10,6 +10,7 @@ import {
   shouldEnableDesktopContentProtection,
   shouldStartDesktopPowerSaveBlocker,
   shouldPreventDesktopClipboardExfiltration,
+  shouldPreventDesktopContextMenu,
   shouldPreventDesktopDownloads,
   shouldPreventDesktopDragDropNavigation,
   shouldGuardDesktopFrameNavigation,
@@ -103,6 +104,10 @@ describe("desktop shell policy", () => {
 
   it("requires the desktop shell to prevent clipboard exfiltration", () => {
     expect(shouldPreventDesktopClipboardExfiltration()).toBe(true);
+  });
+
+  it("requires the desktop shell to prevent the browser context menu", () => {
+    expect(shouldPreventDesktopContextMenu()).toBe(true);
   });
 
   it("requires the desktop shell to enable content protection", () => {

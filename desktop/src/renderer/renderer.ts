@@ -8,6 +8,7 @@ import {
   MAX_DAILY_COMMITS,
   resolveLogForPhase,
   shouldPreventDesktopClipboardExfiltration,
+  shouldPreventDesktopContextMenu,
   shouldPreventDesktopDragDropNavigation,
   summarizeStreak,
   validateNewCommit,
@@ -270,9 +271,17 @@ function installClipboardExfiltrationGuard() {
   }
 }
 
+function installContextMenuGuard() {
+  if (!shouldPreventDesktopContextMenu()) return;
+  window.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+  });
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   installDragDropNavigationGuard();
   installClipboardExfiltrationGuard();
+  installContextMenuGuard();
   ($("add-form") as HTMLFormElement).addEventListener("submit", (e) => {
     e.preventDefault();
     const input = $("add-input") as HTMLInputElement;
