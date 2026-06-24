@@ -9,7 +9,7 @@ describe("completion ledger", () => {
       "utf8",
     );
 
-    expect(ledger).toContain("**325 tests, 35 files passed**");
+    expect(ledger).toContain("**326 tests, 35 files passed**");
     expect(ledger).toContain("completion ledger evidence contract");
     expect(ledger).toContain("dark browser chrome metadata");
     expect(ledger).toContain("honest update-promise copy");
@@ -17,6 +17,7 @@ describe("completion ledger", () => {
     expect(ledger).toContain("desktop app-menu removal policy");
     expect(ledger).toContain("desktop DevTools-disabled policy");
     expect(ledger).toContain("desktop locked-window policy");
+    expect(ledger).toContain("desktop window-ownership policy");
     expect(ledger).toContain("desktop permission-denial policy");
     expect(ledger).toContain("desktop certificate-error rejection policy");
     expect(ledger).toContain("desktop redirect guard policy");

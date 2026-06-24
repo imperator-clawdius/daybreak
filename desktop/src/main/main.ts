@@ -20,6 +20,7 @@ import {
   buildDaySession,
   canDismiss,
   getDesktopWindowChromePolicy,
+  getDesktopWindowOwnershipPolicy,
   getDesktopWebPreferencesPolicy,
   isAllowedDesktopNavigation,
   makeItem,
@@ -76,6 +77,7 @@ let closeQuitShortcutsBlocked = false;
 let systemShortcutsBlocked = false;
 let singleInstanceLocked = false;
 let windowChromeLocked = false;
+let windowOwnershipRequested = false;
 let permissionsDenied = false;
 let certificateErrorsRejected = false;
 let redirectsGuarded = false;
@@ -160,6 +162,7 @@ function createWindow(): void {
   const entryUrl = pathToFileURL(entryFile).toString();
   const webPreferencesPolicy = getDesktopWebPreferencesPolicy();
   const windowChromePolicy = getDesktopWindowChromePolicy();
+  const windowOwnershipPolicy = getDesktopWindowOwnershipPolicy();
 
   win = new BrowserWindow({
     // Smoke mode: small, hidden, non-intrusive so CI / verification never
@@ -167,10 +170,10 @@ function createWindow(): void {
     width: SMOKE ? (SMOKE_SCREENSHOT ? SMOKE_SCREENSHOT_WIDTH : 800) : width,
     height: SMOKE ? (SMOKE_SCREENSHOT ? SMOKE_SCREENSHOT_HEIGHT : 600) : height,
     show: !SMOKE,
-    fullscreen: !SMOKE,
+    fullscreen: !SMOKE && windowOwnershipPolicy.fullscreen,
     frame: false,
     closable: true,
-    alwaysOnTop: !SMOKE,
+    alwaysOnTop: !SMOKE && windowOwnershipPolicy.alwaysOnTop,
     skipTaskbar: false,
     ...windowChromePolicy,
     webPreferences: {
@@ -181,6 +184,18 @@ function createWindow(): void {
   contentProtectionRequested = shouldEnableDesktopContentProtection();
   if (contentProtectionRequested) {
     win.setContentProtection(true);
+  }
+  windowOwnershipRequested =
+    windowOwnershipPolicy.alwaysOnTop &&
+    windowOwnershipPolicy.alwaysOnTopLevel === "screen-saver" &&
+    windowOwnershipPolicy.fullscreen &&
+    windowOwnershipPolicy.visibleOnAllWorkspaces &&
+    windowOwnershipPolicy.visibleOnFullScreen;
+  if (!SMOKE && windowOwnershipRequested) {
+    win.setAlwaysOnTop(true, windowOwnershipPolicy.alwaysOnTopLevel);
+    win.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: windowOwnershipPolicy.visibleOnFullScreen,
+    });
   }
   contentProtectionStatus = win.isContentProtected() ? "enabled" : "disabled";
   windowChromeLocked =
@@ -450,6 +465,10 @@ async function runSmokeFlow(): Promise<void> {
             : " single_instance_lock=false"
         }${
           windowChromeLocked ? " window_chrome=locked" : " window_chrome=loose"
+        }${
+          windowOwnershipRequested
+            ? " window_ownership=requested"
+            : " window_ownership=not_requested"
         }${
           permissionsDenied
             ? " permissions_denied=true"

@@ -86,6 +86,16 @@ export function getDesktopWindowChromePolicy() {
   } as const;
 }
 
+export function getDesktopWindowOwnershipPolicy() {
+  return {
+    alwaysOnTop: true,
+    alwaysOnTopLevel: "screen-saver",
+    fullscreen: true,
+    visibleOnAllWorkspaces: true,
+    visibleOnFullScreen: true,
+  } as const;
+}
+
 export function getDesktopWebPreferencesPolicy() {
   return {
     allowRunningInsecureContent: false,

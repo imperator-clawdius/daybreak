@@ -711,6 +711,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("system_shortcuts_blocked=true") &&
     stdout.includes("single_instance_lock=true") &&
     stdout.includes("window_chrome=locked") &&
+    stdout.includes("window_ownership=requested") &&
     stdout.includes("permissions_denied=true") &&
     stdout.includes("certificate_errors_rejected=true") &&
     stdout.includes("redirects_guarded=true") &&

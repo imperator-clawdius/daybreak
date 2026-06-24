@@ -3,6 +3,7 @@ import {
   shouldRejectDesktopCertificateError,
   shouldDenyDesktopPermission,
   getDesktopWindowChromePolicy,
+  getDesktopWindowOwnershipPolicy,
   getDesktopWebPreferencesPolicy,
   getDesktopContentSecurityPolicy,
   isAllowedDesktopNavigation,
@@ -148,6 +149,16 @@ describe("desktop shell policy", () => {
       minimizable: false,
       movable: false,
       resizable: false,
+    });
+  });
+
+  it("defines production window ownership policy across workspaces", () => {
+    expect(getDesktopWindowOwnershipPolicy()).toEqual({
+      alwaysOnTop: true,
+      alwaysOnTopLevel: "screen-saver",
+      fullscreen: true,
+      visibleOnAllWorkspaces: true,
+      visibleOnFullScreen: true,
     });
   });
 
