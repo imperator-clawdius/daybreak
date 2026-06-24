@@ -215,3 +215,10 @@ export function isAllowedDesktopNavigation(
     return false;
   }
 }
+
+export function isAllowedDesktopIpcSender(
+  appEntrypointUrl: string,
+  senderUrl: string,
+): boolean {
+  return isAllowedDesktopNavigation(appEntrypointUrl, senderUrl);
+}

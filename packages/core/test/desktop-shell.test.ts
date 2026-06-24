@@ -8,6 +8,7 @@ import {
   getDesktopWebPreferencesPolicy,
   hasUnsafeDesktopLaunchArg,
   getDesktopContentSecurityPolicy,
+  isAllowedDesktopIpcSender,
   isAllowedDesktopNavigation,
   shouldBlockDesktopShortcut,
   shouldEnableDesktopContentProtection,
@@ -59,6 +60,22 @@ describe("desktop shell policy", () => {
         "not a url",
       ),
     ).toBe(false);
+  });
+
+  it("trusts IPC only from the packaged Daybreak HTML entrypoint", () => {
+    const entrypoint = "file:///C:/Daybreak/resources/app.asar/dist/index.html";
+
+    expect(isAllowedDesktopIpcSender(entrypoint, entrypoint)).toBe(true);
+    expect(isAllowedDesktopIpcSender(entrypoint, "https://daybreak.rest/")).toBe(
+      false,
+    );
+    expect(
+      isAllowedDesktopIpcSender(
+        entrypoint,
+        "file:///C:/Daybreak/resources/app.asar/dist/other.html",
+      ),
+    ).toBe(false);
+    expect(isAllowedDesktopIpcSender(entrypoint, "not a url")).toBe(false);
   });
 
   it("defines a strict local-only renderer content security policy", () => {

@@ -24,6 +24,7 @@ import {
   getDesktopWindowOwnershipPolicy,
   getDesktopWebPreferencesPolicy,
   hasUnsafeDesktopLaunchArg,
+  isAllowedDesktopIpcSender,
   isAllowedDesktopNavigation,
   makeItem,
   planStartupRegistration,
@@ -84,6 +85,7 @@ let windowChromeLocked = false;
 let windowOwnershipRequested = false;
 let permissionsDenied = false;
 let certificateErrorsRejected = false;
+let ipcSenderGuarded = false;
 let redirectsGuarded = false;
 let frameNavigationGuarded = false;
 let dragDropNavigationGuarded = false;
@@ -280,6 +282,12 @@ function createWindow(): void {
     }
   });
   redirectsGuarded = shouldGuardDesktopRedirects();
+  ipcSenderGuarded =
+    isAllowedDesktopIpcSender(entryUrl, entryUrl) &&
+    !isAllowedDesktopIpcSender(
+      entryUrl,
+      pathToFileURL(join(__dirname, "other.html")).toString(),
+    );
   win.webContents.on("will-frame-navigate", (details) => {
     if (
       shouldGuardDesktopFrameNavigation() &&
@@ -507,6 +515,10 @@ async function runSmokeFlow(): Promise<void> {
           certificateErrorsRejected
             ? " certificate_errors_rejected=true"
             : " certificate_errors_rejected=false"
+        }${
+          ipcSenderGuarded
+            ? " ipc_sender_guarded=true"
+            : " ipc_sender_guarded=false"
         }${
           redirectsGuarded ? " redirects_guarded=true" : " redirects_guarded=false"
         }${
@@ -848,7 +860,23 @@ function configureApplicationMenu(): void {
   applicationMenuDisabled = Menu.getApplicationMenu() === null;
 }
 
-ipcMain.handle("daybreak:load", () => {
+function isTrustedIpcSender(
+  event: Electron.IpcMainInvokeEvent,
+  channel: string,
+): boolean {
+  const entryUrl = pathToFileURL(join(__dirname, "index.html")).toString();
+  const senderUrl = event.senderFrame?.url ?? event.sender.getURL();
+  const trusted = isAllowedDesktopIpcSender(entryUrl, senderUrl);
+  if (!trusted) {
+    console.error(`rejected ${channel} IPC from untrusted sender:`, senderUrl);
+  }
+  return trusted;
+}
+
+ipcMain.handle("daybreak:load", (event) => {
+  if (!isTrustedIpcSender(event, "daybreak:load")) {
+    throw new Error("untrusted IPC sender");
+  }
   const now = nowForSession();
   dismissAllowed = false;
   const history = store.read().days;
@@ -858,7 +886,11 @@ ipcMain.handle("daybreak:load", () => {
 });
 
 // Persist progress as the user wipes. Returns whether dismissal is now allowed.
-ipcMain.handle("daybreak:save", (_evt, payload: { log: DayLog; phase: Phase }) => {
+ipcMain.handle("daybreak:save", (event, payload: { log: DayLog; phase: Phase }) => {
+  if (!isTrustedIpcSender(event, "daybreak:save")) {
+    dismissAllowed = false;
+    return { canDismiss: false };
+  }
   if (!activeSession || activeSession.phase !== payload.phase) {
     dismissAllowed = false;
     return { canDismiss: false };
@@ -884,7 +916,11 @@ ipcMain.handle("daybreak:save", (_evt, payload: { log: DayLog; phase: Phase }) =
 });
 
 // Renderer asks to close after a confirmed-resolved board.
-ipcMain.handle("daybreak:dismiss", (_evt, payload: { log: DayLog; phase: Phase }) => {
+ipcMain.handle("daybreak:dismiss", (event, payload: { log: DayLog; phase: Phase }) => {
+  if (!isTrustedIpcSender(event, "daybreak:dismiss")) {
+    dismissAllowed = false;
+    return { closed: false };
+  }
   if (!activeSession || activeSession.phase !== payload.phase) {
     dismissAllowed = false;
     return { closed: false };

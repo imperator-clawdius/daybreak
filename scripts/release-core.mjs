@@ -716,6 +716,7 @@ export function evaluatePackagedSmoke({ executablePath, runnerResult }) {
     stdout.includes("window_ownership=requested") &&
     stdout.includes("permissions_denied=true") &&
     stdout.includes("certificate_errors_rejected=true") &&
+    stdout.includes("ipc_sender_guarded=true") &&
     stdout.includes("redirects_guarded=true") &&
     stdout.includes("frame_navigation_guarded=true") &&
     stdout.includes("drag_drop_guarded=true") &&
