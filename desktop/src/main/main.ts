@@ -24,6 +24,7 @@ import {
   shouldEnforceDesktopSingleInstance,
   shouldGuardDesktopFrameNavigation,
   shouldGuardDesktopRedirects,
+  shouldPreventDesktopDownloads,
   shouldRejectDesktopCertificateError,
   validateLogUpdate,
   type DayLog,
@@ -64,6 +65,7 @@ let certificateErrorsRejected = false;
 let redirectsGuarded = false;
 let frameNavigationGuarded = false;
 let dragDropNavigationGuarded = false;
+let downloadsBlocked = false;
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
   const prior = {
@@ -282,6 +284,15 @@ function configureCertificatePolicy(): void {
   });
 }
 
+function configureDownloadPolicy(): void {
+  session.defaultSession.on("will-download", (event) => {
+    if (shouldPreventDesktopDownloads()) {
+      event.preventDefault();
+    }
+  });
+  downloadsBlocked = shouldPreventDesktopDownloads();
+}
+
 async function runSmokeFlow(): Promise<void> {
   // Give the renderer's boot() (load + first save round-trip) time to run.
   await delay(500);
@@ -344,6 +355,8 @@ async function runSmokeFlow(): Promise<void> {
           dragDropNavigationGuarded
             ? " drag_drop_guarded=true"
             : " drag_drop_guarded=false"
+        }${
+          downloadsBlocked ? " downloads_blocked=true" : " downloads_blocked=false"
         }${
           SMOKE_CLOSE_PROBE ? " close_probe=true" : ""
         }${
@@ -671,6 +684,7 @@ if (configureSingleInstanceLock()) app.whenReady().then(() => {
   configureStartupRegistration();
   configurePermissionPolicy();
   configureCertificatePolicy();
+  configureDownloadPolicy();
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
