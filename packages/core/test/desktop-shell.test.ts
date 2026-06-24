@@ -190,4 +190,11 @@ describe("desktop shell policy", () => {
     expect(shouldBlockDesktopShortcut({ key: "r" })).toBe(false);
     expect(shouldBlockDesktopShortcut({ key: "ArrowLeft" })).toBe(false);
   });
+
+  it("blocks print and save browser shell shortcuts", () => {
+    expect(shouldBlockDesktopShortcut({ key: "p", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "P", meta: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "s", control: true })).toBe(true);
+    expect(shouldBlockDesktopShortcut({ key: "S", meta: true })).toBe(true);
+  });
 });
