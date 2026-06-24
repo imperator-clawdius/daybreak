@@ -52,6 +52,22 @@ describe("persisted day log validation", () => {
     expect(isPersistedDayLog({ ...validLog, items: null })).toBe(false);
   });
 
+  it("rejects a day log with duplicate item ids or items assigned to another day", () => {
+    expect(
+      isPersistedDayLog({
+        ...validLog,
+        items: [validLog.items[0], { ...validLog.items[0], text: "duplicate" }],
+      }),
+    ).toBe(false);
+
+    expect(
+      isPersistedDayLog({
+        ...validLog,
+        items: [{ ...validLog.items[0], day: "2026-06-23" }],
+      }),
+    ).toBe(false);
+  });
+
   it("accepts only arrays where every day log is valid", () => {
     expect(isPersistedDayLogArray([validLog])).toBe(true);
     expect(isPersistedDayLogArray([validLog, { ...validLog, day: "" }])).toBe(

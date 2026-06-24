@@ -34,13 +34,22 @@ function isPersistedItem(value: unknown): value is Item {
 
 export function isPersistedDayLog(value: unknown): value is DayLog {
   if (!isObject(value)) return false;
-  return (
-    isDayKey(value.day) &&
-    typeof value.morningResolved === "boolean" &&
-    typeof value.eveningResolved === "boolean" &&
-    Array.isArray(value.items) &&
-    value.items.every(isPersistedItem)
-  );
+  if (
+    !isDayKey(value.day) ||
+    typeof value.morningResolved !== "boolean" ||
+    typeof value.eveningResolved !== "boolean" ||
+    !Array.isArray(value.items) ||
+    !value.items.every(isPersistedItem)
+  ) {
+    return false;
+  }
+
+  const seenIds = new Set<string>();
+  for (const item of value.items) {
+    if (seenIds.has(item.id) || item.day !== value.day) return false;
+    seenIds.add(item.id);
+  }
+  return true;
 }
 
 export function isPersistedDayLogArray(value: unknown): value is DayLog[] {
