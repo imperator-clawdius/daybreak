@@ -50,6 +50,18 @@ For the packaged Windows build, run the packaged app directly after
 Do not rely on a global `electron` command; Electron is installed as a workspace
 dev dependency and is launched through npm scripts or the packaged executable.
 
+To build a production, non-watermarked Windows package that stays disabled at
+login and is launched manually, run:
+
+```powershell
+npm run package:desktop:manual
+```
+
+The installer and unpacked executable are written to `desktop\release`.
+The standard `npm run package -w @daybreak/desktop` command retains login startup.
+The manual build disables Daybreak's login startup when launched normally;
+development and smoke runs never change startup registration.
+
 ## Status
 
 See [`docs/COMPLETION.md`](docs/COMPLETION.md) for the honest completion ledger

@@ -2,20 +2,24 @@ export interface StartupRegistrationInput {
   platform: string;
   smoke: boolean;
   packaged: boolean;
+  autoStart: boolean;
 }
 
 export interface StartupRegistrationPlan {
-  shouldRegister: boolean;
+  shouldConfigure: boolean;
   openAtLogin: boolean;
+  enabled: boolean;
 }
 
 export function planStartupRegistration(
   input: StartupRegistrationInput,
 ): StartupRegistrationPlan {
-  const shouldRegister =
+  const shouldConfigure =
     input.platform === "win32" && input.packaged && !input.smoke;
+  const enabled = shouldConfigure && input.autoStart;
   return {
-    shouldRegister,
-    openAtLogin: shouldRegister,
+    shouldConfigure,
+    openAtLogin: enabled,
+    enabled,
   };
 }

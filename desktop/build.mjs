@@ -12,11 +12,16 @@ const out = resolve(root, "dist");
 await rm(out, { recursive: true, force: true });
 await mkdir(out, { recursive: true });
 
+const autoStart = process.env.DAYBREAK_AUTO_START !== "0";
+
 const common = {
   bundle: true,
   sourcemap: false,
   logLevel: "info",
   target: "es2022",
+  define: {
+    __DAYBREAK_AUTO_START__: JSON.stringify(autoStart),
+  },
 };
 
 await build({

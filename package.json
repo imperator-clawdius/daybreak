@@ -12,7 +12,8 @@
   ],
   "overrides": {
     "next": {
-      "postcss": "8.5.15"
+      "postcss": "8.5.28",
+      "sharp": "0.35.5"
     }
   },
   "scripts": {
@@ -30,6 +31,7 @@
     "verify:pages-health": "node scripts/verify-pages-health.mjs",
     "verify:readiness": "node scripts/verify-readiness.mjs",
     "verify:release": "node scripts/verify-release.mjs",
+    "package:desktop:manual": "node scripts/package-manual.mjs",
     "dev:desktop": "npm run dev -w @daybreak/desktop",
     "dev:site": "npm run dev -w @daybreak/site"
   },

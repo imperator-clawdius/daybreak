@@ -8,9 +8,24 @@ import { canDismiss } from "./wipe.js";
 
 let idCounter = 0;
 
+/** Keep new commitments distinct from every saved item after an app restart. */
+export function createItemIdFactory(history: DayLog[]): () => string {
+  const used = new Set(history.flatMap((log) => log.items.map((item) => item.id)));
+  let next = 0;
+  return () => {
+    let id: string;
+    do {
+      id = `item-${++next}`;
+    } while (used.has(id));
+    used.add(id);
+    return id;
+  };
+}
+
 /**
  * Deterministic id generator (no Math.random in core).
- * The host may pass its own factory; defaults to a monotonic counter.
+ * Persistent hosts must pass a factory seeded from their saved history.
+ * The default monotonic counter is suitable for transient boards and fixtures.
  */
 export function makeItem(
   text: string,
@@ -97,17 +112,15 @@ export function buildDaySession(
   history: DayLog[],
 ): { phase: Phase; log: DayLog } {
   const phase = phaseForHour(now.getHours());
-  if (phase === "morning") {
-    return { phase, log: buildMorningSession(now, history) };
-  }
-
   const today = dayKey(now);
   const existing = history.find((log) => log.day === today);
+  if (phase === "morning" || !existing?.morningResolved) {
+    return { phase: "morning", log: buildMorningSession(now, history) };
+  }
+
   return {
     phase,
-    log: existing
-      ? buildEveningSession(existing)
-      : buildMorningSession(now, history),
+    log: buildEveningSession(existing),
   };
 }
 

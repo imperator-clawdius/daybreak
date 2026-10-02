@@ -48,9 +48,17 @@ import {
 } from "@daybreak/core";
 import { Store } from "./store";
 
+declare const __DAYBREAK_AUTO_START__: boolean;
+const AUTO_START =
+  typeof __DAYBREAK_AUTO_START__ === "undefined" || __DAYBREAK_AUTO_START__;
+
 const SMOKE = process.env.DAYBREAK_SMOKE === "1";
 const SMOKE_SCENARIO =
-  process.env.DAYBREAK_SMOKE_SCENARIO === "evening" ? "evening" : "morning";
+  process.env.DAYBREAK_SMOKE_SCENARIO === "evening"
+    ? "evening"
+    : process.env.DAYBREAK_SMOKE_SCENARIO === "resume"
+      ? "resume"
+      : "morning";
 const SMOKE_CLOSE_PROBE = process.env.DAYBREAK_SMOKE_CLOSE_PROBE === "1";
 const SMOKE_CRASH_PROBE = process.env.DAYBREAK_SMOKE_CRASH_PROBE === "1";
 const SMOKE_SCREENSHOT = process.env.DAYBREAK_SMOKE_SCREENSHOT;
@@ -106,6 +114,22 @@ let powerSaveBlockerId: number | null = null;
 launchArgsGuarded = !hasUnsafeDesktopLaunchArg(process.argv);
 if (!SMOKE && app.isPackaged && !launchArgsGuarded) {
   app.exit(1);
+}
+
+if (SMOKE && SMOKE_SCENARIO === "resume") {
+  store.write({
+    version: 1,
+    lastSeenIso: null,
+    days: [{
+      day: SMOKE_DAY,
+      morningResolved: true,
+      eveningResolved: false,
+      items: [{
+        ...makeItem("Saved commitment from an earlier launch", SMOKE_DAY, () => "item-1"),
+        state: "killed",
+      }],
+    }],
+  });
 }
 
 if (SMOKE && SMOKE_SCENARIO === "evening") {
@@ -871,11 +895,14 @@ function configureStartupRegistration(): void {
     platform: process.platform,
     smoke: SMOKE,
     packaged: app.isPackaged,
+    autoStart: AUTO_START,
   });
-  if (!plan.shouldRegister) return;
+  if (!plan.shouldConfigure) return;
 
   app.setLoginItemSettings({
     openAtLogin: plan.openAtLogin,
+    enabled: plan.enabled,
+    name: "electron.app.Daybreak",
     path: process.execPath,
   });
 }

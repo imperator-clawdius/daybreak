@@ -4,17 +4,63 @@ import {
   buildEveningSession,
   buildMorningSession,
   carryForward,
+  createItemIdFactory,
   makeItem,
   phaseForHour,
   resolveLogForPhase,
 } from "../src/session";
 import { DayLog, Item } from "../src/model";
+import { validateLogUpdate } from "../src/log-update";
 
 function logFor(day: string, items: Item[]): DayLog {
   return { day, morningResolved: true, eveningResolved: false, items };
 }
 
 describe("session building", () => {
+  it("can save a new commitment after reopening a saved morning board", () => {
+    const original = makeItem("Existing commitment", "2026-06-22", createItemIdFactory([]));
+    const today = logFor("2026-06-22", [{ ...original, state: "open" }]);
+    const nextId = createItemIdFactory([today]);
+    const added = makeItem("Commitment after restart", today.day, nextId);
+    const updated = { ...today, items: [...today.items, added] };
+
+    expect(added.id).not.toBe(original.id);
+    expect(validateLogUpdate(today, updated, "morning").ok).toBe(true);
+    expect(nextId()).not.toBe(added.id);
+  });
+
+  it("reserves IDs from earlier days so carry-over cannot merge unrelated commitments", () => {
+    const earlier = logFor("2026-06-21", [
+      { ...makeItem("Unfinished promise", "2026-06-21", () => "item-1"), state: "open" },
+      { ...makeItem("Finished promise", "2026-06-21", () => "item-3"), state: "done" },
+    ]);
+    const nextId = createItemIdFactory([earlier]);
+    const first = makeItem("New promise", "2026-06-22", nextId);
+    const second = makeItem("Another promise", "2026-06-22", nextId);
+
+    expect(new Set([...earlier.items, first, second].map((item) => item.id)).size).toBe(4);
+    expect(carryForward([earlier, logFor("2026-06-22", [first, second])]).map((item) => item.text))
+      .toEqual(["Unfinished promise", "New promise", "Another promise"]);
+  });
+
+  it("starts a first launch after 17:00 with commitments instead of an empty review", () => {
+    const session = buildDaySession(new Date(2026, 5, 22, 18), []);
+
+    expect(session.phase).toBe("morning");
+    expect(session.log).toMatchObject({ day: "2026-06-22", morningResolved: false });
+  });
+
+  it("finishes an interrupted morning even when reopened after 17:00", () => {
+    const unfinished = {
+      ...logFor("2026-06-22", [makeItem("Still deciding", "2026-06-22")]),
+      morningResolved: false,
+    };
+    const session = buildDaySession(new Date(2026, 5, 22, 18), [unfinished]);
+
+    expect(session.phase).toBe("morning");
+    expect(session.log.items[0]?.text).toBe("Still deciding");
+  });
+
   it("builds a morning day session before 17:00", () => {
     const history: DayLog[] = [
       logFor("2026-06-21", [
