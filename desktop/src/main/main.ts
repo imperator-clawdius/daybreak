@@ -48,6 +48,10 @@ import {
 } from "@daybreak/core";
 import { Store } from "./store";
 
+declare const __DAYBREAK_AUTO_START__: boolean;
+const AUTO_START =
+  typeof __DAYBREAK_AUTO_START__ === "undefined" || __DAYBREAK_AUTO_START__;
+
 const SMOKE = process.env.DAYBREAK_SMOKE === "1";
 const SMOKE_SCENARIO =
   process.env.DAYBREAK_SMOKE_SCENARIO === "evening"
@@ -891,11 +895,14 @@ function configureStartupRegistration(): void {
     platform: process.platform,
     smoke: SMOKE,
     packaged: app.isPackaged,
+    autoStart: AUTO_START,
   });
-  if (!plan.shouldRegister) return;
+  if (!plan.shouldConfigure) return;
 
   app.setLoginItemSettings({
     openAtLogin: plan.openAtLogin,
+    enabled: plan.enabled,
+    name: "electron.app.Daybreak",
     path: process.execPath,
   });
 }

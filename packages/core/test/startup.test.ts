@@ -8,37 +8,52 @@ describe("startup registration policy", () => {
         platform: "win32",
         smoke: false,
         packaged: true,
+        autoStart: true,
       }),
-    ).toEqual({ shouldRegister: true, openAtLogin: true });
+    ).toEqual({ shouldConfigure: true, openAtLogin: true, enabled: true });
   });
 
-  it("does not register login startup during smoke verification", () => {
+  it("disables login startup for a manual-start Windows build", () => {
+    expect(
+      planStartupRegistration({
+        platform: "win32",
+        smoke: false,
+        packaged: true,
+        autoStart: false,
+      }),
+    ).toEqual({ shouldConfigure: true, openAtLogin: false, enabled: false });
+  });
+
+  it.each([true, false])("does not change startup during smoke verification (autoStart=%s)", (autoStart) => {
     expect(
       planStartupRegistration({
         platform: "win32",
         smoke: true,
         packaged: true,
+        autoStart,
       }),
-    ).toEqual({ shouldRegister: false, openAtLogin: false });
+    ).toEqual({ shouldConfigure: false, openAtLogin: false, enabled: false });
   });
 
-  it("does not register login startup from an unpackaged dev run", () => {
+  it.each([true, false])("does not change startup from an unpackaged dev run (autoStart=%s)", (autoStart) => {
     expect(
       planStartupRegistration({
         platform: "win32",
         smoke: false,
         packaged: false,
+        autoStart,
       }),
-    ).toEqual({ shouldRegister: false, openAtLogin: false });
+    ).toEqual({ shouldConfigure: false, openAtLogin: false, enabled: false });
   });
 
-  it("does not register login startup outside Windows", () => {
+  it.each([true, false])("does not change startup outside Windows (autoStart=%s)", (autoStart) => {
     expect(
       planStartupRegistration({
         platform: "linux",
         smoke: false,
         packaged: true,
+        autoStart,
       }),
-    ).toEqual({ shouldRegister: false, openAtLogin: false });
+    ).toEqual({ shouldConfigure: false, openAtLogin: false, enabled: false });
   });
 });
