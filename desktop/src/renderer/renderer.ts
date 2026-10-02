@@ -4,6 +4,7 @@ import {
   actionForSwipe,
   applyWipe,
   canDismiss,
+  createItemIdFactory,
   makeItem,
   MAX_DAILY_COMMITS,
   resolveLogForPhase,
@@ -29,6 +30,7 @@ const api = window.daybreak;
 
 let log: DayLog;
 let history: DayLog[] = [];
+let nextItemId = createItemIdFactory([]);
 let phase: Phase;
 let now: Date;
 let activeSwipe:
@@ -48,6 +50,7 @@ async function boot() {
   phase = loaded.phase;
   log = loaded.log;
   history = loaded.history;
+  nextItemId = createItemIdFactory(history);
   now = new Date(loaded.now);
   api.onNudge(() => flashHint("Wipe every item before Daybreak will close."));
   render();
@@ -216,7 +219,10 @@ function addCommit(text: string) {
     flashHint(validation.message);
     return;
   }
-  log = { ...log, items: [...log.items, makeItem(validation.text, log.day)] };
+  log = {
+    ...log,
+    items: [...log.items, makeItem(validation.text, log.day, nextItemId)],
+  };
   render();
   void persist();
 }
