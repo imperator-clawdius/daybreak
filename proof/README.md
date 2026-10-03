@@ -95,7 +95,14 @@ the first real paid checkout. The verifier expects:
 - `checkout_session.mode` is `payment`
 - `checkout_session.status` is `complete`
 - `checkout_session.payment_status` is `paid`
-- `checkout_session.amount_total` is `1900`
+- For a tax-exclusive purchase, `checkout_session.amount_subtotal` is `1900`,
+  and `amount_total` equals `1900 + total_details.amount_tax`.
+- `checkout_session.total_details` contains exactly `amount_discount`,
+  `amount_shipping`, and `amount_tax`, all nonnegative safe integer cents.
+  Discount and shipping amounts must both be `0`. Tax may be `0` or greater.
+  If either the subtotal or breakdown is supplied, both are required.
+- Existing minimal untaxed proofs containing only `amount_total: 1900` remain
+  supported. A larger total without the itemized tax evidence stays pending.
 - `checkout_session.currency` is `usd`
 - `checkout_session.id` starts with `cs_live_`
 - `checkout_session.payment_link` equals `payment_link.id`
@@ -104,9 +111,16 @@ the first real paid checkout. The verifier expects:
 - `refunds.data` is empty
 - `refunds.has_more` is `false`
 
+Stripe defines subtotal before tax and final total after tax in its
+[Checkout Session reference](https://docs.stripe.com/api/checkout/sessions/object).
+Copy the actual amounts; do not infer a tax rate, subtract an unexplained charge,
+or add synthetic order evidence. This verifies supplied evidence, not Stripe
+authentication or settlement. Inclusive-tax and discounted purchases are outside
+this $19 tax-exclusive proof contract.
+
 Keep customer email, customer name, payment method details, Stripe metadata,
 client reference IDs, invoices, subscriptions, card metadata, network metadata,
-discount or promotion fields, receipts, authorization headers, cookies, and API
+discount or promotion objects, receipts, authorization headers, cookies, and API
 keys out of this file.
 
 Minimal shape, with placeholder values only:
@@ -123,7 +137,13 @@ Minimal shape, with placeholder values only:
     "mode": "payment",
     "status": "complete",
     "payment_status": "paid",
+    "amount_subtotal": 1900,
     "amount_total": 1900,
+    "total_details": {
+      "amount_discount": 0,
+      "amount_shipping": 0,
+      "amount_tax": 0
+    },
     "currency": "usd",
     "payment_link": "plink_REPLACE_WITH_LIVE_ID"
   },
@@ -141,7 +161,7 @@ The verifier rejects any proof artifact that includes sensitive fields such as
 `card`, `last4`, `fingerprint`, `ip_address`, `metadata`,
 `client_reference_id`, `invoice`, `subscription`,
 `allow_promotion_codes`, `coupon`, `discounts`, `promotion_code`,
-`total_details`,
+`total_details` outside the exact minimal Checkout Session breakdown above,
 `api_key`, `request`, `response`, `request_headers`, `response_headers`,
 `order`, `order_count`, `orders`, `session`, `session_data`, `sessions`,
 `private_key`, `certificate_private_key`, `signing_key`, `stripe_secret_key`,
