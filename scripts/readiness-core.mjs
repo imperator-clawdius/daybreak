@@ -101,13 +101,24 @@ function normalizeProofKey(key) {
     .toLowerCase();
 }
 
-function containsDisallowedPaidOrderProofData(value) {
+function isSafeTaxBreakdown(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const keys = Object.keys(value);
+  return keys.length === 3 &&
+    keys.every(key => ["amount_discount", "amount_shipping", "amount_tax"].includes(key)) &&
+    Object.values(value).every(amount =>
+      typeof amount === "number" && Number.isSafeInteger(amount) && amount >= 0);
+}
+
+function containsDisallowedPaidOrderProofData(value, path = []) {
   if (!value || typeof value !== "object") return false;
-  return Object.entries(value).some(
-    ([key, nested]) =>
-      DISALLOWED_PAID_ORDER_PROOF_KEYS.has(normalizeProofKey(key)) ||
-      containsDisallowedPaidOrderProofData(nested),
-  );
+  for (const [key, nested] of Object.entries(value)) {
+    if (key === "total_details" && path.length === 1 && path[0] === "checkout_session" &&
+        isSafeTaxBreakdown(nested)) continue;
+    if (DISALLOWED_PAID_ORDER_PROOF_KEYS.has(normalizeProofKey(key))) return true;
+    if (containsDisallowedPaidOrderProofData(nested, [...path, key])) return true;
+  }
+  return false;
 }
 
 function containsDisallowedExternalProofData(value) {
@@ -1015,7 +1026,7 @@ export function evaluateMarketSignal({
   }
   if (
     typeof session.amount_total !== "number" ||
-    !Number.isInteger(session.amount_total) ||
+    !Number.isSafeInteger(session.amount_total) ||
     typeof session.currency !== "string"
   ) {
     return {
@@ -1026,10 +1037,23 @@ export function evaluateMarketSignal({
       detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed",
     };
   }
-  if (
-    session.amount_total !== expectedPriceUsd * 100 ||
-    session.currency !== "usd"
-  ) {
+  const expectedSubtotal = expectedPriceUsd * 100;
+  const itemized = session.amount_subtotal !== undefined || session.total_details !== undefined;
+  const totals = session.total_details;
+  if (itemized && (
+    typeof session.amount_subtotal !== "number" ||
+    !Number.isSafeInteger(session.amount_subtotal) || !isSafeTaxBreakdown(totals)
+  )) {
+    return { pass: false, reason: "paid_order_proof_malformed", paidOrders: 0, refunds: 0,
+      detail: "paid_orders=0 refunds=0 reason=paid_order_proof_malformed" };
+  }
+  const tax = isSafeTaxBreakdown(totals) ? totals.amount_tax : 0;
+  const expectedTotal = expectedSubtotal + tax;
+  if (!Number.isSafeInteger(expectedSubtotal) || expectedSubtotal <= 0 ||
+      !Number.isSafeInteger(expectedTotal) || session.currency !== "usd" ||
+      session.amount_total !== expectedTotal ||
+      (itemized && (session.amount_subtotal !== expectedSubtotal ||
+        !isSafeTaxBreakdown(totals) || totals.amount_discount !== 0 || totals.amount_shipping !== 0))) {
     return pending("paid_order_amount_mismatch");
   }
   if (!Array.isArray(refundData)) {
